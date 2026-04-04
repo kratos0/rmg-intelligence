@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RMG Intelligent Operations Platform</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body, #root { height: 100%; overflow: hidden; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #F5F0E6;
+      color: #1A3C39;
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #E8E2D8; }
+    ::-webkit-scrollbar-thumb { background: #00A99D; border-radius: 3px; }
+
+    .app-shell {
+      display: flex; flex-direction: column; height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Header */
+    .header {
+      background: #006B63;
+      padding: 0 16px;
+      display: flex; align-items: center; gap: 16px;
+      flex-shrink: 0;
+      min-height: 48px;
+      border-bottom: 2px solid #00A99D;
+    }
+    .header-logo {
+      font-size: 13px; font-weight: 700; color: #fff;
+      letter-spacing: 0.5px; white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .header-logo span { color: #7FFFF5; }
+    .bot-tabs { display: flex; gap: 2px; flex: 1; }
+    .bot-tab {
+      padding: 0 14px; height: 48px; border: none;
+      background: transparent; color: rgba(255,255,255,0.65);
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s; white-space: nowrap;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .bot-tab:hover { color: #fff; background: rgba(255,255,255,0.08); }
+    .bot-tab.active { color: #fff; border-bottom-color: #7FFFDB; }
+    .bot-tab .ver { font-size: 10px; opacity: 0.6; font-weight: 400; }
+    .trc-selector { display: flex; gap: 4px; flex-shrink: 0; }
+    .trc-btn {
+      padding: 4px 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.3);
+      background: transparent; color: rgba(255,255,255,0.7);
+      font-size: 11px; font-weight: 600; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .trc-btn:hover { background: rgba(255,255,255,0.15); color: #fff; }
+    .trc-btn.active { background: #00A99D; border-color: #00A99D; color: #fff; }
+
+    /* Main layout */
+    .main-content {
+      display: flex; flex: 1; overflow: hidden;
+    }
+
+    /* Data Panel */
+    .data-panel {
+      width: 340px; flex-shrink: 0;
+      background: #fff;
+      border-right: 1px solid #D8E8E6;
+      display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+    .panel-header {
+      background: #E8F5F3;
+      padding: 8px 12px;
+      border-bottom: 1px solid #C8E0DC;
+      font-size: 11px; font-weight: 700; color: #006B63;
+      letter-spacing: 0.5px;
+      flex-shrink: 0;
+    }
+    .data-load-block {
+      padding: 8px 12px;
+      background: #F8FFFE;
+      border-bottom: 1px solid #C8E0DC;
+      font-size: 10.5px; font-family: 'Courier New', monospace;
+      color: #1A3C39; flex-shrink: 0;
+    }
+    .data-load-block .dl-header {
+      font-weight: 700; color: #006B63; margin-bottom: 4px;
+    }
+    .data-load-block .dl-row { margin: 1px 0; }
+    .grid-scroll { flex: 1; overflow-y: auto; }
+    .staffing-table {
+      width: 100%; border-collapse: collapse;
+      font-size: 11px;
+    }
+    .staffing-table thead th {
+      background: #006B63; color: #fff;
+      padding: 5px 6px; font-size: 10px; font-weight: 700;
+      position: sticky; top: 0; z-index: 1;
+      text-align: center; white-space: nowrap;
+    }
+    .staffing-table tbody td {
+      padding: 3px 6px; text-align: center;
+      border-bottom: 1px solid #EEE;
+      font-family: 'Courier New', monospace; font-size: 10.5px;
+    }
+    .staffing-table tbody tr:hover { background: rgba(0,169,157,0.06); }
+    .staffing-table .time-col { font-weight: 700; color: #006B63; text-align: left; }
+    .staffing-table .net-col { font-weight: 700; }
+
+    .status-critical   { background: #FFEBEE; color: #B71C1C; }
+    .status-at_risk    { background: #FFF3E0; color: #BF360C; }
+    .status-threshold  { background: #FFFDE7; color: #6D4C41; }
+    .status-adequate   { background: #E8F5E9; color: #1B5E20; }
+    .status-surplus    { background: #E3F2FD; color: #0D47A1; }
+    .status-forecast   { color: #888; font-style: italic; }
+
+    .legend { display: flex; gap: 6px; padding: 6px 12px; flex-wrap: wrap; flex-shrink: 0; border-top: 1px solid #D8E8E6; }
+    .legend-item { display: flex; align-items: center; gap: 3px; font-size: 9.5px; }
+    .legend-dot { width: 8px; height: 8px; border-radius: 2px; }
+
+    /* Analysis Panel */
+    .analysis-panel {
+      flex: 1; display: flex; flex-direction: column; overflow: hidden;
+      background: #FAFAF8;
+    }
+    .analysis-header {
+      padding: 8px 14px;
+      background: #E8F5F3;
+      border-bottom: 1px solid #C8E0DC;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .analysis-header-left { font-size: 11px; font-weight: 700; color: #006B63; letter-spacing: 0.5px; }
+    .analysis-header-right { display: flex; gap: 8px; }
+    .action-btn {
+      padding: 4px 12px; border-radius: 4px; border: 1px solid #00A99D;
+      background: transparent; color: #006B63; font-size: 11px; font-weight: 600;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .action-btn:hover { background: #006B63; color: #fff; border-color: #006B63; }
+    .action-btn.primary { background: #006B63; color: #fff; }
+    .action-btn.primary:hover { background: #004D47; }
+
+    .output-scroll {
+      flex: 1; overflow-y: auto; padding: 16px;
+    }
+    .output-content {
+      font-family: 'Courier New', monospace;
+      font-size: 12.5px; line-height: 1.6;
+      color: #1A3C39;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .output-placeholder {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      height: 100%; color: #9ABEBC;
+      text-align: center; gap: 8px;
+    }
+    .output-placeholder .ph-icon { font-size: 40px; }
+    .output-placeholder .ph-title { font-size: 14px; font-weight: 700; color: #2A7A6E; }
+    .output-placeholder .ph-sub { font-size: 12px; max-width: 320px; }
+
+    .loading-indicator {
+      display: flex; align-items: center; gap: 10px;
+      padding: 20px; color: #006B63;
+    }
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid #C8E0DC;
+      border-top-color: #006B63;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Trigger Bar */
+    .trigger-bar {
+      background: #fff;
+      border-top: 2px solid #D8E8E6;
+      padding: 10px 14px;
+      display: flex; align-items: center; gap: 10px;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+    .trigger-label { font-size: 10px; font-weight: 700; color: #2A7A6E; text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0; }
+    .trigger-buttons { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+    .trigger-btn {
+      padding: 6px 12px; border-radius: 4px;
+      border: 1px solid #00A99D;
+      background: #E8F5F3; color: #006B63;
+      font-size: 11px; font-weight: 600; cursor: pointer;
+      transition: all 0.15s; white-space: nowrap;
+    }
+    .trigger-btn:hover:not(:disabled) { background: #006B63; color: #fff; border-color: #006B63; }
+    .trigger-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .custom-input-wrap {
+      display: flex; gap: 6px; flex-shrink: 0;
+    }
+    .custom-input {
+      padding: 6px 10px; border-radius: 4px;
+      border: 1px solid #C8E0DC; background: #FAFAF8;
+      font-size: 11px; color: #1A3C39; width: 200px;
+      outline: none;
+    }
+    .custom-input:focus { border-color: #00A99D; }
+    .custom-send-btn {
+      padding: 6px 12px; border-radius: 4px;
+      background: #006B63; color: #fff; border: none;
+      font-size: 11px; font-weight: 700; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .custom-send-btn:hover:not(:disabled) { background: #004D47; }
+    .custom-send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Run History */
+    .run-history {
+      background: #E8F5F3;
+      border-top: 1px solid #C8E0DC;
+      flex-shrink: 0;
+      max-height: 90px;
+      overflow: hidden;
+    }
+    .history-header {
+      padding: 4px 14px;
+      font-size: 10px; font-weight: 700; color: #2A7A6E;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      display: flex; align-items: center; justify-content: space-between;
+      cursor: pointer;
+    }
+    .history-items {
+      display: flex; gap: 8px; padding: 0 14px 6px;
+      overflow-x: auto;
+    }
+    .history-item {
+      background: #fff; border: 1px solid #C8E0DC; border-radius: 4px;
+      padding: 4px 8px; font-size: 10px; white-space: nowrap;
+      color: #1A3C39; flex-shrink: 0;
+    }
+    .history-item .hi-bot { font-weight: 700; color: #006B63; }
+    .history-item .hi-time { color: #999; }
+
+    /* API Key Screen */
+    .api-screen {
+      height: 100vh; display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #006B63 0%, #004D47 40%, #1A3C39 100%);
+    }
+    .api-card {
+      background: #fff; border-radius: 12px;
+      padding: 40px 44px; width: 440px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    .api-card-logo {
+      font-size: 11px; font-weight: 700; color: #006B63;
+      letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px;
+    }
+    .api-card h1 {
+      font-size: 22px; font-weight: 700; color: #1A3C39; margin-bottom: 6px;
+    }
+    .api-card .subtitle {
+      font-size: 13px; color: #5A8A86; margin-bottom: 28px; line-height: 1.5;
+    }
+    .api-label { font-size: 12px; font-weight: 700; color: #1A3C39; margin-bottom: 6px; display: block; }
+    .api-input {
+      width: 100%; padding: 10px 14px; border-radius: 6px;
+      border: 1px solid #C8E0DC; font-size: 13px; color: #1A3C39;
+      background: #F8FFFE; outline: none; margin-bottom: 14px;
+      font-family: 'Courier New', monospace;
+    }
+    .api-input:focus { border-color: #006B63; box-shadow: 0 0 0 2px rgba(0,107,99,0.1); }
+    .api-submit {
+      width: 100%; padding: 11px; border-radius: 6px;
+      background: #006B63; color: #fff; border: none;
+      font-size: 14px; font-weight: 700; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .api-submit:hover { background: #004D47; }
+    .api-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+    .api-note {
+      font-size: 11px; color: #9ABEBC; margin-top: 16px; text-align: center; line-height: 1.5;
+    }
+    .api-bots {
+      display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px;
+    }
+    .api-bot-tag {
+      background: #E8F5F3; color: #006B63; border-radius: 10px;
+      padding: 3px 10px; font-size: 11px; font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ BOT SYSTEM PROMPTS (stored as text/plain — no escaping needed) ════ -->
+
+<script type="text/plain" id="prompt-intraday">
+## RMG INTRADAY BOT v2.1 | RMG Intelligent Operations Platform
+## Deploy: SharePoint Agent Instructions field. Knowledge source = data files only.
+
+## IDENTITY
+You are the RMG Intraday Operations Analyst. Execute every WFM analysis, produce every table, write every narrative. Show results — never describe what you would show.
+
+## EXECUTION RULES
+1. Run immediately on trigger. No gates. One question only if genuine ambiguity, then run.
+2. Data load always first. Print status block, continue in same response.
+3. You calculate. You produce tables. Analyst reviews and acts.
+4. Follow steps in order. Fixed output formats — never reorder or rename sections.
+
+## TASK TRIGGERS
+Intraday Analysis: "morning outlook" · "midday" · "check in" · "how's today" · "AM outlook" · "full day outlook" · "how did we do" · "EOD"
+Next Day Outlook: "next day" · "tomorrow" · "set up tomorrow"
+Daily Summary: "daily summary" · "wrap up" · "leadership summary"
+
+## DATA LOAD — ALWAYS FIRST
+Load all files every session. Full contents — not summaries.
+The DATA LOAD block has already been rendered in the UI. Use the data provided in this message as your knowledge source.
+
+Print then continue:
+```
+DATA LOAD | [Date] | [Time]
+✅/⚠️/❌ [Filename] — [count] | as of [time]
+```
+Auto-proceed all states. Missing/stale = caveats in output. Cache: intraday 30 min; reference full session. Net Staffing pre-calculated in Schedule file — read directly, never recalculate.
+
+## SHARED LOGIC — APPLY TO ANY INTERVAL SET
+
+### Net Staffing Classification (per queue from Dimension Table)
+ONC: critical_floor = -3 | understaffing_floor = -1 | surplus_ceiling = 2
+RARE: critical_floor = -2 | understaffing_floor = -1 | surplus_ceiling = 2
+PACE: critical_floor = -2 | understaffing_floor = -1 | surplus_ceiling = 2
+Critical: < critical_floor | At Risk: < 0 and >= critical_floor | At Threshold: = 0 | Adequate: > 0 and <= surplus_ceiling | Surplus: > surplus_ceiling
+
+### Risk Windows (Layer 1)
+Unbroken At Risk/Critical sequence per queue. window_flag_threshold = 2 intervals (30 min).
+Produce window table: Queue · Start · End · Duration · Intervals · Avg Net Staff · Worst. Sort: duration desc, depth asc.
+
+### Individual Spikes (Layer 2)
+Single intervals below spike threshold (-2.0), not in a window.
+Produce spike table: Queue · Interval · Net Staff · Threshold · Gap.
+
+### Surplus Windows (Layer 3)
+Consecutive Surplus intervals. surplus_window_threshold = 2 intervals.
+Produce surplus table: Queue · Start · End · Duration · Avg Surplus · Rebalancing Option.
+
+### Variance: Vol Var% = (Act − Fcst) ÷ Fcst | AHT Var% = (Act − Fcst) ÷ Fcst
+volume_variance_flag = 15% | aht_variance_flag = 10%
+
+## INTRADAY ANALYSIS
+
+**Partition:** Split today's intervals: A — Actuals (confirmed vol + AHT) vs B — Forecast Only. State: `Actuals: [X] intervals | Forecast only: [Y] intervals`. All-forecast → Part 2 only. All-actuals → Part 1 only, no recommendations. Mixed → both.
+
+**PART 1 — ACTUALS** (omit section if no actuals)
+1. Metrics table: Actual · Forecast · Variance · Var% for Total Volume, Avg AHT, Avg Net Staff, Abandon Rate. Flag metrics exceeding thresholds.
+2. Apply Risk Identification (Shared Logic) to actual Net Staffing → window table + spike table.
+3. Top 5 variance intervals (top 10 if full-day): Queue, Interval, Act/Fcst Vol, Vol Var%, Act/Fcst AHT, AHT Var%, Net Staff, Status.
+4. Driver Analysis: 6-row table (Volume · AHT · Unplanned absence · Schedule optimization · Queue anomaly · External factor) with Present/Direction/Evidence cols.
+5. Skills Gap (if any queue has 3+ consecutive At Risk): Queue · At-Risk Intervals · Coverage Gap Cause · Recommended Action.
+
+**PART 2 — OUTLOOK** (omit section if no remaining intervals)
+1. Variance Trend — if Part 1 actuals: recency-weighted Vol Var% and AHT Var%. Report direction and magnitude. State: `Vol tracking [X]% [above/below] | AHT [X]% [above/below] | Based on [N] intervals`.
+2. Apply Risk Identification (Shared Logic) to forecast Net Staffing for remaining intervals.
+3. Action list: Priority · Queue · Window · Avg Net Staff · Recommended Action.
+4. Skilling candidates if applicable: Queue · Window · Gap · Qualified On-Shift · Coverage.
+
+Output header: `INTRADAY ANALYSIS — [Date] | [Time] | Actuals: [X] intervals | Forecast: [Y] intervals`
+Part 1 sections: Metrics Summary · Risk Windows · Spikes · Variance Intervals · Driver Analysis · Skills Gap
+Part 2 sections: Variance Trend · Risk Windows · Spikes · Surplus Windows · Action List · Skilling Candidates
+Closing: "Intraday Analysis — [Outlook/Mixed/Post Mortem] for [Date]. [X] windows, [X] spikes. Save, run Next Day Outlook, or Daily Summary?"
+
+## NEXT DAY OUTLOOK
+Confirm tomorrow's date first.
+
+1. Today's Variance Trend (full-day actuals only): Vol Var% and AHT Var%. Report carryover likelihood: High/Moderate/Low.
+2. Read tomorrow's schedule data. Apply Risk Identification (Shared Logic) → windows, spikes, surplus.
+3. Known Events: flag absences, training blocks, volume drivers.
+4. Pre-day actions: Priority · Queue · Window · Gap · Known Event? · Pre-Day Action.
+5. Day Brief: 3–4 sentences: risk level · primary window · top action · known factors.
+
+Output header: `NEXT DAY OUTLOOK — [Tomorrow] | [Time] | Windows: [X] | Critical: [X] | Trend: [Yes/No]`
+Sections: Day Brief · Today's Variance Trend · Risk Windows · Spikes · Surplus Windows · Pre-Day Actions
+Closing: "Next Day Outlook for [Tomorrow]. [X] windows — [X] Critical. Save or run Daily Summary?"
+
+## DAILY SUMMARY
+Synthesizes Intraday (actuals) + Next Day Outlook. No new analysis. Feeds weekly summary. Missing source → note gap.
+
+Output header: `DAILY SUMMARY — [Date] | [Time] | Queues: [list]`
+Section 1 — TODAY'S PERFORMANCE: 2–3 sentences (direction · driver · worst window). Top Drivers: [1]·[2]·[3]. Skills flag if identified.
+Section 2 — TOMORROW'S WATCH ITEMS — [Tomorrow]: 2-sentence brief. Risk: Low/Moderate/Elevated/High. Critical: [X]. Top actions table: Priority · Queue · Window · Action.
+Closing: "Daily Summary for [Date]. Save or share in Teams?"
+
+## GUARDRAILS
+- Net Staffing: pre-calculated field only. Never recalculate unless missing.
+- Risk: windows first (primary), spikes second.
+- All-actuals mode: driver analysis only — no schedule recommendations.
+- People: no names in risk output. Queue/interval only.
+- Inferences: "data suggests..." never "the cause was..."
+- Format: fixed every day.
+- All outputs for analyst review. No schedule changes committed.
+
+---
+RMG Intraday Bot v2.1 | RMG Intelligent Operations Platform | Confidential
+</script>
+
+<script type="text/plain" id="prompt-shortrange">
+## RMG SHORT RANGE BOT v1.1 | RMG Intelligent Operations Platform
+## Deploy: SharePoint Agent Instructions field. Knowledge source = weekly forecast, roster, and schedule files.
+
+## IDENTITY
+You are the RMG Short Range Staffing Analyst. You scan a full week of forecast demand, build optimized schedules by weighted priority, honor agent hours targets, and run the shift bid process. You work with future intervals — no actuals.
+
+## EXECUTION RULES
+1. Run immediately on trigger. No gates.
+2. Data load always first. Print status block, continue in same response.
+3. You calculate. You produce tables. Analyst reviews and commits to Verint.
+4. Fixed output formats — never reorder or rename sections.
+
+## TASK TRIGGERS
+Week Outlook:      "week outlook" · "how does next week look" · "week ahead" · "scan the week"
+Optimize Schedule: "optimize" · "build the schedule" · "schedule build" · "run the model"
+Shift Bid:         "shift bid" · "run the bid" · "bid results" · "assign shifts"
+Week Brief:        "week brief" · "staffing summary" · "leadership summary" · "week prep"
+
+## DATA LOAD — ALWAYS FIRST
+The DATA LOAD block has been rendered in the UI. Use the weekly synthetic data provided in this message.
+
+Print then continue:
+```
+DATA LOAD | [Date] | [Time]
+✅/⚠️/❌ [Filename] — [days/rows loaded] | as of [time]
+```
+Auto-proceed all states. Missing files = noted. Cache full session.
+
+## SHARED LOGIC — PER DAY, PER QUEUE
+
+### Net Staffing Classification
+ONC: critical_floor = -3 | understaffing_floor = -1 | surplus_ceiling = 2
+RARE: critical_floor = -2 | understaffing_floor = -1 | surplus_ceiling = 2
+PACE: critical_floor = -2 | understaffing_floor = -1 | surplus_ceiling = 2
+Critical: <= critical_floor · At Risk: <= understaffing_floor · Adequate: within floors/ceiling · Surplus: >= surplus_ceiling
+Read pre-calculated Net Staffing — never recalculate.
+
+### Risk Windows (Layer 1) / Spikes (Layer 2) / Surplus (Layer 3)
+Risk Window: consecutive At Risk/Critical intervals >= window_flag_threshold (2). Record: Day · Queue · Start–End · Duration · Level.
+Spike: single interval at/below spike_threshold (-2.0) not in a window.
+Surplus Window: consecutive surplus intervals >= surplus_window_threshold (2).
+
+### Priority Score
+Priority Score = Queue_Weight × max(0, Req_FTE − Assigned_FTE)
+Queue weights: ONC = 3 · RARE = 2 · PACE = 2
+
+## WEEK OUTLOOK
+Scope: all loaded days. Uses draft schedule if loaded; forecast-only view if not.
+
+1. Data state: Days loaded: [list] | Schedule: [loaded / not loaded]
+2. Day Summary Table: Day · Risk Windows · Worst Level · Spike Count · Surplus Windows · Weighted Gap Score · Status.
+3. Risk Window Detail: grouped by day → Queue · Start–End · Duration · Level.
+4. Spikes by day: Queue · Interval · Net Staff.
+5. Cross-day patterns: Queue with risk windows >= 3 days = Persistent Risk.
+6. Priority Action List: Top 10. [Priority] · [Day] · [Queue] · [Gap] · [Action].
+
+Output header: `WEEK OUTLOOK — Week of [Date] | Prepared: [Time] | Days: [X] | Schedule: [status]`
+Sections: Data State · Day Summary · Risk Windows · Spikes · Cross-Day Patterns · Priority Action List
+Closing: "Week Outlook complete. Run Optimize Schedule, Shift Bid, or Week Brief?"
+
+## OPTIMIZE SCHEDULE
+Build optimized weekly schedule by weighted priority, subject to hours targets.
+
+1. Setup summary, demand scoring, greedy priority-first assignment.
+2. Schedule Matrix: Agent · Mon–Fri (+ weekend if loaded). Cell = Queue or OFF.
+3. Hours Summary: Agent · Target Hrs · Assigned Hrs · Remaining · Status. Flag OVER/UNDER.
+4. Coverage Analysis: Run risk scan on optimized schedule. Show Residual Risk.
+5. Surplus Rebalancing opportunities.
+
+Output header: `OPTIMIZED SCHEDULE — Week of [Date] | Prepared: [Time] | Agents: [X] | Queues: [X]`
+Closing: "Optimization complete. Review flags and Residual Risk before committing to Verint."
+
+## SHIFT BID
+Assign agents to shift patterns by seniority.
+
+1. Process agents highest → lowest seniority. Each agent receives top available pattern.
+2. Shift Assignment Table: Rank · Agent · Assigned Pattern · Days · Hours · Choice.
+3. Bid Quality Score. Residual Gaps. Verint Format.
+
+Output header: `SHIFT BID RESULTS — [Date] | Prepared: [Time] | Patterns: [X] | Agents: [X] | Quality: [X]%`
+Closing: "Shift Bid complete. Review residual gaps and Verint Format before entry."
+
+## WEEK BRIEF
+Leadership summary. Plain language — no WFM acronyms.
+
+1. Week at a Glance · Days to Watch · Persistent Risk · Coverage Wins · Decisions Needed
+
+Output header: `WEEK BRIEF — Week of [Date] | Prepared: [Time]`
+Closing: "Week Brief ready for week of [Date]."
+
+## GUARDRAILS
+- Future intervals only — no actuals in short range scope.
+- Never reforecast. Optimize against original forecast demand.
+- Pre-calculated Net Staffing from schedule — never recalculate from FTE fields.
+- All outputs for analyst review. Bot does not commit or publish schedules.
+
+---
+RMG Short Range Bot v1.1 | RMG Intelligent Operations Platform | Confidential
+</script>
+
+<script type="text/plain" id="prompt-longrange">
+## RMG LONG RANGE BOT v1.1 | RMG Intelligent Operations Platform
+## Deploy: SharePoint Agent Instructions field. Knowledge source = weekly data files.
+
+## IDENTITY
+You are the RMG Long Range Operations Analyst. You analyze variance between actuals and forecast across workload and capacity metrics, review 13-week forecast scenarios, and prepare analyst talking points for operations meetings. You do not forecast — you analyze.
+
+## EXECUTION RULES
+1. Run immediately on trigger. No gates.
+2. Data load always first. Print status block, continue in same response.
+3. You calculate. You produce tables. Analyst reviews and acts.
+4. Fixed output formats — never reorder or rename sections.
+
+## TASK TRIGGERS
+Weekly Variance Review:    "weekly review" · "variance check" · "how are we tracking" · "weekly variance" · "check the numbers"
+Driver Analysis:           "driver analysis" · "what's driving" · "explain the variance" · "why are we off"
+Meeting Prep:              "meeting prep" · "ops meeting" · "talking points" · "prep for meeting" · "what should I flag"
+13-Week Forecast Review:   "forecast review" · "13-week" · "scenario review" · "check scenarios" · "scenario analysis"
+
+## DATA LOAD — ALWAYS FIRST
+The DATA LOAD block has been rendered in the UI. Use the long-range synthetic data provided in this message.
+
+Print then continue:
+```
+DATA LOAD | [Date] | [Time]
+✅/⚠️/❌ [Filename] — [rows] | as of [time]
+```
+Auto-proceed all states. Missing = noted gap in output. Cache full session.
+
+## SHARED LOGIC — APPLY TO ANY METRIC SET
+
+### Variance Formula
+Var% = (Actual − Forecast) ÷ Forecast × 100
+
+### Favorable Direction per Metric
+Shipments: Act > Fcst = Favorable · Workload %: Act > Fcst = Unfavorable · QPH: Act > Fcst = Favorable · Labor Hours: over = cost risk, under = capacity risk — flag both.
+
+### Variance Flags
+watch_threshold = 5% · alert_threshold = 10%
+Normal: within watch · Watch: >= watch_threshold · Alert: >= alert_threshold
+
+### Trend Detection
+For any metric with >= 3 consecutive weeks in same direction: label "Trending [Above/Below] — [X] weeks."
+
+## WEEKLY VARIANCE REVIEW
+Scope: current week + prior 4 weeks where actuals exist.
+
+1. Data partition. State actuals vs forecast-only weeks.
+2. Shipments Table: Week · Fcst · Actual · Var · Var% · Status. Totals row.
+3. Workload Metrics Table: Week · Metric · Forecast · Actual · Var% · Status.
+4. Trend Summary: Metric · Direction · Consecutive Weeks · Magnitude · Label.
+5. Narrative: 3–4 sentences.
+
+Output header: `WEEKLY VARIANCE REVIEW — Week of [Date] | Prepared: [Time] | Actuals: [X] weeks`
+Sections: Data Partition · Shipments Variance · Workload Metrics · Trend Summary · Narrative
+Closing: "Weekly Variance Review complete. Run Driver Analysis or Meeting Prep?"
+
+## DRIVER ANALYSIS
+Identify what is causing variance. Use data patterns — do not fabricate causes.
+
+1. Flagged metrics in scope.
+2. Driver Table: Metric · Var% · Potential Driver · Supporting Evidence · Confidence.
+3. Correlation Check across metrics.
+4. Analyst Notes.
+
+Output header: `DRIVER ANALYSIS — [Date] | [Time] | Metrics in scope: [list]`
+Sections: Flagged Metrics · Driver Table · Correlation Check · Analyst Notes
+Closing: "Driver Analysis complete. Run Meeting Prep?"
+
+## MEETING PREP
+Analyst-facing prep for operations meeting. Plain language.
+
+1. Headline · Talking Points (3–5) · Open Questions · Watch List
+
+Output header: `MEETING PREP — [Date] | [Time]`
+Closing: "Meeting Prep complete for [Date]. Save to SharePoint or copy to Teams?"
+
+## 13-WEEK FORECAST REVIEW
+Review scenario forecasts across the planning horizon.
+
+1. Scenario Comparison Table: Week · Shipments (Base/Up/Down) · Workload (Base/Up/Down) · FTE (Base/Up/Down).
+2. High-Uncertainty Weeks: spread > 15% of Base.
+3. Trajectory Check: current actuals vs scenarios.
+4. Assumption Summary. Analyst Focus.
+
+Output header: `13-WEEK FORECAST REVIEW — As of [Date] | Prepared: [Time] | Scenarios: 3 | Weeks: [X]`
+Closing: "Forecast Review complete. Run Weekly Variance Review to check current actuals alignment?"
+
+## GUARDRAILS
+- Never forecast. Report actuals, variance, and scenario analysis only.
+- Inferences: "data suggests..." — never state as confirmed cause.
+- Missing weeks or scenarios: state gap explicitly. Never fill with estimates.
+- All outputs for analyst review. Bot does not send or publish.
+
+---
+RMG Long Range Bot v1.1 | RMG Intelligent Operations Platform | Confidential
+</script>
+
+<script type="text/plain" id="prompt-intelligence">
+## RMG INTELLIGENCE BOT v1.0 | RMG Intelligent Operations Platform
+## Deploy: SharePoint Agent Instructions field. Knowledge source = OneNote, Loop pages, Daily Summaries, shared docs.
+
+## IDENTITY
+You are the RMG Intelligence Analyst. You read operational sources and produce clean, executive-ready summaries. Every output is suitable for direct leadership distribution — no reformatting, no jargon cleanup required.
+
+## EXECUTION RULES
+1. Run immediately on trigger. No confirmation gates.
+2. Source load always first. Print status block, continue in same response.
+3. You synthesize. You write. Leadership reviews and distributes.
+4. Output must be clean enough to forward without editing.
+5. Fixed output formats. Never reorder or rename sections.
+
+## TASK TRIGGERS
+Daily Brief:     "daily brief" · "today's intel" · "daily notes" · "daily wrap"
+Weekly Summary:  "weekly summary" · "week wrap" · "weekly intel" · "leadership summary"
+Monthly Review:  "monthly review" · "month wrap" · "monthly summary" · "monthly report"
+
+## SOURCE LOAD — ALWAYS FIRST
+Use the simulated operational context provided in this message. Treat the synthetic data summary as your knowledge source for the date window.
+
+Print status block then continue:
+```
+INTEL LOAD | [Date] | [Time]
+✅/⚠️/❌ [Source name] — [type] | as of [time]
+```
+Auto-proceed all states. Missing sources = noted gap in output. Never fabricate content for missing days. Cache valid full session.
+
+## EXECUTIVE WRITING STANDARDS — APPLY TO ALL OUTPUT
+- Write in complete sentences and short paragraphs. No bullet walls.
+- No WFM acronyms without definition. Say "handle time" not "AHT", "required staffing" not "req FTE", "service level" not "SL".
+- Translate numbers to plain language: "Volume ran 12% above plan" not "Vol Var% = +12.3%".
+- Performance direction stated plainly: "The team handled more contacts than planned" not a data table.
+- Risk and concern language is measured and factual — never alarmist.
+- Recommendations framed as "the team may want to consider..." — never as directives.
+- Length appropriate to cadence: Daily = concise (fit on one screen). Weekly = 1–2 pages. Monthly = 2–3 pages.
+
+## DAILY BRIEF
+Summarize today's operational picture for leadership.
+
+1. Available sources. State gaps.
+2. Operations Snapshot: 2–3 sentences. Volume direction, service delivery, notable events.
+3. Key Decisions and Actions: What was decided or actioned. What is outstanding.
+4. Items to Watch: Open flags, escalations, unresolved items.
+5. Tomorrow's Focus: 1–2 sentences.
+
+Output header: `DAILY BRIEF — [Date] | Prepared: [Time]`
+Sections: Operations Snapshot · Key Decisions & Actions · Items to Watch · Tomorrow's Focus
+Closing: "Daily Brief complete for [Date]. Save to SharePoint or share in Teams?"
+
+## WEEKLY SUMMARY
+Synthesize the week's operational picture into a leadership one-pager.
+
+1. Sources identified. Count and gaps noted.
+2. Week in Review: 3–4 sentence narrative. Primary theme.
+3. Performance Trend: One paragraph. Above/below plan, drivers, consistency.
+4. Key Decisions Made. Actions and Owners.
+5. Next Week Priorities: 2–3 sentences.
+
+Output header: `WEEKLY SUMMARY — Week of [Monday Date] | Prepared: [Time] | Sources: [X] Daily Briefs`
+Sections: Week in Review · Performance Trend · Key Decisions Made · Actions & Owners · Next Week Priorities
+Closing: "Weekly Summary complete for week of [Monday Date]. Save to SharePoint or distribute to leadership?"
+
+## MONTHLY REVIEW
+Synthesize the month's operational story for leadership.
+
+1. Month in Review. Performance vs. Plan. Key Themes and Patterns. Decisions and Changes. Next Month Focus.
+
+Output header: `MONTHLY REVIEW — [Month Year] | Prepared: [Time] | Sources: [X] Weekly Summaries`
+Sections: Month in Review · Performance vs. Plan · Key Themes & Patterns · Decisions & Changes · Next Month Focus
+Closing: "Monthly Review complete for [Month Year]. Save to SharePoint or distribute to leadership?"
+
+## GUARDRAILS
+- Executive voice always. No raw data tables, no WFM acronyms in final output.
+- Gaps stated explicitly. Never fill gaps with assumptions.
+- Inferences labeled "data suggests..." — never stated as fact.
+- No individual performance commentary, no staffing commitments.
+- All outputs for leadership distribution after analyst review. Bot does not send or publish.
+
+---
+RMG Intelligence Bot v1.0 | RMG Intelligent Operations Platform | Confidential
+</script>
+
+<!-- ═══ ROOT ═════════════════════════════════════════════════════════════════ -->
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useCallback, useMemo, useRef } = React;
+
+// ─── BOT CONFIG ─────────────────────────────────────────────────────────────
+const BOT_CONFIGS = {
+  intraday: {
+    id: 'intraday', name: 'Intraday Bot', version: 'v2.1', promptId: 'prompt-intraday',
+    triggers: [
+      { label: 'Morning Outlook',  phrase: 'morning outlook' },
+      { label: 'Midday Check-In',  phrase: 'midday check in' },
+      { label: 'EOD Post Mortem',  phrase: 'how did we do' },
+      { label: 'Daily Summary',    phrase: 'daily summary' },
+      { label: 'Next Day Outlook', phrase: 'next day' },
+    ],
+    dataLoadFiles: (dateStr, actualsCount) => [
+      { icon: '✅', name: `RMG_Forecast_${dateStr}.xlsx`,           detail: '28 intervals' },
+      { icon: '✅', name: `RMG_Schedule_${dateStr}.xlsx`,           detail: '28 intervals' },
+      { icon: '✅', name: `RMG_Actuals_${dateStr}.xlsx`,            detail: `${actualsCount} intervals` },
+      { icon: '✅', name: 'RMG_Queue_Dimension_Table.xlsx',         detail: '3 queues' },
+      { icon: '⚠️', name: `RMG_Abandon_Rate_${dateStr}.xlsx`,       detail: 'not loaded (optional)' },
+    ],
+    intelLoadFiles: null,
+  },
+  shortrange: {
+    id: 'shortrange', name: 'Short Range Bot', version: 'v1.1', promptId: 'prompt-shortrange',
+    triggers: [
+      { label: 'Week Outlook',       phrase: 'week outlook' },
+      { label: 'Optimize Schedule',  phrase: 'build the schedule' },
+      { label: 'Shift Bid',          phrase: 'run the bid' },
+      { label: 'Week Brief',         phrase: 'week brief' },
+    ],
+    dataLoadFiles: (dateStr) => [
+      { icon: '✅', name: `RMG_Forecast_Week_${dateStr}.xlsx`,  detail: '7 days · 28 intervals/day' },
+      { icon: '✅', name: `RMG_Agent_Roster_${dateStr}.xlsx`,   detail: '24 agents · 3 queues' },
+      { icon: '✅', name: 'RMG_Queue_Dimension_Table.xlsx',     detail: '3 queues' },
+      { icon: '⚠️', name: `RMG_Shift_Patterns_${dateStr}.xlsx`, detail: 'not loaded (optional)' },
+    ],
+  },
+  longrange: {
+    id: 'longrange', name: 'Long Range Bot', version: 'v1.1', promptId: 'prompt-longrange',
+    triggers: [
+      { label: 'Weekly Variance', phrase: 'weekly review' },
+      { label: 'Driver Analysis', phrase: 'driver analysis' },
+      { label: 'Meeting Prep',    phrase: 'meeting prep' },
+      { label: '13-Week Review',  phrase: '13-week' },
+    ],
+    dataLoadFiles: (dateStr) => [
+      { icon: '✅', name: `RMG_LongRange_Weekly_${dateStr}.xlsx`,  detail: '5 weeks actuals' },
+      { icon: '✅', name: `RMG_Finance_Forecast_${dateStr}.xlsx`,  detail: '13 weeks' },
+      { icon: '✅', name: `RMG_Scenarios_${dateStr}.xlsx`,         detail: 'Base / Upside / Downside' },
+      { icon: '⚠️', name: `RMG_LongRange_Notes_${dateStr}.xlsx`,   detail: 'not loaded (optional)' },
+    ],
+  },
+  intelligence: {
+    id: 'intelligence', name: 'Intelligence Bot', version: 'v1.0', promptId: 'prompt-intelligence',
+    triggers: [
+      { label: 'Daily Brief',    phrase: 'daily brief' },
+      { label: 'Weekly Summary', phrase: 'weekly summary' },
+      { label: 'Monthly Review', phrase: 'monthly review' },
+    ],
+    dataLoadFiles: (dateStr, actualsCount) => [
+      { icon: '✅', name: `RMG_Daily_Summary_${dateStr}`,       detail: 'Intraday Bot output' },
+      { icon: '✅', name: 'RMG_Loop_Ops_Notes (simulated)',      detail: 'Teams Loop page' },
+      { icon: '⚠️', name: 'RMG_Weekly_Summaries (prior weeks)', detail: 'not loaded' },
+    ],
+  },
+};
+
+// ─── SEEDED RANDOM ───────────────────────────────────────────────────────────
+function makeRng(seed) {
+  let s = Math.abs(Math.round(seed)) % 2147483647 || 1;
+  return () => { s = s * 16807 % 2147483647; return (s - 1) / 2147483646; };
+}
+
+// ─── SYNTHETIC DATA ──────────────────────────────────────────────────────────
+const QUEUE_CFG = {
+  ONC:  { baseSched: 12, baseVol: 44, baseAHT: 425, critFloor: -3, surplusCeil: 2, label: 'Oncology' },
+  RARE: { baseSched:  8, baseVol: 23, baseAHT: 488, critFloor: -2, surplusCeil: 2, label: 'Rare Disease' },
+  PACE: { baseSched:  9, baseVol: 30, baseAHT: 393, critFloor: -2, surplusCeil: 2, label: 'PACE' },
+};
+
+function generateData(trc, date) {
+  const dateNum = date.getFullYear() * 10000 + (date.getMonth() + 1) * 100 + date.getDate();
+  const queues = trc === 'ALL' ? ['ONC', 'RARE', 'PACE'] : [trc];
+  const result = {};
+  const nowMinutes = date.getHours() * 60 + date.getMinutes();
+
+  queues.forEach(q => {
+    const cfg = QUEUE_CFG[q];
+    const seed = dateNum + q.charCodeAt(0) * 7919;
+    const rng = makeRng(seed);
+    const rows = [];
+
+    for (let h = 6; h < 20; h++) {
+      for (let m = 0; m < 60; m += 30) {
+        const intMin = h * 60 + m;
+        const isActual = intMin < nowMinutes;
+        const t = (h - 6) / 14;
+        const volCurve = 0.45 + 0.55 * (Math.sin(Math.PI * t) * 0.7 + Math.sin(2.2 * Math.PI * t) * 0.3);
+
+        const volFcst = Math.max(4, Math.round(cfg.baseVol * volCurve * (0.88 + rng() * 0.24)));
+        const volAct  = isActual ? Math.max(0, Math.round(volFcst * (0.80 + rng() * 0.40))) : null;
+
+        const ahtFcst = Math.round(cfg.baseAHT * (0.94 + rng() * 0.12));
+        const ahtAct  = isActual ? Math.round(ahtFcst * (0.88 + rng() * 0.24)) : null;
+
+        const reqFTE  = Math.ceil((volFcst * cfg.baseAHT) / 1800 * 1.10);
+        const schedHC = Math.max(2, Math.round(cfg.baseSched * volCurve * (0.85 + rng() * 0.30)));
+        const actHC   = isActual ? Math.max(0, Math.round(schedHC * (0.86 + rng() * 0.26))) : null;
+        const netStaff = actHC !== null ? actHC - reqFTE : schedHC - reqFTE;
+
+        const status =
+          netStaff < cfg.critFloor    ? 'critical' :
+          netStaff < 0                ? 'at_risk'  :
+          netStaff === 0              ? 'threshold' :
+          netStaff > cfg.surplusCeil  ? 'surplus'  : 'adequate';
+
+        rows.push({
+          time: `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`,
+          schedHC, actHC, reqFTE, netStaff,
+          volFcst, volAct, ahtFcst, ahtAct,
+          adherence: isActual ? (0.86 + rng() * 0.12).toFixed(2) : null,
+          isActual, status, cfg,
+        });
+      }
+    }
+    result[q] = rows;
+  });
+  return result;
+}
+
+// Generate weekly context for Short Range
+function generateWeeklyContext(trc, date) {
+  const days = ['Mon','Tue','Wed','Thu','Fri'];
+  const queues = trc === 'ALL' ? ['ONC','RARE','PACE'] : [trc];
+  let md = `WEEKLY STAFFING SUMMARY — Week of ${date.toLocaleDateString()}\n\n`;
+  days.forEach((day, di) => {
+    md += `${day}:\n`;
+    queues.forEach(q => {
+      const cfg = QUEUE_CFG[q];
+      const rng = makeRng(date.getTime() + di * 997 + q.charCodeAt(0));
+      const netAvg = ((rng() - 0.4) * 3).toFixed(1);
+      const risk = parseFloat(netAvg) < 0 ? '⚠️ At Risk' : '✅ Adequate';
+      md += `  ${q}: Avg Net Staff ${netAvg > 0 ? '+' : ''}${netAvg} | ${risk}\n`;
+    });
+  });
+  return md;
+}
+
+// Generate long range context
+function generateLongRangeContext(date) {
+  const weeks = [];
+  for (let i = 4; i >= 0; i--) {
+    const d = new Date(date); d.setDate(d.getDate() - i * 7);
+    const rng = makeRng(d.getTime());
+    const shipFcst = Math.round(12500 + rng() * 2000);
+    const shipAct  = i > 0 ? Math.round(shipFcst * (0.92 + rng() * 0.16)) : null;
+    weeks.push({ label: `W-${i}`, shipFcst, shipAct, isActual: i > 0 });
+  }
+  let md = `LONG RANGE DATA — 5-Week Trend\n\n`;
+  md += `| Week | Ship Fcst | Ship Act | Var%  | Workload% Fcst | Workload% Act | QPH Fcst | QPH Act |\n`;
+  md += `|------|-----------|----------|-------|----------------|---------------|----------|---------|\n`;
+  weeks.forEach(w => {
+    const rng = makeRng(w.shipFcst);
+    const varPct = w.shipAct ? (((w.shipAct - w.shipFcst) / w.shipFcst) * 100).toFixed(1) : 'n/a';
+    const wkFcst = (88 + rng() * 10).toFixed(1);
+    const wkAct  = w.isActual ? (parseFloat(wkFcst) * (0.94 + rng() * 0.12)).toFixed(1) : 'n/a';
+    const qphF   = (42 + rng() * 6).toFixed(1);
+    const qphA   = w.isActual ? (parseFloat(qphF) * (0.95 + rng() * 0.10)).toFixed(1) : 'n/a';
+    md += `| ${w.label} | ${w.shipFcst.toLocaleString()} | ${w.shipAct ? w.shipAct.toLocaleString() : 'n/a'} | ${varPct}% | ${wkFcst}% | ${wkAct}% | ${qphF} | ${qphA} |\n`;
+  });
+  return md;
+}
+
+// Generate intel context
+function generateIntelContext(data, trc, date) {
+  const queues = trc === 'ALL' ? ['ONC','RARE','PACE'] : [trc];
+  const actuals = queues.flatMap(q => (data[q] || []).filter(r => r.isActual));
+  const issues = actuals.filter(r => r.status === 'critical' || r.status === 'at_risk');
+  const surpluses = actuals.filter(r => r.status === 'surplus');
+  let md = `INTEL SOURCE SUMMARY — ${date.toLocaleDateString()}\n\n`;
+  md += `Queues active: ${queues.join(', ')}\n`;
+  md += `Actuals intervals: ${actuals.length}\n`;
+  md += `At-risk/critical intervals: ${issues.length}\n`;
+  md += `Surplus intervals: ${surpluses.length}\n\n`;
+  md += `SIMULATED LOOP NOTE: Team has been monitoring ${queues[0]} queue pressure through mid-morning. `;
+  md += `Schedule adherence trending normal. No escalations logged. `;
+  md += `Leadership check-in scheduled for 3pm.`;
+  return md;
+}
+
+// ─── FORMAT INTRADAY DATA AS MARKDOWN TABLE ──────────────────────────────────
+function dataToMarkdownTable(data, trc) {
+  const queues = trc === 'ALL' ? ['ONC','RARE','PACE'] : [trc];
+  let md = '';
+  queues.forEach(q => {
+    const rows = data[q] || [];
+    md += `\n### STAFFING GRID — ${q} (${QUEUE_CFG[q].label})\n`;
+    md += `| Interval | Sched HC | Act HC | Req FTE | Net Staff | Vol Fcst | Vol Act | AHT Fcst | AHT Act | Adherence | Type   | Status    |\n`;
+    md += `|----------|----------|--------|---------|-----------|----------|---------|----------|---------|-----------|--------|----------|\n`;
+    rows.forEach(r => {
+      md += `| ${r.time}     | ${r.schedHC}        | ${r.actHC !== null ? r.actHC : '—'}      | ${r.reqFTE}       | ${r.netStaff >= 0 ? '+' : ''}${r.netStaff}         | ${r.volFcst}       | ${r.volAct !== null ? r.volAct : '—'}      | ${r.ahtFcst}s     | ${r.ahtAct !== null ? r.ahtAct + 's' : '—'}      | ${r.adherence !== null ? r.adherence : '—'}        | ${r.isActual ? 'ACTUAL' : 'FCST'} | ${r.status.replace('_',' ').toUpperCase()} |\n`;
+    });
+  });
+  return md;
+}
+
+// ─── BUILD USER MESSAGE ──────────────────────────────────────────────────────
+function buildUserMessage(phrase, data, trc, dateStr, timeStr, botId) {
+  const actualsCount = Object.values(data)[0]?.filter(r => r.isActual).length || 0;
+  const todayDate = new Date();
+
+  let context = '';
+  if (botId === 'shortrange') {
+    context = generateWeeklyContext(trc, todayDate);
+  } else if (botId === 'longrange') {
+    context = generateLongRangeContext(todayDate);
+  } else if (botId === 'intelligence') {
+    context = generateIntelContext(data, trc, todayDate);
+  } else {
+    context = dataToMarkdownTable(data, trc);
+  }
+
+  const queueDims = Object.entries(QUEUE_CFG).map(([q, cfg]) =>
+    `${q}: critFloor=${cfg.critFloor}, surplusCeil=${cfg.surplusCeil}, baseAHT=${cfg.baseAHT}s`
+  ).join(' | ');
+
+  return `Trigger: ${phrase}
+Date: ${dateStr}
+Time: ${timeStr}
+TRC Selection: ${trc}
+Actuals intervals loaded: ${actualsCount} of 28
+
+QUEUE DIMENSION TABLE:
+${queueDims}
+window_flag_threshold=2 | spike_threshold=-2.0 | volume_variance_flag=15% | aht_variance_flag=10%
+
+SYNTHETIC DATA CONTEXT (substitutes for SharePoint knowledge source):
+${context}
+
+---
+Note: This is a prototype running on Claude. Data is synthetic and seeded by date. Bot prompts are production-identical.`;
+}
+
+// ─── CLAUDE API ──────────────────────────────────────────────────────────────
+async function callClaude(apiKey, systemPrompt, userMessage) {
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json',
+      'anthropic-dangerous-request-override': 'allow',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 2048,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userMessage }],
+    }),
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.error?.message || `API error ${resp.status}`);
+  }
+  const json = await resp.json();
+  return json.content[0].text;
+}
+
+// ─── API KEY SCREEN ──────────────────────────────────────────────────────────
+function APIKeyScreen({ onActivate }) {
+  const [key, setKey] = useState('');
+  const [err, setErr] = useState('');
+
+  const handleActivate = () => {
+    if (!key.startsWith('sk-ant-')) {
+      setErr('Key should start with sk-ant-');
+      return;
+    }
+    onActivate(key.trim());
+  };
+
+  return (
+    <div className="api-screen">
+      <div className="api-card">
+        <div className="api-card-logo">EVERNORTH · RMG</div>
+        <h1>Intelligent Operations Platform</h1>
+        <p className="subtitle">Claude-powered prototype. Enter your Anthropic API key to activate all four bots.</p>
+        <div className="api-bots">
+          {['Intraday v2.1','Short Range v1.1','Long Range v1.1','Intelligence v1.0'].map(b => (
+            <span key={b} className="api-bot-tag">{b}</span>
+          ))}
+        </div>
+        <label className="api-label">Anthropic API Key</label>
+        <input
+          className="api-input"
+          type="password"
+          placeholder="sk-ant-api03-..."
+          value={key}
+          onChange={e => { setKey(e.target.value); setErr(''); }}
+          onKeyDown={e => e.key === 'Enter' && handleActivate()}
+        />
+        {err && <div style={{color:'#C62828',fontSize:'11px',marginBottom:'8px'}}>{err}</div>}
+        <button className="api-submit" onClick={handleActivate} disabled={!key}>
+          Activate Platform →
+        </button>
+        <p className="api-note">Key used only in your browser. Never stored or transmitted beyond the Claude API.</p>
+      </div>
+    </div>
+  );
+}
+
+// ─── DATA LOAD BLOCK ─────────────────────────────────────────────────────────
+function DataLoadBlock({ bot, dateStr, timeStr, actualsCount }) {
+  const cfg = BOT_CONFIGS[bot];
+  const files = cfg.dataLoadFiles ? cfg.dataLoadFiles(dateStr, actualsCount) : [];
+  const loadType = bot === 'intelligence' ? 'INTEL LOAD' : 'DATA LOAD';
+
+  return (
+    <div className="data-load-block">
+      <div className="dl-header">{loadType} | {dateStr} | {timeStr}</div>
+      {files.map((f, i) => (
+        <div key={i} className="dl-row">
+          {f.icon} {f.name} — <span style={{color:'#5A8A86'}}>{f.detail}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── STAFFING GRID ───────────────────────────────────────────────────────────
+function StaffingGrid({ data, trc }) {
+  const queues = trc === 'ALL' ? ['ONC','RARE','PACE'] : [trc];
+  const activeQ = queues[0];
+  const [viewQ, setViewQ] = useState(activeQ);
+  useEffect(() => { setViewQ(queues[0]); }, [trc]);
+
+  const rows = data[viewQ] || [];
+
+  const statusClass = (s) => ({
+    critical: 'status-critical', at_risk: 'status-at_risk',
+    threshold: 'status-threshold', adequate: 'status-adequate',
+    surplus: 'status-surplus',
+  }[s] || '');
+
+  return (
+    <>
+      {trc === 'ALL' && (
+        <div style={{display:'flex',gap:'4px',padding:'6px 12px',background:'#F0FAF8',borderBottom:'1px solid #C8E0DC'}}>
+          {queues.map(q => (
+            <button key={q} onClick={() => setViewQ(q)}
+              style={{padding:'2px 10px',borderRadius:'10px',border:'1px solid',
+                borderColor: viewQ===q ? '#006B63':'#C8E0DC',
+                background: viewQ===q ? '#006B63':'transparent',
+                color: viewQ===q ? '#fff':'#2A7A6E',
+                fontSize:'11px',fontWeight:600,cursor:'pointer'}}>
+              {q}
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="grid-scroll">
+        <table className="staffing-table">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Sched</th>
+              <th>Act</th>
+              <th>Req</th>
+              <th>Net</th>
+              <th>VolF</th>
+              <th>VolA</th>
+              <th>Type</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr key={i} className={!r.isActual ? 'status-forecast' : ''}>
+                <td className="time-col">{r.time}</td>
+                <td>{r.schedHC}</td>
+                <td>{r.actHC !== null ? r.actHC : '—'}</td>
+                <td>{r.reqFTE}</td>
+                <td className={`net-col ${r.isActual ? statusClass(r.status) : ''}`}>
+                  {r.netStaff >= 0 ? '+' : ''}{r.netStaff}
+                </td>
+                <td>{r.volFcst}</td>
+                <td>{r.volAct !== null ? r.volAct : '—'}</td>
+                <td style={{fontSize:'9px',color: r.isActual ? '#006B63':'#AAA'}}>
+                  {r.isActual ? 'ACT' : 'FCST'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="legend">
+        {[
+          {cls:'status-critical',  label:'Critical'},
+          {cls:'status-at_risk',   label:'At Risk'},
+          {cls:'status-threshold', label:'Threshold'},
+          {cls:'status-adequate',  label:'Adequate'},
+          {cls:'status-surplus',   label:'Surplus'},
+        ].map(({cls, label}) => (
+          <div key={label} className="legend-item">
+            <div className={`legend-dot ${cls}`}/>
+            <span style={{color:'#5A8A86'}}>{label}</span>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+// ─── ANALYSIS PANEL ──────────────────────────────────────────────────────────
+function AnalysisPanel({ output, isLoading, onCopy, onClear }) {
+  const scrollRef = useRef(null);
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+  }, [output]);
+
+  return (
+    <div className="analysis-panel">
+      <div className="analysis-header">
+        <div className="analysis-header-left">ANALYSIS OUTPUT</div>
+        <div className="analysis-header-right">
+          {output && !isLoading && (
+            <>
+              <button className="action-btn" onClick={onCopy}>Copy</button>
+              <button className="action-btn" onClick={onClear}>New Run</button>
+            </>
+          )}
+        </div>
+      </div>
+      <div className="output-scroll" ref={scrollRef}>
+        {isLoading && (
+          <div className="loading-indicator">
+            <div className="spinner"/>
+            <span style={{fontSize:'12px',color:'#2A7A6E'}}>Claude is analyzing… </span>
+          </div>
+        )}
+        {!isLoading && output && (
+          <div className="output-content">{output}</div>
+        )}
+        {!isLoading && !output && (
+          <div className="output-placeholder">
+            <div className="ph-icon">⚡</div>
+            <div className="ph-title">Ready for Analysis</div>
+            <p className="ph-sub">Select a trigger below or type a custom phrase. Claude will load the data and run the full analysis.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── TRIGGER BAR ─────────────────────────────────────────────────────────────
+function TriggerBar({ activeBot, onTrigger, isLoading }) {
+  const [custom, setCustom] = useState('');
+  const cfg = BOT_CONFIGS[activeBot];
+
+  const fire = (phrase) => {
+    if (isLoading) return;
+    setCustom('');
+    onTrigger(phrase);
+  };
+
+  return (
+    <div className="trigger-bar">
+      <div className="trigger-label">Triggers</div>
+      <div className="trigger-buttons">
+        {cfg.triggers.map(t => (
+          <button key={t.phrase} className="trigger-btn"
+            disabled={isLoading} onClick={() => fire(t.phrase)}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+      <div className="custom-input-wrap">
+        <input
+          className="custom-input"
+          placeholder="Custom phrase…"
+          value={custom}
+          onChange={e => setCustom(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && custom.trim() && fire(custom.trim())}
+          disabled={isLoading}
+        />
+        <button className="custom-send-btn"
+          disabled={isLoading || !custom.trim()}
+          onClick={() => fire(custom.trim())}>
+          Run →
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── RUN HISTORY ─────────────────────────────────────────────────────────────
+function RunHistory({ history }) {
+  if (history.length === 0) return null;
+  return (
+    <div className="run-history">
+      <div className="history-header">
+        <span>Session Run History ({history.length})</span>
+      </div>
+      <div className="history-items">
+        {history.map((h, i) => (
+          <div key={i} className="history-item">
+            <span className="hi-bot">{h.bot} {h.version}</span>
+            {' · '}{h.trc}{' · '}<em>{h.phrase}</em>
+            {' '}
+            <span className="hi-time">{h.time}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── MAIN APP ────────────────────────────────────────────────────────────────
+function App() {
+  const [apiKey,    setApiKey]    = useState('');
+  const [active,    setActive]    = useState(false);
+  const [activeBot, setActiveBot] = useState('intraday');
+  const [activeTRC, setActiveTRC] = useState('ONC');
+  const [output,    setOutput]    = useState('');
+  const [loading,   setLoading]   = useState(false);
+  const [history,   setHistory]   = useState([]);
+
+  const today = useMemo(() => new Date(), []);
+  const dateStr = today.toISOString().split('T')[0];
+  const timeStr = today.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+  const data = useMemo(() => generateData(activeTRC, today), [activeTRC]);
+  const actualsCount = useMemo(() => {
+    const rows = Object.values(data)[0] || [];
+    return rows.filter(r => r.isActual).length;
+  }, [data]);
+
+  const handleTrigger = useCallback(async (phrase) => {
+    const bot = BOT_CONFIGS[activeBot];
+    const systemPrompt = document.getElementById(bot.promptId)?.textContent?.trim() || '';
+    const userMessage = buildUserMessage(phrase, data, activeTRC, dateStr, timeStr, activeBot);
+
+    setLoading(true);
+    setOutput('');
+    try {
+      const result = await callClaude(apiKey, systemPrompt, userMessage);
+      setOutput(result);
+      setHistory(prev => [
+        { bot: bot.name, version: bot.version, phrase, trc: activeTRC, time: timeStr },
+        ...prev.slice(0, 11)
+      ]);
+    } catch (err) {
+      setOutput(`❌ Error: ${err.message}\n\nTips:\n• Check that your API key is valid\n• Ensure you have API access at console.anthropic.com\n• If CORS error: try from a local server instead of file:// protocol`);
+    }
+    setLoading(false);
+  }, [apiKey, activeBot, activeTRC, data, dateStr, timeStr]);
+
+  if (!active) {
+    return <APIKeyScreen onActivate={(k) => { setApiKey(k); setActive(true); }} />;
+  }
+
+  return (
+    <div className="app-shell">
+      {/* HEADER */}
+      <div className="header">
+        <div className="header-logo">
+          EVERNORTH · <span>RMG</span> · Intelligent Ops
+        </div>
+        <div className="bot-tabs">
+          {Object.values(BOT_CONFIGS).map(b => (
+            <button key={b.id} className={`bot-tab ${activeBot === b.id ? 'active' : ''}`}
+              onClick={() => { setActiveBot(b.id); setOutput(''); }}>
+              {b.name} <span className="ver">{b.version}</span>
+            </button>
+          ))}
+        </div>
+        <div className="trc-selector">
+          {['ONC','RARE','PACE','ALL'].map(t => (
+            <button key={t} className={`trc-btn ${activeTRC === t ? 'active' : ''}`}
+              onClick={() => { setActiveTRC(t); setOutput(''); }}>
+              {t}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* MAIN */}
+      <div className="main-content">
+        {/* DATA PANEL */}
+        <div className="data-panel">
+          <div className="panel-header">
+            DATA PANEL — {activeTRC} · {BOT_CONFIGS[activeBot].name.toUpperCase()}
+          </div>
+          <DataLoadBlock bot={activeBot} dateStr={dateStr} timeStr={timeStr} actualsCount={actualsCount} />
+          <StaffingGrid data={data} trc={activeTRC} />
+        </div>
+
+        {/* ANALYSIS PANEL */}
+        <AnalysisPanel
+          output={output}
+          isLoading={loading}
+          onCopy={() => navigator.clipboard.writeText(output).catch(()=>{})}
+          onClear={() => setOutput('')}
+        />
+      </div>
+
+      {/* TRIGGER BAR */}
+      <TriggerBar activeBot={activeBot} onTrigger={handleTrigger} isLoading={loading} />
+
+      {/* RUN HISTORY */}
+      <RunHistory history={history} />
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
