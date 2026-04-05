@@ -561,6 +561,59 @@
     }
     .preview-risk-table tbody td { padding: 6px 10px; border-bottom: 1px solid #EEE; }
     .preview-risk-table tbody tr:hover td { background: rgba(3,92,103,0.04); }
+
+    /* ═══ BUILD PASS 4: DYNAMIC BOT VIEWS ═══════════════════════════════════ */
+    .bp4-view { flex: 1; overflow-y: auto; min-height: 0; }
+    .bp4-kpi-row {
+      display: grid; grid-template-columns: repeat(4,1fr);
+      gap: 1px; background: #D8E8E6; border-bottom: 1px solid #D8E8E6;
+      flex-shrink: 0;
+    }
+    .bp4-kpi { background: #fff; padding: 6px 4px; text-align: center; }
+    .bp4-kpi-val { font-size: 14px; font-weight: 700; font-family: 'Courier New',monospace; line-height: 1.2; }
+    .bp4-kpi-label { font-size: 8.5px; color: #5A8A86; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+    .bp4-kpi-sub { font-size: 8.5px; color: #9ABEBC; }
+    .bp4-section-label {
+      padding: 4px 10px; background: #E0F2F0;
+      font-size: 9.5px; font-weight: 700; color: #035C67;
+      letter-spacing: 0.5px; text-transform: uppercase;
+      border-top: 1px solid #C8E0DC; border-bottom: 1px solid #C8E0DC;
+    }
+    .bp4-table-wrap { overflow-y: auto; overflow-x: hidden; }
+    .bp4-table { width: 100%; border-collapse: collapse; font-size: 10.5px; }
+    .bp4-table thead th {
+      background: #F0FAF8; color: #035C67;
+      padding: 4px 6px; font-size: 9.5px; font-weight: 700;
+      position: sticky; top: 0; text-align: center;
+      border-bottom: 1px solid #D8E8E6;
+    }
+    .bp4-table tbody td {
+      padding: 2.5px 6px; text-align: center;
+      border-bottom: 1px solid #F0F0F0;
+      font-family: 'Courier New',monospace; font-size: 10px;
+    }
+    .bp4-table tbody tr:hover { background: rgba(3,92,103,0.04); }
+    .bp4-table .time-col { text-align: left; font-weight: 700; color: #035C67; }
+    .net-bad  { color: #B71C1C; font-weight: 700; background: rgba(234,83,83,0.12); }
+    .net-warn { color: #8B0000; font-weight: 700; }
+    .net-ok   { color: #1B5E20; font-weight: 700; }
+    .bp4-risks { }
+    .bp4-risk-row {
+      display: flex; gap: 5px; align-items: center;
+      padding: 3px 10px; border-bottom: 1px solid #F0F0F0; font-size: 9.5px;
+    }
+    .bp4-risk-queue { font-family: 'Courier New'; font-weight: 700; color: #035C67; flex: 1; font-size: 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .bp4-risk-window { font-family: 'Courier New'; color: #5A8A86; font-size: 9px; flex-shrink: 0; }
+    .bp4-risk-net { font-weight: 700; min-width: 26px; text-align: right; flex-shrink: 0; }
+    .bp4-risk-dur { color: #9ABEBC; font-size: 9px; flex-shrink: 0; }
+    .bp4-score-card {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 12px; background: #F0FAF8; border-bottom: 1px solid #C8E0DC;
+    }
+    .bp4-score-grade { font-size: 34px; font-weight: 700; line-height: 1; font-family: 'Courier New'; flex-shrink: 0; }
+    .bp4-score-info { flex: 1; }
+    .bp4-hist-item { padding: 6px 10px; border-bottom: 1px solid #F0F0F0; }
+    .bp4-hist-top { display: flex; justify-content: space-between; align-items: center; font-size: 11px; }
   </style>
 </head>
 <body>
@@ -3123,6 +3176,365 @@ function RunHistory({ history }) {
   );
 }
 
+// ─── BUILD PASS 4: DYNAMIC BOT VIEWS ─────────────────────────────────────────
+
+function SimClock() {
+  const [time, setTime] = useState(() => new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}));
+  useEffect(() => {
+    const id = setInterval(() => setTime(new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})), 30000);
+    return () => clearInterval(id);
+  }, []);
+  return <span style={{fontFamily:'Courier New',fontSize:10,color:'#3EFFC0',fontWeight:700}}>⏱ {time}</span>;
+}
+
+function KpiCard({ label, value, sub, color }) {
+  return (
+    <div className="bp4-kpi">
+      <div className="bp4-kpi-val" style={{color:color||'#035C67'}}>{value}</div>
+      <div className="bp4-kpi-label">{label}</div>
+      {sub&&<div className="bp4-kpi-sub">{sub}</div>}
+    </div>
+  );
+}
+
+function IntradayView({ activeTRC, generatedData }) {
+  const today = useMemo(()=>new Date().toISOString().split('T')[0],[]);
+  const todayIntervals = useMemo(()=>{
+    if(!generatedData?.intervals) return [];
+    return generatedData.intervals.filter(iv=>iv.date===today&&(activeTRC==='ALL'||iv.trc===activeTRC));
+  },[generatedData,today,activeTRC]);
+  const todayRisks = useMemo(()=>{
+    if(!generatedData?.riskWindows) return [];
+    return generatedData.riskWindows.filter(w=>w.date===today&&(activeTRC==='ALL'||w.trc===activeTRC)).slice(0,8);
+  },[generatedData,today,activeTRC]);
+  const slotMap = useMemo(()=>{
+    const m={};
+    todayIntervals.forEach(iv=>(iv.slots||[]).forEach(s=>{
+      if(!m[s.time]) m[s.time]={sch:0,act:0,req:0,net:0};
+      m[s.time].sch+=s.scheduledFTE||0;
+      m[s.time].act+=s.actualFTE||0;
+      m[s.time].req+=s.requiredFTE||0;
+      m[s.time].net+=s.netStaffing||0;
+    }));
+    return Object.entries(m).sort(([a],[b])=>a.localeCompare(b));
+  },[todayIntervals]);
+  const agentsActive = useMemo(()=>{
+    if(!generatedData?.agentSchedules) return 0;
+    return generatedData.agentSchedules.filter(a=>a.date===today&&a.status==='Active'&&(activeTRC==='ALL'||a.trc===activeTRC)).length;
+  },[generatedData,today,activeTRC]);
+  const score = generatedData?.scheduleScore;
+  const avgNet = slotMap.length>0 ? Math.round(slotMap.reduce((s,[,v])=>s+v.net,0)/slotMap.length) : 0;
+  const netColor = avgNet<-2?'#EA5353':avgNet<0?'#E88789':avgNet>3?'#90B9FF':'#008F83';
+  return (
+    <div className="bp4-view">
+      <div className="bp4-kpi-row">
+        <KpiCard label="Active" value={agentsActive} color="#035C67" />
+        <KpiCard label="Risks" value={todayRisks.length} color={todayRisks.length>3?'#EA5353':'#008F83'} sub="today" />
+        <KpiCard label="Score" value={score?`${score.score}${score.grade}`:'—'} color={score&&'AB'.includes(score.grade)?'#008F83':'#EA5353'} />
+        <KpiCard label="Avg Net" value={avgNet>=0?`+${avgNet}`:avgNet} color={netColor} />
+      </div>
+      <div className="bp4-section-label">INTERVAL COVERAGE — TODAY</div>
+      <div className="bp4-table-wrap" style={{maxHeight:220}}>
+        <table className="bp4-table">
+          <thead><tr><th>Time</th><th>Sch</th><th>Act</th><th>Req</th><th>Net</th></tr></thead>
+          <tbody>
+            {slotMap.map(([time,v])=>{
+              const nc=v.net<-2?'net-bad':v.net<0?'net-warn':v.net>0?'net-ok':'';
+              return (
+                <tr key={time}>
+                  <td className="time-col">{time}</td>
+                  <td>{Math.round(v.sch*10)/10}</td>
+                  <td>{Math.round(v.act*10)/10}</td>
+                  <td>{Math.round(v.req*10)/10}</td>
+                  <td className={nc}>{v.net>=0?'+':''}{Math.round(v.net)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      {todayRisks.length>0&&(
+        <>
+          <div className="bp4-section-label" style={{color:'#EA5353'}}>⚠ RISK WINDOWS ({todayRisks.length})</div>
+          <div className="bp4-risks">
+            {todayRisks.map((w,i)=>(
+              <div key={i} className="bp4-risk-row">
+                <span className="bp4-risk-queue">{w.queueId}</span>
+                <span className="bp4-risk-window">{w.start}–{w.end}</span>
+                <span className="bp4-risk-net" style={{color:'#EA5353'}}>{w.netAvg}</span>
+                <span className="bp4-risk-dur">{w.durationMins}m</span>
+                <span style={{fontSize:9,color:w.timeBucket==='PEAK'?'#EA5353':'#90B9FF',flexShrink:0}}>{w.timeBucket}</span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function ShortRangeView({ activeTRC, generatedData }) {
+  const score = generatedData?.scheduleScore;
+  const todayBase = useMemo(()=>new Date(),[]);
+  const days = useMemo(()=>Array.from({length:7},(_,i)=>{
+    const d=new Date(todayBase); d.setDate(d.getDate()+i-3);
+    return d.toISOString().split('T')[0];
+  }),[todayBase]);
+  const todayStr = todayBase.toISOString().split('T')[0];
+  const dailyStats = useMemo(()=>{
+    if(!generatedData?.agentSchedules) return [];
+    return days.map(date=>{
+      const ds=generatedData.agentSchedules.filter(a=>a.date===date&&(activeTRC==='ALL'||a.trc===activeTRC));
+      return {date, active:ds.filter(a=>a.status==='Active').length,
+              callout:ds.filter(a=>a.status==='CallOut').length,
+              vto:ds.filter(a=>a.status==='VTO').length, total:ds.length};
+    });
+  },[generatedData,days,activeTRC]);
+  const weeklyHistory = useMemo(()=>{
+    if(!generatedData?.weeklyHistory) return [];
+    const byWk={};
+    generatedData.weeklyHistory.filter(w=>activeTRC==='ALL'||w.trc===activeTRC).forEach(w=>{
+      if(!byWk[w.week]) byWk[w.week]={week:w.week,vol:0,sl:0,cnt:0};
+      byWk[w.week].vol+=w.actualVolume||0;
+      byWk[w.week].sl+=w.sl||0;
+      byWk[w.week].cnt++;
+    });
+    return Object.values(byWk).sort((a,b)=>a.week.localeCompare(b.week)).slice(-6);
+  },[generatedData,activeTRC]);
+  const gradeColor={A:'#008F83',B:'#5A8A86',C:'#E88789',D:'#EA5353',F:'#B71C1C'};
+  return (
+    <div className="bp4-view">
+      {score&&(
+        <div className="bp4-score-card">
+          <div className="bp4-score-grade" style={{color:gradeColor[score.grade]||'#035C67'}}>{score.grade}</div>
+          <div className="bp4-score-info">
+            <div style={{fontWeight:700,fontSize:13,color:'#035C67'}}>{score.score}/100</div>
+            <div style={{fontSize:10,color:'#5A8A86'}}>Schedule Score</div>
+            {(score.penalties||[]).slice(0,2).map((p,i)=>(
+              <div key={i} style={{fontSize:9.5,color:'#EA5353',marginTop:2}}>
+                ⚠ {typeof p==='object'?`${p.type}: ${p.detail}`:p}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      <div className="bp4-section-label">7-DAY AGENT COVERAGE</div>
+      <div className="bp4-table-wrap">
+        <table className="bp4-table">
+          <thead><tr><th>Date</th><th>Active</th><th>CO</th><th>VTO</th><th>Total</th></tr></thead>
+          <tbody>
+            {dailyStats.map((d,i)=>{
+              const isToday=d.date===todayStr;
+              return (
+                <tr key={i} style={isToday?{background:'rgba(62,255,192,0.08)',fontWeight:700}:{}}>
+                  <td className="time-col" style={{fontSize:9.5}}>{d.date.slice(5)}{isToday?' ★':''}</td>
+                  <td>{d.active}</td>
+                  <td style={{color:d.callout>0?'#EA5353':'inherit'}}>{d.callout}</td>
+                  <td style={{color:d.vto>0?'#90B9FF':'inherit'}}>{d.vto}</td>
+                  <td>{d.total}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      {weeklyHistory.length>0&&(
+        <>
+          <div className="bp4-section-label">WEEKLY HISTORY (LAST 6)</div>
+          <div className="bp4-table-wrap">
+            <table className="bp4-table">
+              <thead><tr><th>Week</th><th>Act Vol</th><th>SL%</th></tr></thead>
+              <tbody>
+                {weeklyHistory.map((w,i)=>(
+                  <tr key={i}>
+                    <td style={{fontSize:9,fontFamily:'Courier New',textAlign:'left'}}>{w.week.slice(5)}</td>
+                    <td>{Math.round(w.vol)}</td>
+                    <td>{w.cnt>0?Math.round(w.sl/w.cnt):'—'}%</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function LongRangeView({ activeTRC, generatedData }) {
+  const weeklyHistory = useMemo(()=>{
+    if(!generatedData?.weeklyHistory) return [];
+    const byWk={};
+    generatedData.weeklyHistory.filter(w=>activeTRC==='ALL'||w.trc===activeTRC).forEach(w=>{
+      if(!byWk[w.week]) byWk[w.week]={week:w.week,vol:0,sl:0,adh:0,cnt:0};
+      byWk[w.week].vol+=w.actualVolume||0;
+      byWk[w.week].sl+=w.sl||0;
+      byWk[w.week].adh+=w.adherence||0;
+      byWk[w.week].cnt++;
+    });
+    return Object.values(byWk).sort((a,b)=>a.week.localeCompare(b.week));
+  },[generatedData,activeTRC]);
+  const weeklyForecast = useMemo(()=>{
+    if(!generatedData?.weeklyForecast) return [];
+    const byWk={};
+    generatedData.weeklyForecast.filter(w=>activeTRC==='ALL'||w.trc===activeTRC).forEach(w=>{
+      if(!byWk[w.week]) byWk[w.week]={week:w.week,vol:0,conf:0,trend:w.trendDirection,cnt:0};
+      byWk[w.week].vol+=w.forecastedVolume||0;
+      byWk[w.week].conf+=w.confidence||0;
+      byWk[w.week].cnt++;
+    });
+    return Object.values(byWk).sort((a,b)=>a.week.localeCompare(b.week));
+  },[generatedData,activeTRC]);
+  const trendArrow=(curr,prev)=>{
+    if(!prev) return {a:'→',c:'#5A8A86'};
+    const d=curr-prev;
+    if(d>prev*0.05) return {a:'↑',c:'#EA5353'};
+    if(d<-prev*0.05) return {a:'↓',c:'#008F83'};
+    return {a:'→',c:'#5A8A86'};
+  };
+  return (
+    <div className="bp4-view">
+      <div className="bp4-section-label">13-WEEK HISTORY</div>
+      <div className="bp4-table-wrap" style={{maxHeight:210}}>
+        <table className="bp4-table">
+          <thead><tr><th>Week</th><th>Act Vol</th><th>SL%</th><th>ADH%</th><th>Δ</th></tr></thead>
+          <tbody>
+            {weeklyHistory.map((w,i)=>{
+              const tr=trendArrow(w.vol,weeklyHistory[i-1]?.vol);
+              return (
+                <tr key={i}>
+                  <td style={{fontSize:9,fontFamily:'Courier New',textAlign:'left'}}>{w.week.slice(5)}</td>
+                  <td>{Math.round(w.vol)}</td>
+                  <td>{w.cnt>0?Math.round(w.sl/w.cnt):'—'}%</td>
+                  <td>{w.cnt>0?Math.round(w.adh/w.cnt):'—'}%</td>
+                  <td style={{color:tr.c,fontWeight:700}}>{tr.a}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      {weeklyForecast.length>0&&(
+        <>
+          <div className="bp4-section-label" style={{color:'#90B9FF'}}>4-WEEK FORECAST</div>
+          <div className="bp4-table-wrap">
+            <table className="bp4-table">
+              <thead><tr><th>Week</th><th>Proj Vol</th><th>Conf</th><th>Trend</th></tr></thead>
+              <tbody>
+                {weeklyForecast.map((w,i)=>(
+                  <tr key={i}>
+                    <td style={{fontSize:9,fontFamily:'Courier New',textAlign:'left'}}>{w.week.slice(5)}</td>
+                    <td style={{fontStyle:'italic',color:'#5A8A86'}}>{Math.round(w.vol)}</td>
+                    <td style={{color:w.cnt>0&&(w.conf/w.cnt)>0.8?'#008F83':'#E88789'}}>
+                      {w.cnt>0?Math.round(w.conf/w.cnt*100):'—'}%
+                    </td>
+                    <td style={{color:w.trend==='Rising'?'#EA5353':w.trend==='Falling'?'#008F83':'#5A8A86',fontWeight:700}}>
+                      {w.trend==='Rising'?'↑':w.trend==='Falling'?'↓':'→'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function IntelligenceView({ activeTRC, generatedData, history }) {
+  const today = useMemo(()=>new Date().toISOString().split('T')[0],[]);
+  const trcs = ['ONC','RARE','PACE'];
+  const trcStats = useMemo(()=>{
+    if(!generatedData) return {};
+    return Object.fromEntries(trcs.map(trc=>{
+      const ds=(generatedData.agentSchedules||[]).filter(a=>a.trc===trc&&a.date===today);
+      const rs=(generatedData.riskWindows||[]).filter(w=>w.trc===trc&&w.date===today);
+      const ivs=(generatedData.intervals||[]).filter(iv=>iv.trc===trc&&iv.date===today);
+      let netS=0,netC=0;
+      ivs.forEach(iv=>(iv.slots||[]).forEach(s=>{netS+=s.netStaffing||0;netC++;}));
+      return [trc,{
+        active:ds.filter(a=>a.status==='Active').length,
+        callout:ds.filter(a=>a.status==='CallOut').length,
+        risks:rs.length,
+        netAvg:netC>0?Math.round(netS/netC):0,
+      }];
+    }));
+  },[generatedData,today]);
+  const score=generatedData?.scheduleScore;
+  return (
+    <div className="bp4-view">
+      <div className="bp4-section-label">CROSS-TRC SNAPSHOT — TODAY</div>
+      <div className="bp4-table-wrap">
+        <table className="bp4-table">
+          <thead><tr><th>TRC</th><th>Active</th><th>CO</th><th>Risks</th><th>Net</th></tr></thead>
+          <tbody>
+            {trcs.map(trc=>{
+              const s=trcStats[trc]||{};
+              const isActive=activeTRC===trc||activeTRC==='ALL';
+              return (
+                <tr key={trc} style={isActive?{background:'rgba(62,255,192,0.06)'}:{}}>
+                  <td><span className="badge badge-mint" style={{fontSize:9}}>{trc}</span></td>
+                  <td>{s.active||0}</td>
+                  <td style={{color:(s.callout||0)>0?'#EA5353':'inherit'}}>{s.callout||0}</td>
+                  <td style={{color:(s.risks||0)>3?'#EA5353':'inherit'}}>{s.risks||0}</td>
+                  <td style={{color:(s.netAvg||0)<0?'#EA5353':'#008F83',fontWeight:700}}>
+                    {(s.netAvg||0)>=0?'+':''}{s.netAvg||0}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      {score&&(
+        <div style={{padding:'8px 12px',background:'rgba(3,92,103,0.05)',borderTop:'1px solid #C8E0DC'}}>
+          <div style={{fontSize:10.5,fontWeight:700,color:'#035C67'}}>
+            Overall Score: {score.score}/100 · Grade {score.grade}
+          </div>
+          {(score.penalties||[]).slice(0,2).map((p,i)=>(
+            <div key={i} style={{fontSize:9.5,color:'#EA5353',marginTop:2}}>
+              ⚠ {typeof p==='object'?`${p.type}: ${p.detail}`:p}
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="bp4-section-label">BOT RUN HISTORY ({history.length})</div>
+      {history.length===0&&(
+        <div style={{padding:'20px 12px',textAlign:'center',color:'#9ABEBC',fontSize:11}}>
+          No bot runs yet.<br/>Fire a trigger to build history.
+        </div>
+      )}
+      {history.map((h,i)=>(
+        <div key={i} className="bp4-hist-item">
+          <div className="bp4-hist-top">
+            <span style={{fontWeight:700,color:'#035C67'}}>{h.bot} {h.version}</span>
+            <span style={{color:'#5A8A86',fontSize:9}}>{h.trc} · {h.time}</span>
+          </div>
+          <div style={{fontSize:10,color:'#5A8A86',fontStyle:'italic'}}>"{h.phrase}"</div>
+          {h.raw&&(
+            <div style={{fontSize:9.5,color:'#008F83',marginTop:2}}>
+              Risks: {h.raw.summary?.riskCount||0} · Top: {h.raw.summary?.topQueue||'—'} · Net: {h.raw.summary?.netAvgWorst||0}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function BotDataView({ activeBot, activeTRC, generatedData, legacyData, history }) {
+  const hasRealData=!!(generatedData?.intervals?.length);
+  if(!hasRealData) return <StaffingGrid data={legacyData} trc={activeTRC} />;
+  switch(activeBot){
+    case 'intraday':    return <IntradayView     activeTRC={activeTRC} generatedData={generatedData} />;
+    case 'shortrange':  return <ShortRangeView   activeTRC={activeTRC} generatedData={generatedData} />;
+    case 'longrange':   return <LongRangeView    activeTRC={activeTRC} generatedData={generatedData} />;
+    case 'intelligence':return <IntelligenceView activeTRC={activeTRC} generatedData={generatedData} history={history} />;
+    default:            return <StaffingGrid data={legacyData} trc={activeTRC} />;
+  }
+}
+
 // ─── OPERATIONS TAB (wrapper) ─────────────────────────────────────────────────
 function OperationsTab({ activeTRC, generatedData }) {
   const [activeBot, setActiveBot] = useState('intraday');
@@ -3211,8 +3623,9 @@ Note: This is a prototype running on Claude. Data is synthetic and deterministic
       {/* Data panel + Analysis panel */}
       <div className="main-content">
         <div className="data-panel">
-          <div className="panel-header">
-            DATA PANEL — {activeTRC} · {BOT_CONFIGS[activeBot].name.toUpperCase()}
+          <div className="panel-header" style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+            <span>DATA PANEL — {activeTRC} · {BOT_CONFIGS[activeBot].name.toUpperCase()}</span>
+            <SimClock />
           </div>
           {hasRealData && dataLoadSummary ? (
             <div className="data-load-block">
@@ -3227,7 +3640,7 @@ Note: This is a prototype running on Claude. Data is synthetic and deterministic
           ) : (
             <DataLoadBlock bot={activeBot} dateStr={dateStr} timeStr={timeStr} actualsCount={actualsCount} />
           )}
-          <StaffingGrid data={legacyData} trc={activeTRC} />
+          <BotDataView activeBot={activeBot} activeTRC={activeTRC} generatedData={generatedData} legacyData={legacyData} history={history} />
         </div>
         <AnalysisPanel
           output={output}
