@@ -475,6 +475,92 @@
       background: #fff; margin-bottom: 4px; border-radius: 4px; border: 1px solid #E8E8E8; }
     .readiness-item.ready { color: #1B5E20; }
     .readiness-item.pending-item { color: #8B6914; }
+
+    /* ═══ DATA ENGINE TAB ═════════════════════════════════════════════════════ */
+    .data-shell { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #EDEBE7; }
+    .data-subtabs {
+      display: flex; background: #fff;
+      border-bottom: 2px solid #D8E8E6; flex-shrink: 0; padding: 0 8px;
+    }
+    .data-subtab {
+      padding: 0 16px; height: 40px; border: none;
+      background: transparent; color: #5A8A86;
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      border-bottom: 2px solid transparent; margin-bottom: -2px;
+      transition: all 0.15s; display: flex; align-items: center; gap: 5px;
+    }
+    .data-subtab:hover { color: #035C67; background: #F0FAF8; }
+    .data-subtab.active { color: #035C67; border-bottom-color: #035C67; }
+
+    /* Scenario picker */
+    .scenario-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+      padding: 16px 20px 0;
+    }
+    .scenario-card {
+      background: #fff; border: 2px solid #D8E8E6; border-radius: 8px;
+      padding: 14px; cursor: pointer; transition: all 0.15s;
+    }
+    .scenario-card:hover { border-color: #008F83; background: #F0FAF8; }
+    .scenario-card.selected { border-color: #035C67; background: #E0F2F0; }
+    .scenario-card-name { font-size: 12px; font-weight: 700; color: #035C67; margin-bottom: 4px; }
+    .scenario-card-label { font-size: 11px; color: #5A8A86; margin-bottom: 8px; }
+    .scenario-card-stats { display: flex; flex-wrap: wrap; gap: 4px; }
+    .scenario-pill {
+      font-size: 10px; padding: 2px 7px; border-radius: 8px;
+      background: #E0F2F0; color: #035C67; font-weight: 600;
+    }
+    .scenario-pill.warn { background: rgba(232,135,137,0.2); color: #8B0000; }
+    .scenario-pill.good { background: rgba(218,250,135,0.4); color: #1B5E20; }
+
+    /* Custom controls */
+    .custom-controls {
+      background: #fff; border: 1px solid #D8E8E6; border-radius: 6px;
+      margin: 12px 20px 0; padding: 14px;
+    }
+    .custom-controls-title { font-size: 11px; font-weight: 700; color: #035C67;
+      margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .custom-control-row {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 10px;
+    }
+    .custom-control-row:last-child { margin-bottom: 0; }
+    .custom-control-label { font-size: 11px; color: #5A8A86; font-weight: 600; width: 160px; flex-shrink: 0; }
+    .custom-control-val { font-size: 11px; font-weight: 700; color: #035C67;
+      width: 40px; text-align: right; flex-shrink: 0; }
+    input[type=range] { flex: 1; accent-color: #035C67; height: 4px; }
+
+    /* Generate bar */
+    .generate-bar {
+      background: #fff; border-top: 1px solid #D8E8E6;
+      padding: 12px 20px; display: flex; align-items: center; gap: 12px;
+      flex-shrink: 0; margin-top: 12px;
+    }
+    .btn-generate {
+      padding: 8px 24px; border-radius: 4px; background: #035C67; color: #3EFFC0;
+      border: none; font-size: 13px; font-weight: 700; cursor: pointer;
+      transition: background 0.15s; letter-spacing: 0.3px;
+    }
+    .btn-generate:hover:not(:disabled) { background: #002F32; }
+    .btn-generate:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Data preview */
+    .preview-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+      padding: 16px 20px;
+    }
+    .preview-stat {
+      background: #fff; border-radius: 6px; border: 1px solid #D8E8E6;
+      padding: 12px; text-align: center;
+    }
+    .preview-stat-val { font-size: 22px; font-weight: 700; color: #035C67; }
+    .preview-stat-label { font-size: 10.5px; color: #5A8A86; margin-top: 3px; }
+    .preview-risk-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    .preview-risk-table thead th {
+      background: #035C67; color: #fff; padding: 6px 10px;
+      font-size: 10.5px; font-weight: 700; text-align: left; white-space: nowrap;
+    }
+    .preview-risk-table tbody td { padding: 6px 10px; border-bottom: 1px solid #EEE; }
+    .preview-risk-table tbody tr:hover td { background: rgba(3,92,103,0.04); }
   </style>
 </head>
 <body>
@@ -1076,6 +1162,40 @@ function addMins(timeStr, mins) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// DATA ENGINE CONSTANTS
+// ─────────────────────────────────────────────────────────────────────────────
+const SCENARIOS = {
+  Baseline:     { label:'Normal Operations', volumeModifier:1.00, adherenceBase:0.92, calloutRate:0.04, vtoRate:0.02 },
+  HighVolume:   { label:'High Volume Day',   volumeModifier:1.25, adherenceBase:0.89, calloutRate:0.04, vtoRate:0.00 },
+  Understaffed: { label:'Understaffed Day',  volumeModifier:1.00, adherenceBase:0.88, calloutRate:0.10, vtoRate:0.00 },
+  Surplus:      { label:'Overstaffed Day',   volumeModifier:0.85, adherenceBase:0.94, calloutRate:0.02, vtoRate:0.08 },
+  MixedPressure:{ label:'Mixed Pressure',    volumeModifier:1.10, adherenceBase:0.90, calloutRate:0.06, vtoRate:0.02 },
+  Custom:       { label:'Custom',            volumeModifier:1.00, adherenceBase:0.92, calloutRate:0.04, vtoRate:0.02 },
+};
+const DRIVER_EVENTS = [
+  { type:'None',          label:'None',           volumeImpact: 0.00, adherenceImpact: 0.00  },
+  { type:'Holiday',       label:'Holiday',        volumeImpact:-0.35, adherenceImpact: 0.00  },
+  { type:'CampaignLaunch',label:'Campaign Launch',volumeImpact: 0.22, adherenceImpact:-0.03  },
+  { type:'SeasonalPeak',  label:'Seasonal Peak',  volumeImpact: 0.18, adherenceImpact:-0.02  },
+  { type:'SystemOutage',  label:'System Outage',  volumeImpact: 0.45, adherenceImpact:-0.08  },
+  { type:'StaffingShort', label:'Staffing Short', volumeImpact: 0.00, adherenceImpact:-0.12  },
+];
+// 30-min slot weights 07:00–18:30 (24 slots) — morning peak, lunch dip, afternoon peak
+const TIME_CURVE = [
+  0.55, 0.65, 0.80, 1.00, 1.20, 1.35,   // 07:00–09:30
+  1.40, 1.38, 1.28, 1.12, 0.88, 0.72,   // 10:00–12:30
+  0.85, 1.05, 1.22, 1.35, 1.30, 1.20,   // 13:00–15:30
+  1.08, 0.92, 0.78, 0.62, 0.52, 0.42,   // 16:00–18:30
+];
+// Base volume/AHT per workstream (per interval slot, baseline)
+const WS_BASE = {
+  Pharmacist:    { baseVol: 6,  baseAHT: 460 },
+  Technician:    { baseVol: 10, baseAHT: 240 },
+  PatientAccess: { baseVol: 8,  baseAHT: 360 },
+  ContactCenter: { baseVol: 14, baseAHT: 290 },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // SEEDED RANDOM
 // ─────────────────────────────────────────────────────────────────────────────
 function makeRng(seed) {
@@ -1369,6 +1489,301 @@ function generateSchedules(employees, skills) {
       breaks, primaryQueue,
     };
   });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DATA ENGINE — GENERATOR FUNCTIONS
+// ─────────────────────────────────────────────────────────────────────────────
+
+function buildQueueList(config) {
+  const queues = [];
+  Object.entries(config.trcs).filter(([,t])=>t.active).forEach(([trc])=>{
+    Object.entries(config.workstreams).filter(([,w])=>w.active).forEach(([ws])=>{
+      (config.queueTemplates[ws]||[]).forEach(q=>{
+        const ch = q.channel||'Offline';
+        const thr = config.thresholds[ch]||config.thresholds.Offline;
+        queues.push({
+          queueId:`${trc}_${q.id}`, trc, workstream:ws,
+          label:q.label||q.id, priority:q.priority||2,
+          channel:ch, thresholds:{...thr}, templateId:q.id,
+        });
+      });
+    });
+  });
+  return queues;
+}
+
+function generateAgentSchedules(employees, baseSchedules, scenarioParams, startDate, days=14) {
+  const rng = makeRng(Math.abs(startDate.getTime()%2147483647)||1);
+  const result = [];
+  const DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  for(let d=0; d<days; d++){
+    const dt = new Date(startDate); dt.setDate(dt.getDate()+d);
+    const dateStr = dt.toISOString().split('T')[0];
+    const dayLabel = DOW[dt.getDay()];
+    employees.forEach(emp=>{
+      const sched = baseSchedules.find(s=>s.empId===emp.empId);
+      if(!sched || !sched.daysOn.includes(dayLabel)) return;
+      let status = 'Active';
+      const r = rng();
+      if(r < scenarioParams.calloutRate) status = 'CallOut';
+      else if(r < scenarioParams.calloutRate + scenarioParams.vtoRate) status = 'VTO';
+      result.push({
+        empId:emp.empId, trc:emp.trc, workstream:emp.workstream,
+        date:dateStr, shiftStart:sched.shiftStart, shiftEnd:sched.shiftEnd,
+        shiftHours:sched.shiftHours, status, primaryQueue:sched.primaryQueue,
+      });
+    });
+  }
+  return result;
+}
+
+function generateIntervals(agentSchedules, queueList, scenarioParams, startDate, days=14) {
+  const SLOT_START_MIN = 7*60; // 07:00
+  const SLOTS = 24;            // 24 x 30min = 12 hours
+
+  // Group agent schedules by date_trc_ws for fast lookup
+  const byDTW = {};
+  agentSchedules.forEach(as=>{
+    const k = `${as.date}_${as.trc}_${as.workstream}`;
+    (byDTW[k]=byDTW[k]||[]).push(as);
+  });
+
+  const result = [];
+  for(let d=0; d<days; d++){
+    const dt = new Date(startDate); dt.setDate(dt.getDate()+d);
+    const dateStr = dt.toISOString().split('T')[0];
+
+    queueList.forEach(q=>{
+      const wsBase  = WS_BASE[q.workstream]||{baseVol:8,baseAHT:360};
+      const wsScheds = byDTW[`${dateStr}_${q.trc}_${q.workstream}`]||[];
+      const qCountInWS = queueList.filter(qq=>qq.trc===q.trc&&qq.workstream===q.workstream).length||1;
+      const slots = [];
+
+      for(let s=0; s<SLOTS; s++){
+        const slotMin  = SLOT_START_MIN + s*30;
+        const slotEnd  = slotMin + 30;
+        const timeStr  = `${String(Math.floor(slotMin/60)).padStart(2,'0')}:${String(slotMin%60).padStart(2,'0')}`;
+        const curve    = TIME_CURVE[s]||1.0;
+        const slotRng  = makeRng(dt.getTime()%2147483647 + s*997 + q.queueId.charCodeAt(0)*7919 + q.queueId.charCodeAt(q.queueId.length-1)*997);
+
+        // Scheduled FTE: agents on-shift for this slot (not callout/VTO), split across queues
+        let scheduledFTE = 0;
+        wsScheds.forEach(as=>{
+          if(as.status==='CallOut'||as.status==='VTO') return;
+          const [sh,sm] = as.shiftStart.split(':').map(Number);
+          const [eh,em] = as.shiftEnd.split(':').map(Number);
+          if(slotMin>=sh*60+sm && slotEnd<=eh*60+em) scheduledFTE += 1/qCountInWS;
+        });
+        scheduledFTE = Math.round(scheduledFTE*10)/10;
+
+        // Actual FTE = scheduled * adherence
+        const adh = Math.max(0.74, Math.min(1.0, scenarioParams.adherenceBase+(slotRng()-0.5)*0.06));
+        const actualFTE = Math.round(scheduledFTE*adh*10)/10;
+
+        // Volume & AHT → required FTE
+        const vol = Math.round(wsBase.baseVol * curve * scenarioParams.volumeModifier * (0.82+slotRng()*0.36));
+        const aht = Math.round(wsBase.baseAHT*(0.88+slotRng()*0.24));
+        const requiredFTE = parseFloat((vol*aht/1800).toFixed(1));
+
+        const net = parseFloat((actualFTE-requiredFTE).toFixed(1));
+        const thr = q.thresholds;
+        let status;
+        if(net<=(thr.escalate||-3))                       status='critical';
+        else if(net<0 && net>(thr.escalate||-3))          status='at_risk';
+        else if(net===0)                                   status='threshold';
+        else if(net>0&&net<=(thr.surplus||2))              status='adequate';
+        else                                               status='surplus';
+
+        const isPeak = (slotMin>=8*60&&slotMin<12*60)||(slotMin>=13*60&&slotMin<17*60);
+        slots.push({ slotIdx:s, time:timeStr, scheduledFTE, actualFTE, requiredFTE,
+                     netStaffing:net, volume:vol, aht,
+                     adherencePct:parseFloat((adh*100).toFixed(1)),
+                     status, timeBucket:isPeak?'PEAK':'OFFPEAK' });
+      }
+      result.push({ date:dateStr, queueId:q.queueId, trc:q.trc, workstream:q.workstream,
+                    label:q.label, priority:q.priority, channel:q.channel,
+                    thresholds:q.thresholds, slots });
+    });
+  }
+  return result;
+}
+
+function generateRiskWindows(intervals) {
+  const windows = [];
+  intervals.forEach(iv=>{
+    let run = [];
+    const flush = () => {
+      if(run.length>=2){
+        const nets = run.map(s=>s.netStaffing);
+        const netAvg = parseFloat((nets.reduce((a,b)=>a+b,0)/nets.length).toFixed(2));
+        const worst  = Math.min(...nets);
+        const hasCrit= run.some(s=>s.status==='critical');
+        const pkPct  = run.filter(s=>s.timeBucket==='PEAK').length/run.length;
+        windows.push({
+          queueId:iv.queueId, trc:iv.trc, workstream:iv.workstream,
+          label:iv.label, date:iv.date, priority:iv.priority,
+          start:run[0].time, end:run[run.length-1].time,
+          durationMins:run.length*30, intervalCount:run.length,
+          netAvg, worst, hasCritical:hasCrit,
+          timeBucket:pkPct>0.5?'PEAK':'OFFPEAK',
+          severityScore:parseFloat((Math.abs(netAvg)*(pkPct>0.5?1.5:1.0)*(hasCrit?1.3:1.0)*(iv.priority||2)).toFixed(2)),
+        });
+      }
+      run=[];
+    };
+    iv.slots.forEach(s=>{
+      if(s.status==='critical'||s.status==='at_risk') run.push(s);
+      else flush();
+    });
+    flush();
+  });
+  windows.sort((a,b)=>b.severityScore-a.severityScore);
+  return windows.slice(0,30);
+}
+
+function generateDailyHistory(queueList, scenarioParams, endDate, weeks=13) {
+  const result = [];
+  const days = weeks*7;
+  for(let d=days-1; d>=0; d--){
+    const dt = new Date(endDate); dt.setDate(dt.getDate()-d);
+    if(dt.getDay()===0||dt.getDay()===6) continue;
+    const dateStr = dt.toISOString().split('T')[0];
+    const dayRng  = makeRng(dt.getTime()%2147483647);
+    queueList.forEach(q=>{
+      const wb = WS_BASE[q.workstream]||{baseVol:8,baseAHT:360};
+      const fcstVol = Math.round(wb.baseVol*24*scenarioParams.volumeModifier*(0.88+dayRng()*0.24));
+      const varPct  = parseFloat(((dayRng()-0.5)*0.22).toFixed(3));
+      const actVol  = Math.round(fcstVol*(1+varPct));
+      const fcstFTE = Math.round(fcstVol*wb.baseAHT/(7.5*3600)*1.1);
+      const actFTE  = Math.round(fcstFTE*(scenarioParams.adherenceBase+(dayRng()-0.5)*0.06));
+      const sl      = parseFloat((Math.max(58,Math.min(99,82+(dayRng()-0.5)*20))).toFixed(1));
+      const adh     = parseFloat((Math.max(75,Math.min(99,scenarioParams.adherenceBase*100+(dayRng()-0.5)*8))).toFixed(1));
+      result.push({
+        date:dateStr, queueId:q.queueId, trc:q.trc, workstream:q.workstream, label:q.label,
+        forecastedVolume:fcstVol, actualVolume:actVol,
+        variancePct:parseFloat((varPct*100).toFixed(1)),
+        forecastedFTE:fcstFTE, actualFTE:actFTE, sl, adherence:adh, driverFlags:[],
+      });
+    });
+  }
+  return result;
+}
+
+function aggregateWeeklyHistory(dailyHistory) {
+  const wkMap = {};
+  dailyHistory.forEach(d=>{
+    const dt = new Date(d.date);
+    const mon = new Date(dt); mon.setDate(dt.getDate()-(dt.getDay()||7)+1);
+    const wk = mon.toISOString().split('T')[0];
+    const key = `${wk}_${d.queueId}`;
+    if(!wkMap[key]) wkMap[key]={week:wk, queueId:d.queueId, trc:d.trc, workstream:d.workstream, label:d.label, days:[]};
+    wkMap[key].days.push(d);
+  });
+  return Object.values(wkMap).map(w=>{
+    const ds=w.days; const n=ds.length||1;
+    return {
+      week:w.week, queueId:w.queueId, trc:w.trc, workstream:w.workstream, label:w.label,
+      forecastedVolume:Math.round(ds.reduce((s,d)=>s+d.forecastedVolume,0)),
+      actualVolume:Math.round(ds.reduce((s,d)=>s+d.actualVolume,0)),
+      variancePct:parseFloat((ds.reduce((s,d)=>s+d.variancePct,0)/n).toFixed(1)),
+      forecastedFTE:Math.round(ds.reduce((s,d)=>s+d.forecastedFTE,0)/n),
+      actualFTE:Math.round(ds.reduce((s,d)=>s+d.actualFTE,0)/n),
+      sl:parseFloat((ds.reduce((s,d)=>s+d.sl,0)/n).toFixed(1)),
+      adherence:parseFloat((ds.reduce((s,d)=>s+d.adherence,0)/n).toFixed(1)),
+    };
+  }).sort((a,b)=>a.week.localeCompare(b.week));
+}
+
+function generateWeeklyForecast(weeklyHistory, scenarioParams) {
+  const result = [];
+  const qIds = [...new Set(weeklyHistory.map(w=>w.queueId))];
+  qIds.forEach(qid=>{
+    const qHist = weeklyHistory.filter(w=>w.queueId===qid);
+    if(!qHist.length) return;
+    const last = qHist[qHist.length-1];
+    const recent = qHist.slice(-6);
+    const avgVol = recent.reduce((s,w)=>s+w.actualVolume,0)/recent.length;
+    const avgVar = recent.reduce((s,w)=>s+w.variancePct,0)/recent.length;
+    for(let fw=1; fw<=4; fw++){
+      const wkDt = new Date(last.week); wkDt.setDate(wkDt.getDate()+fw*7);
+      result.push({
+        week:wkDt.toISOString().split('T')[0],
+        queueId:qid, trc:last.trc, workstream:last.workstream, label:last.label,
+        forecastedVolume:Math.round(avgVol*scenarioParams.volumeModifier*(1+avgVar/100)),
+        confidence:parseFloat(Math.max(0.62,0.90-fw*0.07).toFixed(2)),
+        trendDirection:avgVar>5?'Rising':avgVar<-5?'Falling':'Flat',
+      });
+    }
+  });
+  return result;
+}
+
+function generateTRCAggregates(intervals, config) {
+  const agg = {};
+  intervals.forEach(iv=>{
+    const key=`${iv.trc}_${iv.workstream}`;
+    if(!agg[key]) agg[key]={trc:iv.trc,workstream:iv.workstream,netSum:0,count:0,surplusCount:0,deficitCount:0,criticalCount:0};
+    iv.slots.forEach(s=>{
+      agg[key].netSum+=s.netStaffing; agg[key].count++;
+      if(s.status==='surplus') agg[key].surplusCount++;
+      if(s.status==='at_risk'||s.status==='threshold') agg[key].deficitCount++;
+      if(s.status==='critical') agg[key].criticalCount++;
+    });
+  });
+  Object.values(agg).forEach(a=>{ a.netAvg=parseFloat((a.netSum/(a.count||1)).toFixed(2)); });
+  return agg;
+}
+
+function calculateScheduleScore(agentSchedules, queueList) {
+  let score = 100;
+  const penalties = [];
+  const total = agentSchedules.length;
+  const callouts = agentSchedules.filter(a=>a.status==='CallOut').length;
+  const cotPct = callouts/Math.max(total,1);
+  if(cotPct>0.10){ score-=15; penalties.push({type:'High Callout',impact:-15,detail:`${(cotPct*100).toFixed(1)}% call-out rate`}); }
+  else if(cotPct>0.05){ score-=8; penalties.push({type:'Elevated Callout',impact:-8,detail:`${(cotPct*100).toFixed(1)}% call-out rate`}); }
+  const vto = agentSchedules.filter(a=>a.status==='VTO').length;
+  if(vto/Math.max(total,1)>0.06){ score-=5; penalties.push({type:'High VTO',impact:-5,detail:`${vto} agents on VTO`}); }
+  return { score:Math.max(0,score), grade:score>=90?'A':score>=80?'B':score>=70?'C':score>=60?'D':'F',
+           calloutPct:parseFloat((cotPct*100).toFixed(1)), penalties };
+}
+
+function assembleDataPacket(generatedData, trc, simDate, simTime, botRunHistory=[]) {
+  const { riskWindows=[], trcAggregates={}, weeklyHistory=[], weeklyForecast=[],
+          agentSchedules=[], intervals=[], scheduleScore={}, queueList=[] } = generatedData||{};
+  const tF = arr=>trc==='ALL'?arr:arr.filter(x=>x.trc===trc);
+  const todayWins = tF(riskWindows.filter(w=>w.date===simDate)).slice(0,10);
+  const trcAgg = Object.fromEntries(Object.entries(trcAggregates).filter(([k])=>trc==='ALL'||k.startsWith(trc)));
+  const surplusWS = Object.values(trcAggregates).filter(a=>(trc==='ALL'||a.trc===trc)&&a.netAvg>1.5).map(a=>a.workstream);
+  const deficitWS = Object.values(trcAggregates).filter(a=>(trc==='ALL'||a.trc===trc)&&a.netAvg<-0.5).map(a=>a.workstream);
+  const crossSkillOpps = [];
+  surplusWS.forEach(sWS=>{ deficitWS.forEach(dWS=>{ const c=getComplianceStatus(sWS,dWS); if(c.status==='allowed') crossSkillOpps.push({from:sWS,to:dWS,compliance:c.label,candidateCount:tF(agentSchedules).filter(a=>a.workstream===sWS&&a.status==='Active').length}); }); });
+  const recentWeekly = tF(weeklyHistory).slice(-4);
+  return {
+    simDate, simTime, trc,
+    summary:{
+      queues:tF(queueList).length,
+      agentsActive:tF(agentSchedules).filter(a=>a.status==='Active').length,
+      agentsCallOut:tF(agentSchedules).filter(a=>a.status==='CallOut').length,
+      agentsVTO:tF(agentSchedules).filter(a=>a.status==='VTO').length,
+      riskWindowCount:todayWins.length,
+      criticalWindowCount:todayWins.filter(w=>w.hasCritical).length,
+    },
+    riskWindows:todayWins,
+    trcAggregates:trcAgg,
+    crossSkillOpps:crossSkillOpps.slice(0,5),
+    weeklyData:{recentWeekly},
+    weeklyHistory:tF(weeklyHistory).slice(-13),
+    weeklyForecast:tF(weeklyForecast).slice(0,4),
+    scheduleScore,
+    intelligenceContext:{
+      postMortems:botRunHistory.filter(r=>r.bot==='intraday').slice(-5).map(r=>r.summary),
+      weeklySummaries:botRunHistory.filter(r=>r.bot==='shortrange').slice(-2).map(r=>r.summary),
+      openEscalations:todayWins.filter(w=>w.hasCritical).length,
+      trendDirection:recentWeekly.length>0?(recentWeekly[recentWeekly.length-1].variancePct>5?'Rising':recentWeekly[recentWeekly.length-1].variancePct<-5?'Falling':'Flat'):'Flat',
+    },
+  };
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -2280,53 +2695,235 @@ function EmployeesTab({ config, employees, setEmployees, skills, setSkills, sche
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
-// MODULE 3 — DATA TAB
+// MODULE 3 — DATA TAB (full — Build Pass 3)
 // ═════════════════════════════════════════════════════════════════════════════
-function DataTab({ config, employees, schedules }) {
-  const activeTRCCount = Object.values(config.trcs).filter(t => t.active).length;
-  const activeWSCount  = Object.values(config.workstreams).filter(w => w.active).length;
-  const queueCount = Object.values(config.queueTemplates).reduce((n, qt) => n + qt.length, 0)
-                   * activeTRCCount;
-  const profilesReady  = employees.length > 0;
-  const schedulesReady = schedules.length > 0;
-  const configReady    = activeTRCCount > 0 && activeWSCount > 0 && queueCount > 0;
+function DataTab({ config, employees, schedules, generatedData, setGeneratedData }) {
+  const [scenario,    setScenario]    = useState('Baseline');
+  const [driverEvent, setDriverEvent] = useState('None');
+  const [custom, setCustom] = useState({ volumeModifier:1.00, adherenceBase:0.92, calloutRate:0.04, vtoRate:0.02 });
+  const [generating, setGenerating]   = useState(false);
+  const [view,        setView]        = useState('picker'); // 'picker' | 'preview'
 
-  const checks = [
-    { label: 'TRCs active',             done: activeTRCCount > 0,  detail: `${activeTRCCount} active`                             },
-    { label: 'Workstreams active',       done: activeWSCount > 0,   detail: `${activeWSCount} active`                              },
-    { label: 'Queue templates defined',  done: queueCount > 0,      detail: `${queueCount} queues`                                 },
-    { label: 'Employee profiles built',  done: profilesReady,       detail: profilesReady ? `${employees.length} agents` : 'Go to Employees → Generate' },
-    { label: 'Schedules generated',      done: schedulesReady,      detail: schedulesReady ? `${schedules.length} schedules`       : 'Go to Employees → Generate' },
+  const activeTRCCount = Object.values(config.trcs).filter(t=>t.active).length;
+  const queueCount     = Object.values(config.queueTemplates).reduce((n,qt)=>n+qt.length,0)*activeTRCCount;
+  const allReady = activeTRCCount>0 && employees.length>0 && schedules.length>0 && queueCount>0;
+  const isGenerated = !!(generatedData?.intervals?.length);
+
+  const getParams = () => {
+    const base = scenario==='Custom' ? {...custom} : {...SCENARIOS[scenario]};
+    const driver = DRIVER_EVENTS.find(d=>d.type===driverEvent)||DRIVER_EVENTS[0];
+    return {
+      ...base,
+      volumeModifier: Math.max(0.4, Math.min(1.6, base.volumeModifier+driver.volumeImpact)),
+      adherenceBase:  Math.max(0.72, Math.min(1.0, base.adherenceBase+driver.adherenceImpact)),
+      label: scenario+(driver.type!=='None'?` / ${driver.label}`:''),
+    };
+  };
+
+  const handleGenerate = () => {
+    if(!allReady||generating) return;
+    setGenerating(true);
+    // setTimeout allows React to render the "Generating…" state before blocking
+    setTimeout(()=>{
+      try {
+        const params    = getParams();
+        const startDate = new Date(2026,3,5); // April 5 2026
+        const ql  = buildQueueList(config);
+        const as  = generateAgentSchedules(employees, schedules, params, startDate, 14);
+        const iv  = generateIntervals(as, ql, params, startDate, 14);
+        const rw  = generateRiskWindows(iv);
+        const dh  = generateDailyHistory(ql, params, startDate, 13);
+        const wh  = aggregateWeeklyHistory(dh);
+        const wf  = generateWeeklyForecast(wh, params);
+        const ta  = generateTRCAggregates(iv, config);
+        const ss  = calculateScheduleScore(as, ql);
+        setGeneratedData({ scenario, driverEvent, scenarioParams:params,
+          queueList:ql, agentSchedules:as, intervals:iv,
+          riskWindows:rw, dailyHistory:dh, weeklyHistory:wh,
+          weeklyForecast:wf, trcAggregates:ta, scheduleScore:ss });
+        setView('preview');
+      } catch(e){ console.error(e); }
+      setGenerating(false);
+    },50);
+  };
+
+  const scenarioMeta = [
+    { id:'Baseline',     icon:'📊', color:'#035C67' },
+    { id:'HighVolume',   icon:'📈', color:'#EA5353' },
+    { id:'Understaffed', icon:'⚠️',  color:'#E88789' },
+    { id:'Surplus',      icon:'💚', color:'#1B5E20' },
+    { id:'MixedPressure',icon:'🔀', color:'#8B6914' },
+    { id:'Custom',       icon:'⚙',  color:'#008F83' },
   ];
 
-  const allReady = checks.every(c => c.done);
+  const checks = [
+    { label:'TRCs active',          done:activeTRCCount>0,     detail:`${activeTRCCount} active`                                             },
+    { label:'Queue templates',      done:queueCount>0,         detail:`${queueCount} queues`                                                 },
+    { label:'Employee profiles',    done:employees.length>0,   detail:employees.length>0?`${employees.length} agents`:'Go to Employees tab'  },
+    { label:'Schedules generated',  done:schedules.length>0,   detail:schedules.length>0?`${schedules.length} schedules`:'Go to Employees tab'},
+  ];
 
   return (
-    <div className="emp-shell">
-      <div className="tab-stub">
-        <div className="stub-icon">📊</div>
-        <div className="stub-title">Data Engine</div>
-        <p className="stub-sub">
-          {allReady
-            ? `Ready — ${queueCount} queues · ${employees.length} agents · 14-day interval dataset pending.`
-            : 'Complete the setup checklist below before generating your dataset.'}
-        </p>
-        {allReady
-          ? <span className="stub-coming" style={{background:'#3EFFC0', color:'#002F32'}}>✅ Ready to Build</span>
-          : <span className="stub-coming">Setup Required</span>}
-        <div style={{width:'100%', maxWidth:500, marginTop:12}}>
-          {checks.map((c, i) => (
-            <div key={i} className={`readiness-item ${c.done ? 'ready' : 'pending-item'}`}>
-              <span style={{fontSize:16}}>{c.done ? '✅' : '⏳'}</span>
-              <span style={{flex:1, fontWeight:600, fontSize:12}}>{c.label}</span>
-              <span style={{fontSize:11, color:'#9ABEBC'}}>{c.detail}</span>
-            </div>
-          ))}
+    <div className="data-shell">
+      {/* Sub-tab bar */}
+      <div style={{display:'flex', alignItems:'center', background:'#fff', borderBottom:'2px solid #D8E8E6', flexShrink:0}}>
+        <div className="data-subtabs" style={{flex:1, borderBottom:'none'}}>
+          <button className={`data-subtab ${view==='picker'?'active':''}`} onClick={()=>setView('picker')}>⚙ Scenario Setup</button>
+          <button className={`data-subtab ${view==='preview'?'active':''}`}
+            onClick={()=>isGenerated&&setView('preview')}
+            style={{opacity:isGenerated?1:0.4, cursor:isGenerated?'pointer':'default'}}>
+            📋 Data Preview {isGenerated&&<span style={{background:'#3EFFC0',color:'#002F32',borderRadius:8,padding:'1px 6px',fontSize:9,marginLeft:4,fontWeight:700}}>READY</span>}
+          </button>
         </div>
-        <p className="stub-details" style={{marginTop:14}}>
-          Coming — Build Pass 3: Scenario picker · Interval generator · 13-week history · Forward forecast · Risk windows · DataPacket assembly
-        </p>
+        {isGenerated && (
+          <div style={{padding:'0 14px', fontSize:11, color:'#5A8A86', flexShrink:0}}>
+            <strong style={{color:'#035C67'}}>{generatedData.scenario}</strong> · {generatedData.scenarioParams?.label||''}
+          </div>
+        )}
       </div>
+
+      {view==='picker' && (
+        <div style={{flex:1, overflowY:'auto'}}>
+          {/* Readiness checks */}
+          {!allReady && (
+            <div style={{padding:'12px 20px', background:'#FFF8E7', borderBottom:'1px solid #F5DFA0'}}>
+              <div style={{fontSize:11, fontWeight:700, color:'#8B6914', marginBottom:8}}>Complete setup before generating:</div>
+              <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
+                {checks.map((c,i)=>(
+                  <span key={i} style={{fontSize:11, padding:'3px 10px', borderRadius:8,
+                    background:c.done?'rgba(218,250,135,0.4)':'rgba(232,135,137,0.15)',
+                    color:c.done?'#1B5E20':'#B71C1C', border:`1px solid ${c.done?'#B5E060':'#E88789'}`}}>
+                    {c.done?'✅':'⏳'} {c.label}: {c.detail}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Scenario cards */}
+          <div className="scenario-grid">
+            {scenarioMeta.map(sm=>{
+              const s = SCENARIOS[sm.id];
+              return (
+                <div key={sm.id} className={`scenario-card ${scenario===sm.id?'selected':''}`}
+                  onClick={()=>setScenario(sm.id)}>
+                  <div className="scenario-card-name" style={{color:sm.color}}>{sm.icon} {sm.id}</div>
+                  <div className="scenario-card-label">{s.label}</div>
+                  {sm.id!=='Custom' && (
+                    <div className="scenario-card-stats">
+                      <span className="scenario-pill">Vol ×{s.volumeModifier.toFixed(2)}</span>
+                      <span className={`scenario-pill ${s.calloutRate>=0.08?'warn':''}`}>
+                        CO {(s.calloutRate*100).toFixed(0)}%
+                      </span>
+                      <span className={`scenario-pill ${s.adherenceBase<0.90?'warn':'good'}`}>
+                        ADH {(s.adherenceBase*100).toFixed(0)}%
+                      </span>
+                      {s.vtoRate>0&&<span className="scenario-pill good">VTO {(s.vtoRate*100).toFixed(0)}%</span>}
+                    </div>
+                  )}
+                  {sm.id==='Custom' && <div style={{fontSize:11,color:'#5A8A86'}}>Set your own parameters below</div>}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Custom controls */}
+          {scenario==='Custom' && (
+            <div className="custom-controls">
+              <div className="custom-controls-title">Custom Parameters</div>
+              {[
+                { key:'volumeModifier', label:'Volume Modifier', min:0.5, max:1.5, step:0.05, fmt:v=>`×${v.toFixed(2)}` },
+                { key:'adherenceBase',  label:'Adherence Base',  min:0.75,max:1.0, step:0.01, fmt:v=>`${(v*100).toFixed(0)}%` },
+                { key:'calloutRate',    label:'Call-Out Rate',   min:0.0, max:0.20,step:0.01, fmt:v=>`${(v*100).toFixed(0)}%` },
+                { key:'vtoRate',        label:'VTO Rate',        min:0.0, max:0.15,step:0.01, fmt:v=>`${(v*100).toFixed(0)}%` },
+              ].map(ctrl=>(
+                <div key={ctrl.key} className="custom-control-row">
+                  <div className="custom-control-label">{ctrl.label}</div>
+                  <input type="range" min={ctrl.min} max={ctrl.max} step={ctrl.step}
+                    value={custom[ctrl.key]}
+                    onChange={e=>setCustom(p=>({...p,[ctrl.key]:parseFloat(e.target.value)}))} />
+                  <div className="custom-control-val">{ctrl.fmt(custom[ctrl.key])}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Driver event + generate bar */}
+          <div className="generate-bar">
+            <div style={{display:'flex', alignItems:'center', gap:8, flex:1}}>
+              <span style={{fontSize:11, fontWeight:700, color:'#5A8A86', flexShrink:0}}>Driver Event:</span>
+              <select className="inline-select" value={driverEvent} onChange={e=>setDriverEvent(e.target.value)}>
+                {DRIVER_EVENTS.map(d=><option key={d.type} value={d.type}>{d.label}</option>)}
+              </select>
+              {driverEvent!=='None' && (
+                <span style={{fontSize:11, color:'#EA5353', fontWeight:600}}>
+                  Vol {DRIVER_EVENTS.find(d=>d.type===driverEvent)?.volumeImpact>=0?'+':''}
+                  {((DRIVER_EVENTS.find(d=>d.type===driverEvent)?.volumeImpact||0)*100).toFixed(0)}%
+                </span>
+              )}
+            </div>
+            <button className="btn-generate" onClick={handleGenerate}
+              disabled={!allReady||generating}>
+              {generating ? '⏳ Generating…' : `⚡ Generate Data — ${scenario}${driverEvent!=='None'?' / '+driverEvent:''}`}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {view==='preview' && isGenerated && (
+        <div style={{flex:1, overflowY:'auto'}}>
+          {/* Key stats */}
+          <div className="preview-grid">
+            {[
+              { val:generatedData.queueList.length,              label:'Active Queues'    },
+              { val:generatedData.agentSchedules.length,         label:'Agent-Day Records'},
+              { val:generatedData.riskWindows.length,            label:'Risk Windows'     },
+              { val:`${generatedData.scheduleScore.score} (${generatedData.scheduleScore.grade})`, label:'Schedule Score' },
+              { val:generatedData.intervals.length,              label:'Queue-Day Records'},
+              { val:generatedData.dailyHistory.length,           label:'History Records'  },
+              { val:generatedData.weeklyHistory.length,          label:'Weekly Records'   },
+              { val:generatedData.weeklyForecast.length,         label:'Forecast Records' },
+            ].map((s,i)=>(
+              <div key={i} className="preview-stat">
+                <div className="preview-stat-val">{s.val}</div>
+                <div className="preview-stat-label">{s.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Top risk windows */}
+          <div style={{padding:'0 20px 20px'}}>
+            <div style={{fontSize:11, fontWeight:700, color:'#035C67', marginBottom:8, textTransform:'uppercase', letterSpacing:'0.5px'}}>
+              Top Risk Windows (Today — {generatedData.riskWindows.filter(w=>w.date==='2026-04-05').length} found)
+            </div>
+            <table className="preview-risk-table">
+              <thead>
+                <tr><th>Queue</th><th>TRC</th><th>WS</th><th>Window</th><th>Net Avg</th><th>Worst</th><th>Duration</th><th>Type</th><th>Severity</th></tr>
+              </thead>
+              <tbody>
+                {generatedData.riskWindows.filter(w=>w.date==='2026-04-05').slice(0,10).map((w,i)=>(
+                  <tr key={i}>
+                    <td style={{fontFamily:'Courier New',fontSize:10}}>{w.queueId}</td>
+                    <td><span className="badge badge-mint" style={{fontSize:9}}>{w.trc}</span></td>
+                    <td style={{fontSize:10.5}}>{w.workstream}</td>
+                    <td style={{fontFamily:'Courier New',fontSize:10}}>{w.start}–{w.end}</td>
+                    <td style={{fontFamily:'Courier New',fontWeight:700,color:w.netAvg<-2?'#EA5353':'#E88789'}}>{w.netAvg}</td>
+                    <td style={{fontFamily:'Courier New',color:'#EA5353'}}>{w.worst}</td>
+                    <td style={{fontSize:10}}>{w.durationMins}m</td>
+                    <td><span style={{fontSize:9,padding:'1px 5px',borderRadius:6,
+                      background:w.timeBucket==='PEAK'?'rgba(234,83,83,0.15)':'rgba(144,185,255,0.2)',
+                      color:w.timeBucket==='PEAK'?'#B71C1C':'#0D47A1'}}>{w.timeBucket}</span></td>
+                    <td style={{fontFamily:'Courier New',fontSize:10,fontWeight:700,color:'#035C67'}}>{w.severityScore}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div style={{marginTop:16, padding:'10px 14px', background:'#E0F2F0', borderRadius:6, fontSize:11, color:'#035C67'}}>
+              <strong>✅ Data ready.</strong> Switch to the 🤖 Operations tab and fire any trigger — bots will now receive real data via DataPacket.
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -2527,25 +3124,57 @@ function RunHistory({ history }) {
 }
 
 // ─── OPERATIONS TAB (wrapper) ─────────────────────────────────────────────────
-function OperationsTab({ activeTRC }) {
+function OperationsTab({ activeTRC, generatedData }) {
   const [activeBot, setActiveBot] = useState('intraday');
   const [output,    setOutput]    = useState('');
   const [loading,   setLoading]   = useState(false);
   const [history,   setHistory]   = useState([]);
 
-  const today       = useMemo(() => new Date(), []);
-  const dateStr     = today.toISOString().split('T')[0];
-  const timeStr     = today.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-  const data        = useMemo(() => generateData(activeTRC, today), [activeTRC]);
+  const today    = useMemo(() => new Date(), []);
+  const dateStr  = today.toISOString().split('T')[0];
+  const timeStr  = today.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+  // Legacy stub data (fallback when no generatedData)
+  const legacyData = useMemo(() => generateData(activeTRC, today), [activeTRC]);
   const actualsCount = useMemo(() => {
-    const rows = Object.values(data)[0] || [];
+    const rows = Object.values(legacyData)[0] || [];
     return rows.filter(r => r.isActual).length;
-  }, [data]);
+  }, [legacyData]);
+
+  const hasRealData = !!(generatedData?.intervals?.length);
+
+  // Build DataLoad summary from real data or fallback
+  const dataLoadSummary = useMemo(() => {
+    if(!hasRealData) return null;
+    const tF = arr=>activeTRC==='ALL'?arr:arr.filter(x=>x.trc===activeTRC);
+    return {
+      queues:     tF(generatedData.queueList||[]).length,
+      history:    tF(generatedData.dailyHistory||[]).length,
+      agents:     tF(generatedData.agentSchedules||[]).length,
+      riskWins:   tF((generatedData.riskWindows||[]).filter(w=>w.date===dateStr)).length,
+      scenario:   generatedData.scenario||'Baseline',
+    };
+  }, [generatedData, activeTRC, dateStr]);
 
   const handleTrigger = useCallback(async (phrase) => {
     const bot = BOT_CONFIGS[activeBot];
     const systemPrompt = document.getElementById(bot.promptId)?.textContent?.trim() || '';
-    const userMessage  = buildUserMessage(phrase, data, activeTRC, dateStr, timeStr, activeBot);
+
+    let userMessage;
+    if(hasRealData){
+      const packet = assembleDataPacket(generatedData, activeTRC, dateStr, timeStr, history.map(h=>h.raw).filter(Boolean));
+      userMessage = `Trigger: ${phrase}
+Date: ${dateStr} | Time: ${timeStr} | TRC: ${activeTRC}
+Scenario: ${generatedData.scenario||'Baseline'}${generatedData.driverEvent&&generatedData.driverEvent!=='None'?' / '+generatedData.driverEvent:''}
+
+=== DATA PACKET ===
+${JSON.stringify(packet, null, 1)}
+
+---
+Note: This is a prototype running on Claude. Data is synthetic and deterministic. Bot prompts are production-identical.`;
+    } else {
+      userMessage = buildUserMessage(phrase, legacyData, activeTRC, dateStr, timeStr, activeBot);
+    }
 
     setLoading(true);
     setOutput('');
@@ -2553,14 +3182,18 @@ function OperationsTab({ activeTRC }) {
       const result = await callClaude(systemPrompt, userMessage);
       setOutput(result);
       setHistory(prev => [
-        { bot: bot.name, version: bot.version, phrase, trc: activeTRC, time: timeStr },
+        { bot: bot.name, version: bot.version, phrase, trc: activeTRC, time: timeStr,
+          raw: hasRealData ? { bot:activeBot, trigger:phrase, trc:activeTRC,
+            summary:{ riskCount:(generatedData.riskWindows||[]).filter(w=>w.date===dateStr).length,
+                      topQueue:(generatedData.riskWindows||[])[0]?.queueId||'',
+                      netAvgWorst:(generatedData.riskWindows||[])[0]?.netAvg||0 }} : null },
         ...prev.slice(0, 11),
       ]);
     } catch (err) {
       setOutput(`❌ Error: ${err.message}\n\nTip: Make sure ANTHROPIC_API_KEY is set in Vercel environment variables.`);
     }
     setLoading(false);
-  }, [activeBot, activeTRC, data, dateStr, timeStr]);
+  }, [activeBot, activeTRC, hasRealData, generatedData, legacyData, dateStr, timeStr, history]);
 
   return (
     <div className="ops-shell">
@@ -2581,7 +3214,19 @@ function OperationsTab({ activeTRC }) {
           <div className="panel-header">
             DATA PANEL — {activeTRC} · {BOT_CONFIGS[activeBot].name.toUpperCase()}
           </div>
-          <DataLoadBlock bot={activeBot} dateStr={dateStr} timeStr={timeStr} actualsCount={actualsCount} />
+          {hasRealData && dataLoadSummary ? (
+            <div className="data-load-block">
+              <div className="dl-header">DATA LOAD | {dateStr} | {timeStr}</div>
+              <div className="dl-row">✅ Scenario — <span style={{color:'#5A8A86'}}>{dataLoadSummary.scenario}</span></div>
+              <div className="dl-row">✅ Interval Data — <span style={{color:'#5A8A86'}}>{dataLoadSummary.queues} queues · 24 slots each</span></div>
+              <div className="dl-row">✅ Daily History — <span style={{color:'#5A8A86'}}>{dataLoadSummary.history} records (13 weeks)</span></div>
+              <div className="dl-row">✅ Agent Schedules — <span style={{color:'#5A8A86'}}>{dataLoadSummary.agents} agent-day records</span></div>
+              <div className="dl-row">✅ Risk Windows — <span style={{color:'#5A8A86'}}>{dataLoadSummary.riskWins} windows today (pre-ranked)</span></div>
+              <div className="dl-row" style={{color:'#3EFFC0', fontWeight:700}}>⚡ DataPacket ready — real data</div>
+            </div>
+          ) : (
+            <DataLoadBlock bot={activeBot} dateStr={dateStr} timeStr={timeStr} actualsCount={actualsCount} />
+          )}
           <StaffingGrid data={data} trc={activeTRC} />
         </div>
         <AnalysisPanel
@@ -2602,12 +3247,13 @@ function OperationsTab({ activeTRC }) {
 // ROOT APP
 // ═════════════════════════════════════════════════════════════════════════════
 function App() {
-  const [activeModule, setActiveModule] = useState('operations');
-  const [activeTRC,    setActiveTRC]    = useState('ONC');
-  const [config,       setConfig]       = useState(() => JSON.parse(JSON.stringify(DEFAULT_CONFIG)));
-  const [employees,    setEmployees]    = useState([]);
-  const [skills,       setSkills]       = useState([]);
-  const [schedules,    setSchedules]    = useState([]);
+  const [activeModule,  setActiveModule]  = useState('operations');
+  const [activeTRC,     setActiveTRC]     = useState('ONC');
+  const [config,        setConfig]        = useState(() => JSON.parse(JSON.stringify(DEFAULT_CONFIG)));
+  const [employees,     setEmployees]     = useState([]);
+  const [skills,        setSkills]        = useState([]);
+  const [schedules,     setSchedules]     = useState([]);
+  const [generatedData, setGeneratedData] = useState(null);
 
   const modules = [
     { id: 'config',     label: '⚙ Config'     },
@@ -2653,8 +3299,9 @@ function App() {
           schedules={schedules}   setSchedules={setSchedules}
         />
       )}
-      {activeModule === 'data'       && <DataTab config={config} employees={employees} schedules={schedules} />}
-      {activeModule === 'operations' && <OperationsTab activeTRC={activeTRC} />}
+      {activeModule === 'data'       && <DataTab config={config} employees={employees} schedules={schedules}
+                                          generatedData={generatedData} setGeneratedData={setGeneratedData} />}
+      {activeModule === 'operations' && <OperationsTab activeTRC={activeTRC} generatedData={generatedData} />}
     </div>
   );
 }
