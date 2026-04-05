@@ -1699,6 +1699,8 @@ function generateIntervals(agentSchedules, queueList, scenarioParams, startDate,
   const result = [];
   for(let d=0; d<days; d++){
     const dt = new Date(startDate); dt.setDate(dt.getDate()+d);
+    const dow = dt.getDay();
+    if(dow===0||dow===6) continue; // skip weekends — no staff scheduled
     const dateStr = dt.toISOString().split('T')[0];
 
     queueList.forEach(q=>{
@@ -2887,7 +2889,8 @@ function DataTab({ config, employees, schedules, generatedData, setGeneratedData
     setTimeout(()=>{
       try {
         const params    = getParams();
-        const startDate = new Date(2026,3,5); // April 5 2026
+        // Compute most recent Monday so day-0 is always a workday
+        const startDate = (()=>{ const d=new Date(); const dow=d.getDay(); d.setDate(d.getDate()-(dow===0?6:dow-1)); d.setHours(0,0,0,0); return d; })();
         const ql  = buildQueueList(config);
         const as  = generateAgentSchedules(employees, schedules, params, startDate, 14);
         const iv  = generateIntervals(as, ql, params, startDate, 14);
@@ -3305,7 +3308,13 @@ function KpiCard({ label, value, sub, color }) {
 }
 
 function IntradayView({ activeTRC, generatedData }) {
-  const today = useMemo(()=>new Date().toISOString().split('T')[0],[]);
+  // Use most recent workday — fall back to Friday when running on weekend
+  const today = useMemo(()=>{
+    const d=new Date(); const dow=d.getDay();
+    if(dow===0) d.setDate(d.getDate()-2);       // Sun → Fri
+    else if(dow===6) d.setDate(d.getDate()-1);  // Sat → Fri
+    return d.toISOString().split('T')[0];
+  },[]);
   const [selectedWS, setSelectedWS] = useState('ALL');
   const [selectedQ,  setSelectedQ]  = useState('ALL');
 
@@ -3696,7 +3705,12 @@ function LongRangeView({ activeTRC, generatedData }) {
 }
 
 function IntelligenceView({ activeTRC, generatedData, history }) {
-  const today = useMemo(()=>new Date().toISOString().split('T')[0],[]);
+  const today = useMemo(()=>{
+    const d=new Date(); const dow=d.getDay();
+    if(dow===0) d.setDate(d.getDate()-2);
+    else if(dow===6) d.setDate(d.getDate()-1);
+    return d.toISOString().split('T')[0];
+  },[]);
   const trcs = ['ONC','RARE','PACE'];
   const trcStats = useMemo(()=>{
     if(!generatedData) return {};
@@ -3863,9 +3877,18 @@ Note: This is a prototype running on Claude. Data is synthetic and deterministic
 
   return (
     <div className="ops-shell">
-      {/* Bot sub-tabs + TRC selector */}
-      <div className="ops-bot-tabs" style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-        <div style={{display:'flex',gap:4}}>
+      {/* Bot sub-tabs + TRC dropdown (left) */}
+      <div className="ops-bot-tabs" style={{display:'flex',alignItems:'center',gap:0}}>
+        <div style={{display:'flex',alignItems:'center',gap:6,padding:'0 12px',borderRight:'1px solid rgba(62,255,192,0.2)',flexShrink:0}}>
+          <span style={{fontSize:10,fontWeight:700,color:'#3EFFC0',textTransform:'uppercase',letterSpacing:'0.5px'}}>TRC</span>
+          <select value={activeTRC} onChange={e=>setActiveTRC(e.target.value)}
+            style={{padding:'3px 8px',borderRadius:4,border:'1px solid rgba(62,255,192,0.5)',background:'#013A42',color:'#3EFFC0',fontWeight:700,fontSize:12,cursor:'pointer',outline:'none'}}>
+            {(['ALL',...['ONC','RARE','PACE'].filter(t=>
+              !generatedData?.intervals?.length || generatedData.intervals.some(iv=>iv.trc===t)
+            )]).map(t=><option key={t} value={t}>{t}</option>)}
+          </select>
+        </div>
+        <div style={{display:'flex',gap:4,padding:'0 8px'}}>
           {Object.values(BOT_CONFIGS).map(b => (
             <button key={b.id}
               className={`ops-bot-tab ${activeBot===b.id ? 'active' : ''}`}
@@ -3873,15 +3896,6 @@ Note: This is a prototype running on Claude. Data is synthetic and deterministic
               {b.icon} {b.name} <span className="ver">{b.version}</span>
             </button>
           ))}
-        </div>
-        <div style={{display:'flex',alignItems:'center',gap:6,paddingRight:12}}>
-          <span style={{fontSize:10,fontWeight:700,color:'#5A8A86',textTransform:'uppercase',letterSpacing:'0.5px'}}>TRC</span>
-          <div className="trc-selector">
-            {['ONC','RARE','PACE','ALL'].map(t=>(
-              <button key={t} className={`trc-btn ${activeTRC===t?'active':''}`}
-                onClick={()=>setActiveTRC(t)}>{t}</button>
-            ))}
-          </div>
         </div>
       </div>
 
@@ -3938,7 +3952,12 @@ function ScheduleTab({ employees, generatedData }) {
   const [filterTRC, setFilterTRC] = useState('ONC');
   const [filterWS,  setFilterWS]  = useState('ALL');
   const [filterQ,   setFilterQ]   = useState('ALL');
-  const [viewDate,  setViewDate]  = useState(()=>new Date().toISOString().split('T')[0]);
+  const [viewDate,  setViewDate]  = useState(()=>{
+    const d=new Date(); const dow=d.getDay();
+    if(dow===0) d.setDate(d.getDate()+1);       // Sun → Mon
+    else if(dow===6) d.setDate(d.getDate()+2);  // Sat → Mon
+    return d.toISOString().split('T')[0];
+  });
 
   useEffect(()=>setFilterQ('ALL'),[filterWS]);
   useEffect(()=>{ setFilterWS('ALL'); setFilterQ('ALL'); },[filterTRC]);
