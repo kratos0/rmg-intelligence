@@ -3308,24 +3308,42 @@ function KpiCard({ label, value, sub, color }) {
 }
 
 function IntradayView({ activeTRC, generatedData }) {
-  // Use most recent workday — fall back to Friday when running on weekend
-  const today = useMemo(()=>{
+  // Reference "today" — most recent workday (Fri if weekend)
+  const refDay = useMemo(()=>{
     const d=new Date(); const dow=d.getDay();
-    if(dow===0) d.setDate(d.getDate()-2);       // Sun → Fri
-    else if(dow===6) d.setDate(d.getDate()-1);  // Sat → Fri
+    if(dow===0) d.setDate(d.getDate()-2);
+    else if(dow===6) d.setDate(d.getDate()-1);
     return d.toISOString().split('T')[0];
   },[]);
+
+  // Build Mon–Fri of the reference week
+  const weekDays = useMemo(()=>{
+    const ref=new Date(refDay+'T12:00:00');
+    const dow=ref.getDay(); // 1=Mon…5=Fri
+    const mon=new Date(ref); mon.setDate(ref.getDate()-(dow-1));
+    return [0,1,2,3,4].map(i=>{
+      const d=new Date(mon); d.setDate(mon.getDate()+i);
+      const ds=d.toISOString().split('T')[0];
+      const mm=d.getMonth()+1; const dd=d.getDate();
+      return { date:ds, label:['Mon','Tue','Wed','Thu','Fri'][i], short:`${mm}/${dd}` };
+    });
+  },[refDay]);
+
+  const [viewDay,    setViewDay]    = useState(refDay);
   const [selectedWS, setSelectedWS] = useState('ALL');
   const [selectedQ,  setSelectedQ]  = useState('ALL');
+
+  // Reset filters when day or TRC changes
+  useEffect(()=>{ setSelectedWS('ALL'); setSelectedQ('ALL'); },[viewDay,activeTRC]);
 
   // WS short labels
   const wsShort = {Pharmacist:'Pharm',Technician:'Tech',PatientAccess:'PtAcc',ContactCenter:'CC'};
 
-  // All today's intervals for this TRC
+  // All viewDay's intervals for this TRC
   const todayIntervals = useMemo(()=>{
     if(!generatedData?.intervals) return [];
-    return generatedData.intervals.filter(iv=>iv.date===today&&(activeTRC==='ALL'||iv.trc===activeTRC));
-  },[generatedData,today,activeTRC]);
+    return generatedData.intervals.filter(iv=>iv.date===viewDay&&(activeTRC==='ALL'||iv.trc===activeTRC));
+  },[generatedData,viewDay,activeTRC]);
 
   // Cascade resets: TRC change → reset WS + Q; WS change → reset Q
   useEffect(()=>{ setSelectedWS('ALL'); setSelectedQ('ALL'); },[activeTRC]);
@@ -3351,11 +3369,11 @@ function IntradayView({ activeTRC, generatedData }) {
   // Risk windows: TRC + WS + Q filtered
   const todayRisks = useMemo(()=>{
     if(!generatedData?.riskWindows) return [];
-    let rw = generatedData.riskWindows.filter(w=>w.date===today&&(activeTRC==='ALL'||w.trc===activeTRC));
+    let rw = generatedData.riskWindows.filter(w=>w.date===viewDay&&(activeTRC==='ALL'||w.trc===activeTRC));
     if(selectedWS!=='ALL') rw = rw.filter(w=>w.workstream===selectedWS);
     if(selectedQ!=='ALL')  rw = rw.filter(w=>w.queueId===selectedQ);
     return (selectedQ==='ALL'&&selectedWS==='ALL') ? rw.slice(0,8) : rw;
-  },[generatedData,today,activeTRC,selectedWS,selectedQ]);
+  },[generatedData,viewDay,activeTRC,selectedWS,selectedQ]);
 
   // Aggregate slot map from wsIntervals
   const slotMap = useMemo(()=>{
@@ -3390,13 +3408,13 @@ function IntradayView({ activeTRC, generatedData }) {
     }).sort((a,b)=>a.netAvg-b.netAvg)
   ,[wsIntervals]);
 
-  // Active agents scoped to TRC + WS
+  // Active agents scoped to TRC + WS + viewDay
   const agentsActive = useMemo(()=>{
     if(!generatedData?.agentSchedules) return 0;
-    let as = generatedData.agentSchedules.filter(a=>a.date===today&&a.status==='Active'&&(activeTRC==='ALL'||a.trc===activeTRC));
+    let as = generatedData.agentSchedules.filter(a=>a.date===viewDay&&a.status==='Active'&&(activeTRC==='ALL'||a.trc===activeTRC));
     if(selectedWS!=='ALL') as = as.filter(a=>a.workstream===selectedWS);
     return as.length;
-  },[generatedData,today,activeTRC,selectedWS]);
+  },[generatedData,viewDay,activeTRC,selectedWS]);
 
   const score    = generatedData?.scheduleScore;
   const avgNet   = slotMap.length>0 ? Math.round(slotMap.reduce((s,[,v])=>s+v.net,0)/slotMap.length) : 0;
@@ -3406,10 +3424,29 @@ function IntradayView({ activeTRC, generatedData }) {
 
   return (
     <div className="bp4-view">
-      {/* KPI row — reflects current WS scope */}
+      {/* Day selector — Mon–Fri of current work week */}
+      <div style={{display:'flex',alignItems:'center',gap:5,padding:'6px 12px',background:'#F0FAF8',borderBottom:'1px solid #D8E8E6',flexWrap:'wrap'}}>
+        <span style={{fontSize:10,fontWeight:700,color:'#5A8A86',textTransform:'uppercase',letterSpacing:'0.5px',marginRight:4}}>Day</span>
+        {weekDays.map(wd=>{
+          const isActive=wd.date===viewDay;
+          const hasData=generatedData?.intervals?.some(iv=>iv.date===wd.date&&(activeTRC==='ALL'||iv.trc===activeTRC));
+          return (
+            <button key={wd.date} onClick={()=>setViewDay(wd.date)}
+              style={{padding:'3px 10px',borderRadius:12,border:isActive?'1.5px solid #035C67':'1px solid #C8E0DC',
+                background:isActive?'#035C67':'#fff',color:isActive?'#3EFFC0':hasData?'#002F32':'#B0C8C6',
+                fontWeight:isActive?700:500,fontSize:11,cursor:'pointer',lineHeight:1.3,whiteSpace:'nowrap'}}>
+              <div>{wd.label}</div>
+              <div style={{fontSize:9,opacity:0.85}}>{wd.short}</div>
+            </button>
+          );
+        })}
+        <span style={{marginLeft:'auto',fontSize:10,color:'#5A8A86'}}>{viewDay}</span>
+      </div>
+
+      {/* KPI row — reflects current day + WS scope */}
       <div className="bp4-kpi-row">
         <KpiCard label="Active" value={agentsActive} color="#035C67" />
-        <KpiCard label="Risks" value={todayRisks.length} color={todayRisks.length>3?'#EA5353':'#008F83'} sub="today" />
+        <KpiCard label="Risks" value={todayRisks.length} color={todayRisks.length>3?'#EA5353':'#008F83'} sub={viewDay} />
         <KpiCard label="Score" value={score?`${score.score}${score.grade}`:'—'} color={score&&'AB'.includes(score.grade)?'#008F83':'#EA5353'} />
         <KpiCard label="Avg Net" value={avgNet>=0?`+${avgNet}`:avgNet} color={netColor} />
       </div>
