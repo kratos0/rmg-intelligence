@@ -615,9 +615,26 @@
     .bp4-hist-item { padding: 6px 10px; border-bottom: 1px solid #F0F0F0; }
     .bp4-hist-top { display: flex; justify-content: space-between; align-items: center; font-size: 11px; }
 
-    /* Queue selector */
+    /* Workstream selector (TRC → WS tier) */
+    .bp4-ws-selector {
+      display: flex; gap: 3px; padding: 4px 8px; align-items: center; flex-wrap: wrap;
+      background: #E8F5F4; border-bottom: 1px solid #C8E0DC; flex-shrink: 0;
+    }
+    .bp4-ws-label {
+      font-size: 9px; font-weight: 700; color: #008F83; text-transform: uppercase;
+      letter-spacing: 0.5px; flex-shrink: 0; margin-right: 3px;
+    }
+    .bp4-ws-pill {
+      padding: 2px 9px; border-radius: 8px; border: 1px solid #008F83;
+      background: transparent; color: #008F83;
+      font-size: 9.5px; font-weight: 700; cursor: pointer; transition: all 0.12s;
+    }
+    .bp4-ws-pill:hover { background: #008F83; color: #fff; }
+    .bp4-ws-pill.active { background: #008F83; color: #fff; }
+
+    /* Queue selector (WS → Q tier) */
     .bp4-q-selector {
-      display: flex; gap: 3px; padding: 5px 8px; flex-wrap: wrap;
+      display: flex; gap: 3px; padding: 4px 8px; flex-wrap: wrap;
       background: #FAFAF8; border-bottom: 1px solid #D8E8E6; flex-shrink: 0;
     }
     .bp4-q-pill {
@@ -3213,32 +3230,52 @@ function KpiCard({ label, value, sub, color }) {
 
 function IntradayView({ activeTRC, generatedData }) {
   const today = useMemo(()=>new Date().toISOString().split('T')[0],[]);
-  const [selectedQ, setSelectedQ] = useState('ALL');
+  const [selectedWS, setSelectedWS] = useState('ALL');
+  const [selectedQ,  setSelectedQ]  = useState('ALL');
 
+  // WS short labels
+  const wsShort = {Pharmacist:'Pharm',Technician:'Tech',PatientAccess:'PtAcc',ContactCenter:'CC'};
+
+  // All today's intervals for this TRC
   const todayIntervals = useMemo(()=>{
     if(!generatedData?.intervals) return [];
     return generatedData.intervals.filter(iv=>iv.date===today&&(activeTRC==='ALL'||iv.trc===activeTRC));
   },[generatedData,today,activeTRC]);
 
-  // Reset queue selector when TRC changes
-  useEffect(()=>setSelectedQ('ALL'),[activeTRC]);
+  // Cascade resets: TRC change → reset WS + Q; WS change → reset Q
+  useEffect(()=>{ setSelectedWS('ALL'); setSelectedQ('ALL'); },[activeTRC]);
+  useEffect(()=>setSelectedQ('ALL'),[selectedWS]);
 
-  // Sorted queue list for selector
-  const queueList = useMemo(()=>[
+  // Available workstreams from this TRC's intervals
+  const wsList = useMemo(()=>[
     'ALL',
-    ...todayIntervals.map(iv=>iv.queueId).sort()
+    ...[...new Set(todayIntervals.map(iv=>iv.workstream))].sort()
   ],[todayIntervals]);
 
+  // Intervals scoped to selected WS
+  const wsIntervals = useMemo(()=>
+    selectedWS==='ALL' ? todayIntervals : todayIntervals.filter(iv=>iv.workstream===selectedWS)
+  ,[todayIntervals,selectedWS]);
+
+  // Queue list scoped to selected WS
+  const queueList = useMemo(()=>[
+    'ALL',
+    ...wsIntervals.map(iv=>iv.queueId).sort()
+  ],[wsIntervals]);
+
+  // Risk windows: TRC + WS + Q filtered
   const todayRisks = useMemo(()=>{
     if(!generatedData?.riskWindows) return [];
-    const base = generatedData.riskWindows.filter(w=>w.date===today&&(activeTRC==='ALL'||w.trc===activeTRC));
-    return selectedQ==='ALL' ? base.slice(0,8) : base.filter(w=>w.queueId===selectedQ);
-  },[generatedData,today,activeTRC,selectedQ]);
+    let rw = generatedData.riskWindows.filter(w=>w.date===today&&(activeTRC==='ALL'||w.trc===activeTRC));
+    if(selectedWS!=='ALL') rw = rw.filter(w=>w.workstream===selectedWS);
+    if(selectedQ!=='ALL')  rw = rw.filter(w=>w.queueId===selectedQ);
+    return (selectedQ==='ALL'&&selectedWS==='ALL') ? rw.slice(0,8) : rw;
+  },[generatedData,today,activeTRC,selectedWS,selectedQ]);
 
-  // Aggregate across all queues (ALL view)
+  // Aggregate slot map from wsIntervals
   const slotMap = useMemo(()=>{
     const m={};
-    todayIntervals.forEach(iv=>(iv.slots||[]).forEach(s=>{
+    wsIntervals.forEach(iv=>(iv.slots||[]).forEach(s=>{
       if(!m[s.time]) m[s.time]={sch:0,act:0,req:0,net:0};
       m[s.time].sch+=s.scheduledFTE||0;
       m[s.time].act+=s.actualFTE||0;
@@ -3246,18 +3283,17 @@ function IntradayView({ activeTRC, generatedData }) {
       m[s.time].net+=s.netStaffing||0;
     }));
     return Object.entries(m).sort(([a],[b])=>a.localeCompare(b));
-  },[todayIntervals]);
+  },[wsIntervals]);
 
-  // Per-queue slot detail (specific queue selected)
+  // Per-queue slot detail
   const queueSlots = useMemo(()=>{
     if(selectedQ==='ALL') return null;
-    const iv = todayIntervals.find(iv=>iv.queueId===selectedQ);
-    return iv?.slots||[];
-  },[todayIntervals,selectedQ]);
+    return wsIntervals.find(iv=>iv.queueId===selectedQ)?.slots||[];
+  },[wsIntervals,selectedQ]);
 
-  // Queue summary table (ALL view) — one row per queue, sorted worst net first
-  const queueSummary = useMemo(()=>{
-    return todayIntervals.map(iv=>{
+  // Queue summary (worst net first), scoped to selected WS
+  const queueSummary = useMemo(()=>
+    wsIntervals.map(iv=>{
       const slots=iv.slots||[];
       const nets=slots.map(s=>s.netStaffing||0);
       const n=nets.length||1;
@@ -3266,22 +3302,26 @@ function IntradayView({ activeTRC, generatedData }) {
       const riskSlots=slots.filter(s=>s.status==='at_risk'||s.status==='critical').length;
       const critSlots=slots.filter(s=>s.status==='critical').length;
       return {queueId:iv.queueId,workstream:iv.workstream,trc:iv.trc,netAvg,worst,riskSlots,critSlots};
-    }).sort((a,b)=>a.netAvg-b.netAvg);
-  },[todayIntervals]);
+    }).sort((a,b)=>a.netAvg-b.netAvg)
+  ,[wsIntervals]);
 
+  // Active agents scoped to TRC + WS
   const agentsActive = useMemo(()=>{
     if(!generatedData?.agentSchedules) return 0;
-    return generatedData.agentSchedules.filter(a=>a.date===today&&a.status==='Active'&&(activeTRC==='ALL'||a.trc===activeTRC)).length;
-  },[generatedData,today,activeTRC]);
+    let as = generatedData.agentSchedules.filter(a=>a.date===today&&a.status==='Active'&&(activeTRC==='ALL'||a.trc===activeTRC));
+    if(selectedWS!=='ALL') as = as.filter(a=>a.workstream===selectedWS);
+    return as.length;
+  },[generatedData,today,activeTRC,selectedWS]);
 
-  const score = generatedData?.scheduleScore;
-  const avgNet = slotMap.length>0 ? Math.round(slotMap.reduce((s,[,v])=>s+v.net,0)/slotMap.length) : 0;
+  const score    = generatedData?.scheduleScore;
+  const avgNet   = slotMap.length>0 ? Math.round(slotMap.reduce((s,[,v])=>s+v.net,0)/slotMap.length) : 0;
   const netColor = avgNet<-2?'#EA5353':avgNet<0?'#E88789':avgNet>3?'#90B9FF':'#008F83';
-  const netCls = n=>n<-2?'net-bad':n<0?'net-warn':n>0?'net-ok':'';
+  const netCls   = n=>n<-2?'net-bad':n<0?'net-warn':n>0?'net-ok':'';
+  const scopeLabel = selectedQ!=='ALL' ? selectedQ : selectedWS!=='ALL' ? (wsShort[selectedWS]||selectedWS) : 'ALL';
 
   return (
     <div className="bp4-view">
-      {/* KPI row */}
+      {/* KPI row — reflects current WS scope */}
       <div className="bp4-kpi-row">
         <KpiCard label="Active" value={agentsActive} color="#035C67" />
         <KpiCard label="Risks" value={todayRisks.length} color={todayRisks.length>3?'#EA5353':'#008F83'} sub="today" />
@@ -3289,7 +3329,18 @@ function IntradayView({ activeTRC, generatedData }) {
         <KpiCard label="Avg Net" value={avgNet>=0?`+${avgNet}`:avgNet} color={netColor} />
       </div>
 
-      {/* Queue selector */}
+      {/* Workstream selector */}
+      <div className="bp4-ws-selector">
+        <span className="bp4-ws-label">WS</span>
+        {wsList.map(ws=>(
+          <button key={ws} className={`bp4-ws-pill ${selectedWS===ws?'active':''}`}
+            onClick={()=>setSelectedWS(ws)}>
+            {ws==='ALL'?'ALL':(wsShort[ws]||ws)}
+          </button>
+        ))}
+      </div>
+
+      {/* Queue selector — scoped to selected WS */}
       <div className="bp4-q-selector">
         {queueList.map(q=>(
           <button key={q} className={`bp4-q-pill ${selectedQ===q?'active':''}`}
@@ -3299,11 +3350,13 @@ function IntradayView({ activeTRC, generatedData }) {
         ))}
       </div>
 
-      {/* ALL view: aggregate + queue summary */}
+      {/* ALL-queue view: aggregate time table + queue summary */}
       {selectedQ==='ALL'&&(
         <>
-          <div className="bp4-section-label">AGGREGATE COVERAGE — ALL QUEUES</div>
-          <div className="bp4-table-wrap" style={{maxHeight:160}}>
+          <div className="bp4-section-label">
+            AGGREGATE — {selectedWS==='ALL'?'ALL WORKSTREAMS':(wsShort[selectedWS]||selectedWS)}
+          </div>
+          <div className="bp4-table-wrap" style={{maxHeight:150}}>
             <table className="bp4-table">
               <thead><tr><th>Time</th><th>Sch</th><th>Act</th><th>Req</th><th>Net</th></tr></thead>
               <tbody>
@@ -3319,19 +3372,21 @@ function IntradayView({ activeTRC, generatedData }) {
               </tbody>
             </table>
           </div>
-          <div className="bp4-section-label">QUEUE SUMMARY — SORTED BY NET AVG ▲</div>
+          <div className="bp4-section-label">QUEUE SUMMARY ▲ WORST FIRST</div>
           <div className="bp4-table-wrap">
             <table className="bp4-table">
               <thead><tr><th>Queue</th><th>WS</th><th>Net Avg</th><th>Worst</th><th>⚠ Slots</th></tr></thead>
               <tbody>
                 {queueSummary.map((q,i)=>(
-                  <tr key={i} style={{cursor:'pointer'}} onClick={()=>setSelectedQ(q.queueId)}
-                    title={`Click to drill into ${q.queueId}`}>
+                  <tr key={i} style={{cursor:'pointer'}} onClick={()=>{ setSelectedWS(q.workstream); setSelectedQ(q.queueId); }}
+                    title={`Drill into ${q.queueId}`}>
                     <td style={{fontSize:9,fontFamily:'Courier New',textAlign:'left',color:'#035C67',fontWeight:700}}>{q.queueId}</td>
-                    <td style={{fontSize:9}}>{q.workstream.slice(0,4)}</td>
+                    <td style={{fontSize:9}}>{wsShort[q.workstream]||q.workstream.slice(0,4)}</td>
                     <td className={netCls(q.netAvg)}>{q.netAvg>=0?'+':''}{q.netAvg}</td>
                     <td style={{fontFamily:'Courier New',fontSize:10,color:q.worst<-2?'#EA5353':'#E88789',fontWeight:700}}>{q.worst}</td>
-                    <td style={{color:q.riskSlots>4?'#EA5353':q.riskSlots>0?'#E88789':'#008F83',fontWeight:q.riskSlots>0?700:400}}>{q.riskSlots}{q.critSlots>0?` (${q.critSlots}❗)`:''}</td>
+                    <td style={{color:q.riskSlots>4?'#EA5353':q.riskSlots>0?'#E88789':'#008F83',fontWeight:q.riskSlots>0?700:400}}>
+                      {q.riskSlots}{q.critSlots>0?` (${q.critSlots}❗)`:''}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -3340,13 +3395,13 @@ function IntradayView({ activeTRC, generatedData }) {
         </>
       )}
 
-      {/* Per-queue view: full 24-slot detail with vol + adh */}
+      {/* Per-queue view: 24-slot detail with Vol + Adh% */}
       {selectedQ!=='ALL'&&queueSlots&&(
         <>
-          <div className="bp4-section-label" style={{display:'flex',justifyContent:'space-between'}}>
+          <div className="bp4-section-label" style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
             <span>QUEUE DETAIL — {selectedQ}</span>
-            <span style={{fontSize:9,color:'#5A8A86',fontWeight:400,textTransform:'none'}}>
-              {todayIntervals.find(iv=>iv.queueId===selectedQ)?.workstream||''}
+            <span style={{fontSize:9,color:'#5A8A86',fontWeight:400,textTransform:'none',letterSpacing:0}}>
+              {wsShort[wsIntervals.find(iv=>iv.queueId===selectedQ)?.workstream]||''}
             </span>
           </div>
           <div className="bp4-table-wrap" style={{maxHeight:240}}>
@@ -3372,18 +3427,17 @@ function IntradayView({ activeTRC, generatedData }) {
         </>
       )}
 
-      {/* Risk windows — filtered to selected queue if applicable */}
+      {/* Risk windows — scope-aware label */}
       {todayRisks.length>0&&(
         <>
           <div className="bp4-section-label" style={{color:'#EA5353'}}>
-            ⚠ RISK WINDOWS ({todayRisks.length}){selectedQ!=='ALL'?` — ${selectedQ}`:''}
+            ⚠ RISK WINDOWS ({todayRisks.length}){scopeLabel!=='ALL'?` — ${scopeLabel}`:''}
           </div>
           <div className="bp4-risks">
             {todayRisks.map((w,i)=>(
               <div key={i} className="bp4-risk-row">
                 <span className="bp4-risk-queue">{selectedQ==='ALL'?w.queueId:w.start}</span>
-                {selectedQ==='ALL'&&<span className="bp4-risk-window">{w.start}–{w.end}</span>}
-                {selectedQ!=='ALL'&&<span className="bp4-risk-window">–{w.end}</span>}
+                <span className="bp4-risk-window">{selectedQ==='ALL'?`${w.start}–`:''}{w.end}</span>
                 <span className="bp4-risk-net" style={{color:'#EA5353'}}>{w.netAvg}</span>
                 <span className="bp4-risk-dur">{w.durationMins}m</span>
                 <span style={{fontSize:9,color:w.timeBucket==='PEAK'?'#EA5353':'#90B9FF',flexShrink:0}}>{w.timeBucket}</span>
