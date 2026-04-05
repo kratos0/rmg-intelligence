@@ -3308,28 +3308,28 @@ function KpiCard({ label, value, sub, color }) {
 }
 
 function IntradayView({ activeTRC, generatedData }) {
-  // Reference "today" — most recent workday (Fri if weekend)
-  const refDay = useMemo(()=>{
-    const d=new Date(); const dow=d.getDay();
-    if(dow===0) d.setDate(d.getDate()-2);
-    else if(dow===6) d.setDate(d.getDate()-1);
-    return d.toISOString().split('T')[0];
+  // Always anchor to the CURRENT or UPCOMING business week.
+  // If today is a weekday → Monday of this week; if weekend → next Monday.
+  // defaultDay = today when it's a weekday, else next Monday.
+  const [weekDays, defaultDay] = useMemo(()=>{
+    const now=new Date(); const dow=now.getDay(); // 0=Sun…6=Sat
+    const mon=new Date(now);
+    if(dow===0)      mon.setDate(now.getDate()+1);        // Sun → next Mon
+    else if(dow===6) mon.setDate(now.getDate()+2);        // Sat → next Mon
+    else             mon.setDate(now.getDate()-(dow-1));  // weekday → Mon of this week
+    mon.setHours(0,0,0,0);
+    const days=[0,1,2,3,4].map(i=>{
+      const d=new Date(mon); d.setDate(mon.getDate()+i);
+      return { date:d.toISOString().split('T')[0],
+               label:['Mon','Tue','Wed','Thu','Fri'][i],
+               short:`${d.getMonth()+1}/${d.getDate()}` };
+    });
+    // Default selection: today if weekday, else Monday
+    const def=(dow>=1&&dow<=5) ? now.toISOString().split('T')[0] : days[0].date;
+    return [days, def];
   },[]);
 
-  // Build Mon–Fri of the reference week
-  const weekDays = useMemo(()=>{
-    const ref=new Date(refDay+'T12:00:00');
-    const dow=ref.getDay(); // 1=Mon…5=Fri
-    const mon=new Date(ref); mon.setDate(ref.getDate()-(dow-1));
-    return [0,1,2,3,4].map(i=>{
-      const d=new Date(mon); d.setDate(mon.getDate()+i);
-      const ds=d.toISOString().split('T')[0];
-      const mm=d.getMonth()+1; const dd=d.getDate();
-      return { date:ds, label:['Mon','Tue','Wed','Thu','Fri'][i], short:`${mm}/${dd}` };
-    });
-  },[refDay]);
-
-  const [viewDay,    setViewDay]    = useState(refDay);
+  const [viewDay,    setViewDay]    = useState(defaultDay);
   const [selectedWS, setSelectedWS] = useState('ALL');
   const [selectedQ,  setSelectedQ]  = useState('ALL');
 
