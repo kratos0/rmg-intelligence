@@ -614,6 +614,20 @@
     .bp4-score-info { flex: 1; }
     .bp4-hist-item { padding: 6px 10px; border-bottom: 1px solid #F0F0F0; }
     .bp4-hist-top { display: flex; justify-content: space-between; align-items: center; font-size: 11px; }
+
+    /* Queue selector */
+    .bp4-q-selector {
+      display: flex; gap: 3px; padding: 5px 8px; flex-wrap: wrap;
+      background: #FAFAF8; border-bottom: 1px solid #D8E8E6; flex-shrink: 0;
+    }
+    .bp4-q-pill {
+      padding: 2px 7px; border-radius: 8px; border: 1px solid #C8E0DC;
+      background: transparent; color: #5A8A86;
+      font-size: 9.5px; font-weight: 600; cursor: pointer; transition: all 0.12s;
+      font-family: 'Courier New', monospace;
+    }
+    .bp4-q-pill:hover { background: #E0F2F0; border-color: #008F83; color: #035C67; }
+    .bp4-q-pill.active { background: #035C67; border-color: #035C67; color: #3EFFC0; }
   </style>
 </head>
 <body>
@@ -3199,14 +3213,29 @@ function KpiCard({ label, value, sub, color }) {
 
 function IntradayView({ activeTRC, generatedData }) {
   const today = useMemo(()=>new Date().toISOString().split('T')[0],[]);
+  const [selectedQ, setSelectedQ] = useState('ALL');
+
   const todayIntervals = useMemo(()=>{
     if(!generatedData?.intervals) return [];
     return generatedData.intervals.filter(iv=>iv.date===today&&(activeTRC==='ALL'||iv.trc===activeTRC));
   },[generatedData,today,activeTRC]);
+
+  // Reset queue selector when TRC changes
+  useEffect(()=>setSelectedQ('ALL'),[activeTRC]);
+
+  // Sorted queue list for selector
+  const queueList = useMemo(()=>[
+    'ALL',
+    ...todayIntervals.map(iv=>iv.queueId).sort()
+  ],[todayIntervals]);
+
   const todayRisks = useMemo(()=>{
     if(!generatedData?.riskWindows) return [];
-    return generatedData.riskWindows.filter(w=>w.date===today&&(activeTRC==='ALL'||w.trc===activeTRC)).slice(0,8);
-  },[generatedData,today,activeTRC]);
+    const base = generatedData.riskWindows.filter(w=>w.date===today&&(activeTRC==='ALL'||w.trc===activeTRC));
+    return selectedQ==='ALL' ? base.slice(0,8) : base.filter(w=>w.queueId===selectedQ);
+  },[generatedData,today,activeTRC,selectedQ]);
+
+  // Aggregate across all queues (ALL view)
   const slotMap = useMemo(()=>{
     const m={};
     todayIntervals.forEach(iv=>(iv.slots||[]).forEach(s=>{
@@ -3218,49 +3247,143 @@ function IntradayView({ activeTRC, generatedData }) {
     }));
     return Object.entries(m).sort(([a],[b])=>a.localeCompare(b));
   },[todayIntervals]);
+
+  // Per-queue slot detail (specific queue selected)
+  const queueSlots = useMemo(()=>{
+    if(selectedQ==='ALL') return null;
+    const iv = todayIntervals.find(iv=>iv.queueId===selectedQ);
+    return iv?.slots||[];
+  },[todayIntervals,selectedQ]);
+
+  // Queue summary table (ALL view) — one row per queue, sorted worst net first
+  const queueSummary = useMemo(()=>{
+    return todayIntervals.map(iv=>{
+      const slots=iv.slots||[];
+      const nets=slots.map(s=>s.netStaffing||0);
+      const n=nets.length||1;
+      const netAvg=parseFloat((nets.reduce((a,b)=>a+b,0)/n).toFixed(1));
+      const worst=nets.length>0?Math.min(...nets):0;
+      const riskSlots=slots.filter(s=>s.status==='at_risk'||s.status==='critical').length;
+      const critSlots=slots.filter(s=>s.status==='critical').length;
+      return {queueId:iv.queueId,workstream:iv.workstream,trc:iv.trc,netAvg,worst,riskSlots,critSlots};
+    }).sort((a,b)=>a.netAvg-b.netAvg);
+  },[todayIntervals]);
+
   const agentsActive = useMemo(()=>{
     if(!generatedData?.agentSchedules) return 0;
     return generatedData.agentSchedules.filter(a=>a.date===today&&a.status==='Active'&&(activeTRC==='ALL'||a.trc===activeTRC)).length;
   },[generatedData,today,activeTRC]);
+
   const score = generatedData?.scheduleScore;
   const avgNet = slotMap.length>0 ? Math.round(slotMap.reduce((s,[,v])=>s+v.net,0)/slotMap.length) : 0;
   const netColor = avgNet<-2?'#EA5353':avgNet<0?'#E88789':avgNet>3?'#90B9FF':'#008F83';
+  const netCls = n=>n<-2?'net-bad':n<0?'net-warn':n>0?'net-ok':'';
+
   return (
     <div className="bp4-view">
+      {/* KPI row */}
       <div className="bp4-kpi-row">
         <KpiCard label="Active" value={agentsActive} color="#035C67" />
         <KpiCard label="Risks" value={todayRisks.length} color={todayRisks.length>3?'#EA5353':'#008F83'} sub="today" />
         <KpiCard label="Score" value={score?`${score.score}${score.grade}`:'—'} color={score&&'AB'.includes(score.grade)?'#008F83':'#EA5353'} />
         <KpiCard label="Avg Net" value={avgNet>=0?`+${avgNet}`:avgNet} color={netColor} />
       </div>
-      <div className="bp4-section-label">INTERVAL COVERAGE — TODAY</div>
-      <div className="bp4-table-wrap" style={{maxHeight:220}}>
-        <table className="bp4-table">
-          <thead><tr><th>Time</th><th>Sch</th><th>Act</th><th>Req</th><th>Net</th></tr></thead>
-          <tbody>
-            {slotMap.map(([time,v])=>{
-              const nc=v.net<-2?'net-bad':v.net<0?'net-warn':v.net>0?'net-ok':'';
-              return (
-                <tr key={time}>
-                  <td className="time-col">{time}</td>
-                  <td>{Math.round(v.sch*10)/10}</td>
-                  <td>{Math.round(v.act*10)/10}</td>
-                  <td>{Math.round(v.req*10)/10}</td>
-                  <td className={nc}>{v.net>=0?'+':''}{Math.round(v.net)}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+
+      {/* Queue selector */}
+      <div className="bp4-q-selector">
+        {queueList.map(q=>(
+          <button key={q} className={`bp4-q-pill ${selectedQ===q?'active':''}`}
+            onClick={()=>setSelectedQ(q)}>
+            {q==='ALL'?'ALL':q.split('-').slice(-1)[0]}
+          </button>
+        ))}
       </div>
+
+      {/* ALL view: aggregate + queue summary */}
+      {selectedQ==='ALL'&&(
+        <>
+          <div className="bp4-section-label">AGGREGATE COVERAGE — ALL QUEUES</div>
+          <div className="bp4-table-wrap" style={{maxHeight:160}}>
+            <table className="bp4-table">
+              <thead><tr><th>Time</th><th>Sch</th><th>Act</th><th>Req</th><th>Net</th></tr></thead>
+              <tbody>
+                {slotMap.map(([time,v])=>(
+                  <tr key={time}>
+                    <td className="time-col">{time}</td>
+                    <td>{Math.round(v.sch*10)/10}</td>
+                    <td>{Math.round(v.act*10)/10}</td>
+                    <td>{Math.round(v.req*10)/10}</td>
+                    <td className={netCls(v.net)}>{v.net>=0?'+':''}{Math.round(v.net)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="bp4-section-label">QUEUE SUMMARY — SORTED BY NET AVG ▲</div>
+          <div className="bp4-table-wrap">
+            <table className="bp4-table">
+              <thead><tr><th>Queue</th><th>WS</th><th>Net Avg</th><th>Worst</th><th>⚠ Slots</th></tr></thead>
+              <tbody>
+                {queueSummary.map((q,i)=>(
+                  <tr key={i} style={{cursor:'pointer'}} onClick={()=>setSelectedQ(q.queueId)}
+                    title={`Click to drill into ${q.queueId}`}>
+                    <td style={{fontSize:9,fontFamily:'Courier New',textAlign:'left',color:'#035C67',fontWeight:700}}>{q.queueId}</td>
+                    <td style={{fontSize:9}}>{q.workstream.slice(0,4)}</td>
+                    <td className={netCls(q.netAvg)}>{q.netAvg>=0?'+':''}{q.netAvg}</td>
+                    <td style={{fontFamily:'Courier New',fontSize:10,color:q.worst<-2?'#EA5353':'#E88789',fontWeight:700}}>{q.worst}</td>
+                    <td style={{color:q.riskSlots>4?'#EA5353':q.riskSlots>0?'#E88789':'#008F83',fontWeight:q.riskSlots>0?700:400}}>{q.riskSlots}{q.critSlots>0?` (${q.critSlots}❗)`:''}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
+      {/* Per-queue view: full 24-slot detail with vol + adh */}
+      {selectedQ!=='ALL'&&queueSlots&&(
+        <>
+          <div className="bp4-section-label" style={{display:'flex',justifyContent:'space-between'}}>
+            <span>QUEUE DETAIL — {selectedQ}</span>
+            <span style={{fontSize:9,color:'#5A8A86',fontWeight:400,textTransform:'none'}}>
+              {todayIntervals.find(iv=>iv.queueId===selectedQ)?.workstream||''}
+            </span>
+          </div>
+          <div className="bp4-table-wrap" style={{maxHeight:240}}>
+            <table className="bp4-table">
+              <thead><tr><th>Time</th><th>Sch</th><th>Act</th><th>Req</th><th>Net</th><th>Vol</th><th>Adh%</th></tr></thead>
+              <tbody>
+                {queueSlots.map((s,i)=>(
+                  <tr key={i}>
+                    <td className="time-col">{s.time}</td>
+                    <td>{s.scheduledFTE}</td>
+                    <td>{s.actualFTE}</td>
+                    <td>{s.requiredFTE}</td>
+                    <td className={netCls(s.netStaffing)}>{s.netStaffing>=0?'+':''}{s.netStaffing}</td>
+                    <td style={{color:'#5A8A86'}}>{s.volume}</td>
+                    <td style={{color:s.adherencePct<0.88?'#EA5353':'#5A8A86',fontSize:9}}>
+                      {s.adherencePct!=null?Math.round(s.adherencePct*100)+'%':'—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
+      {/* Risk windows — filtered to selected queue if applicable */}
       {todayRisks.length>0&&(
         <>
-          <div className="bp4-section-label" style={{color:'#EA5353'}}>⚠ RISK WINDOWS ({todayRisks.length})</div>
+          <div className="bp4-section-label" style={{color:'#EA5353'}}>
+            ⚠ RISK WINDOWS ({todayRisks.length}){selectedQ!=='ALL'?` — ${selectedQ}`:''}
+          </div>
           <div className="bp4-risks">
             {todayRisks.map((w,i)=>(
               <div key={i} className="bp4-risk-row">
-                <span className="bp4-risk-queue">{w.queueId}</span>
-                <span className="bp4-risk-window">{w.start}–{w.end}</span>
+                <span className="bp4-risk-queue">{selectedQ==='ALL'?w.queueId:w.start}</span>
+                {selectedQ==='ALL'&&<span className="bp4-risk-window">{w.start}–{w.end}</span>}
+                {selectedQ!=='ALL'&&<span className="bp4-risk-window">–{w.end}</span>}
                 <span className="bp4-risk-net" style={{color:'#EA5353'}}>{w.netAvg}</span>
                 <span className="bp4-risk-dur">{w.durationMins}m</span>
                 <span style={{fontSize:9,color:w.timeBucket==='PEAK'?'#EA5353':'#90B9FF',flexShrink:0}}>{w.timeBucket}</span>
