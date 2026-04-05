@@ -12,94 +12,106 @@
     html, body, #root { height: 100%; overflow: hidden; }
     body {
       font-family: Arial, sans-serif;
-      background: #F5F0E6;
-      color: #1A3C39;
+      background: #EDEBE7;
+      color: #002F32;
     }
     ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #E8E2D8; }
-    ::-webkit-scrollbar-thumb { background: #00A99D; border-radius: 3px; }
+    ::-webkit-scrollbar-track { background: #D8E8E6; }
+    ::-webkit-scrollbar-thumb { background: #008F83; border-radius: 3px; }
 
+    /* ═══ APP SHELL ═══════════════════════════════════════════════════════ */
     .app-shell {
-      display: flex; flex-direction: column; height: 100vh;
-      overflow: hidden;
+      display: flex; flex-direction: column; height: 100vh; overflow: hidden;
     }
 
-    /* Header */
+    /* ═══ HEADER ══════════════════════════════════════════════════════════ */
     .header {
-      background: #006B63;
+      background: #035C67;
       padding: 0 16px;
-      display: flex; align-items: center; gap: 16px;
-      flex-shrink: 0;
-      min-height: 48px;
-      border-bottom: 2px solid #00A99D;
+      display: flex; align-items: center; gap: 12px;
+      flex-shrink: 0; min-height: 48px;
+      border-bottom: 2px solid #008F83;
     }
     .header-logo {
       font-size: 13px; font-weight: 700; color: #fff;
-      letter-spacing: 0.5px; white-space: nowrap;
-      flex-shrink: 0;
+      letter-spacing: 0.5px; white-space: nowrap; flex-shrink: 0;
     }
-    .header-logo span { color: #7FFFF5; }
-    .bot-tabs { display: flex; gap: 2px; flex: 1; }
-    .bot-tab {
-      padding: 0 14px; height: 48px; border: none;
+    .header-logo span { color: #3EFFC0; }
+
+    /* Module nav tabs */
+    .module-tabs { display: flex; gap: 2px; flex: 1; }
+    .module-tab {
+      padding: 0 16px; height: 48px; border: none;
       background: transparent; color: rgba(255,255,255,0.65);
       font-size: 12px; font-weight: 600; cursor: pointer;
-      border-bottom: 2px solid transparent;
+      border-bottom: 3px solid transparent;
       transition: all 0.15s; white-space: nowrap;
       display: flex; align-items: center; gap: 5px;
     }
-    .bot-tab:hover { color: #fff; background: rgba(255,255,255,0.08); }
-    .bot-tab.active { color: #fff; border-bottom-color: #7FFFDB; }
-    .bot-tab .ver { font-size: 10px; opacity: 0.6; font-weight: 400; }
+    .module-tab:hover { color: #fff; background: rgba(255,255,255,0.08); }
+    .module-tab.active { color: #fff; border-bottom-color: #3EFFC0; }
+
+    /* TRC selector */
     .trc-selector { display: flex; gap: 4px; flex-shrink: 0; }
     .trc-btn {
-      padding: 4px 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.3);
+      padding: 4px 10px; border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.3);
       background: transparent; color: rgba(255,255,255,0.7);
-      font-size: 11px; font-weight: 600; cursor: pointer;
-      transition: all 0.15s;
+      font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.15s;
     }
     .trc-btn:hover { background: rgba(255,255,255,0.15); color: #fff; }
-    .trc-btn.active { background: #00A99D; border-color: #00A99D; color: #fff; }
+    .trc-btn.active { background: #008F83; border-color: #008F83; color: #fff; }
 
-    /* Main layout */
-    .main-content {
-      display: flex; flex: 1; overflow: hidden;
+    /* ═══ OPERATIONS TAB ══════════════════════════════════════════════════ */
+    .ops-shell { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+    /* Bot sub-tabs (inside Operations) */
+    .ops-bot-tabs {
+      display: flex; gap: 0; background: #fff;
+      border-bottom: 2px solid #D8E8E6;
+      flex-shrink: 0; padding: 0 8px;
     }
+    .ops-bot-tab {
+      padding: 0 14px; height: 40px; border: none;
+      background: transparent; color: #5A8A86;
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px; transition: all 0.15s;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .ops-bot-tab:hover { color: #035C67; background: #F0FAF8; }
+    .ops-bot-tab.active { color: #035C67; border-bottom-color: #035C67; }
+    .ops-bot-tab .ver { font-size: 10px; opacity: 0.6; font-weight: 400; }
+
+    /* Main layout (data panel + analysis panel) */
+    .main-content { display: flex; flex: 1; overflow: hidden; }
 
     /* Data Panel */
     .data-panel {
-      width: 340px; flex-shrink: 0;
-      background: #fff;
+      width: 340px; flex-shrink: 0; background: #fff;
       border-right: 1px solid #D8E8E6;
-      display: flex; flex-direction: column;
-      overflow: hidden;
+      display: flex; flex-direction: column; overflow: hidden;
     }
     .panel-header {
-      background: #E8F5F3;
-      padding: 8px 12px;
+      background: #E0F2F0; padding: 8px 12px;
       border-bottom: 1px solid #C8E0DC;
-      font-size: 11px; font-weight: 700; color: #006B63;
-      letter-spacing: 0.5px;
-      flex-shrink: 0;
+      font-size: 11px; font-weight: 700; color: #035C67;
+      letter-spacing: 0.5px; flex-shrink: 0;
     }
     .data-load-block {
-      padding: 8px 12px;
-      background: #F8FFFE;
+      padding: 8px 12px; background: #F8FFFE;
       border-bottom: 1px solid #C8E0DC;
       font-size: 10.5px; font-family: 'Courier New', monospace;
-      color: #1A3C39; flex-shrink: 0;
+      color: #002F32; flex-shrink: 0;
     }
-    .data-load-block .dl-header {
-      font-weight: 700; color: #006B63; margin-bottom: 4px;
-    }
+    .data-load-block .dl-header { font-weight: 700; color: #035C67; margin-bottom: 4px; }
     .data-load-block .dl-row { margin: 1px 0; }
     .grid-scroll { flex: 1; overflow-y: auto; }
-    .staffing-table {
-      width: 100%; border-collapse: collapse;
-      font-size: 11px;
-    }
+
+    /* Staffing table */
+    .staffing-table { width: 100%; border-collapse: collapse; font-size: 11px; }
     .staffing-table thead th {
-      background: #006B63; color: #fff;
+      background: #035C67; color: #fff;
       padding: 5px 6px; font-size: 10px; font-weight: 700;
       position: sticky; top: 0; z-index: 1;
       text-align: center; white-space: nowrap;
@@ -109,16 +121,17 @@
       border-bottom: 1px solid #EEE;
       font-family: 'Courier New', monospace; font-size: 10.5px;
     }
-    .staffing-table tbody tr:hover { background: rgba(0,169,157,0.06); }
-    .staffing-table .time-col { font-weight: 700; color: #006B63; text-align: left; }
+    .staffing-table tbody tr:hover { background: rgba(3,92,103,0.05); }
+    .staffing-table .time-col { font-weight: 700; color: #035C67; text-align: left; }
     .staffing-table .net-col { font-weight: 700; }
 
-    .status-critical   { background: #FFEBEE; color: #B71C1C; }
-    .status-at_risk    { background: #FFF3E0; color: #BF360C; }
-    .status-threshold  { background: #FFFDE7; color: #6D4C41; }
-    .status-adequate   { background: #E8F5E9; color: #1B5E20; }
-    .status-surplus    { background: #E3F2FD; color: #0D47A1; }
-    .status-forecast   { color: #888; font-style: italic; }
+    /* Status colors (brand-accurate) */
+    .status-critical  { background: rgba(234,83,83,0.18); color: #B71C1C; }
+    .status-at_risk   { background: rgba(232,135,137,0.22); color: #8B0000; }
+    .status-threshold { background: #FFFDE7; color: #6D4C41; }
+    .status-adequate  { background: rgba(218,250,135,0.35); color: #1B5E20; }
+    .status-surplus   { background: rgba(144,185,255,0.28); color: #0D47A1; }
+    .status-forecast  { color: #888; font-style: italic; }
 
     .legend { display: flex; gap: 6px; padding: 6px 12px; flex-wrap: wrap; flex-shrink: 0; border-top: 1px solid #D8E8E6; }
     .legend-item { display: flex; align-items: center; gap: 3px; font-size: 9.5px; }
@@ -126,177 +139,274 @@
 
     /* Analysis Panel */
     .analysis-panel {
-      flex: 1; display: flex; flex-direction: column; overflow: hidden;
-      background: #FAFAF8;
+      flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #FAFAF8;
     }
     .analysis-header {
-      padding: 8px 14px;
-      background: #E8F5F3;
+      padding: 8px 14px; background: #E0F2F0;
       border-bottom: 1px solid #C8E0DC;
-      display: flex; align-items: center; justify-content: space-between;
-      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
     }
-    .analysis-header-left { font-size: 11px; font-weight: 700; color: #006B63; letter-spacing: 0.5px; }
+    .analysis-header-left { font-size: 11px; font-weight: 700; color: #035C67; letter-spacing: 0.5px; }
     .analysis-header-right { display: flex; gap: 8px; }
     .action-btn {
-      padding: 4px 12px; border-radius: 4px; border: 1px solid #00A99D;
-      background: transparent; color: #006B63; font-size: 11px; font-weight: 600;
-      cursor: pointer; transition: all 0.15s;
+      padding: 4px 12px; border-radius: 4px; border: 1px solid #008F83;
+      background: transparent; color: #035C67;
+      font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.15s;
     }
-    .action-btn:hover { background: #006B63; color: #fff; border-color: #006B63; }
-    .action-btn.primary { background: #006B63; color: #fff; }
-    .action-btn.primary:hover { background: #004D47; }
-
-    .output-scroll {
-      flex: 1; overflow-y: auto; padding: 16px;
-    }
+    .action-btn:hover { background: #035C67; color: #fff; border-color: #035C67; }
+    .action-btn.primary { background: #035C67; color: #fff; }
+    .action-btn.primary:hover { background: #002F32; }
+    .output-scroll { flex: 1; overflow-y: auto; padding: 16px; }
     .output-content {
-      font-family: 'Courier New', monospace;
-      font-size: 12.5px; line-height: 1.6;
-      color: #1A3C39;
-      white-space: pre-wrap;
-      word-break: break-word;
+      font-family: 'Courier New', monospace; font-size: 12.5px;
+      line-height: 1.6; color: #002F32; white-space: pre-wrap; word-break: break-word;
     }
     .output-placeholder {
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      height: 100%; color: #9ABEBC;
-      text-align: center; gap: 8px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      height: 100%; color: #9ABEBC; text-align: center; gap: 8px;
     }
     .output-placeholder .ph-icon { font-size: 40px; }
-    .output-placeholder .ph-title { font-size: 14px; font-weight: 700; color: #2A7A6E; }
+    .output-placeholder .ph-title { font-size: 14px; font-weight: 700; color: #008F83; }
     .output-placeholder .ph-sub { font-size: 12px; max-width: 320px; }
-
-    .loading-indicator {
-      display: flex; align-items: center; gap: 10px;
-      padding: 20px; color: #006B63;
-    }
+    .loading-indicator { display: flex; align-items: center; gap: 10px; padding: 20px; color: #035C67; }
     .spinner {
-      width: 18px; height: 18px;
-      border: 2px solid #C8E0DC;
-      border-top-color: #006B63;
-      border-radius: 50%;
+      width: 18px; height: 18px; border: 2px solid #C8E0DC;
+      border-top-color: #035C67; border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
     /* Trigger Bar */
     .trigger-bar {
-      background: #fff;
-      border-top: 2px solid #D8E8E6;
-      padding: 10px 14px;
-      display: flex; align-items: center; gap: 10px;
-      flex-shrink: 0;
-      flex-wrap: wrap;
+      background: #fff; border-top: 2px solid #D8E8E6;
+      padding: 10px 14px; display: flex; align-items: center;
+      gap: 10px; flex-shrink: 0; flex-wrap: wrap;
     }
-    .trigger-label { font-size: 10px; font-weight: 700; color: #2A7A6E; text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0; }
+    .trigger-label { font-size: 10px; font-weight: 700; color: #008F83; text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0; }
     .trigger-buttons { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
     .trigger-btn {
-      padding: 6px 12px; border-radius: 4px;
-      border: 1px solid #00A99D;
-      background: #E8F5F3; color: #006B63;
+      padding: 6px 12px; border-radius: 4px; border: 1px solid #008F83;
+      background: #E0F2F0; color: #035C67;
       font-size: 11px; font-weight: 600; cursor: pointer;
       transition: all 0.15s; white-space: nowrap;
     }
-    .trigger-btn:hover:not(:disabled) { background: #006B63; color: #fff; border-color: #006B63; }
+    .trigger-btn:hover:not(:disabled) { background: #035C67; color: #fff; border-color: #035C67; }
     .trigger-btn:disabled { opacity: 0.45; cursor: not-allowed; }
-    .custom-input-wrap {
-      display: flex; gap: 6px; flex-shrink: 0;
-    }
+    .custom-input-wrap { display: flex; gap: 6px; flex-shrink: 0; }
     .custom-input {
-      padding: 6px 10px; border-radius: 4px;
-      border: 1px solid #C8E0DC; background: #FAFAF8;
-      font-size: 11px; color: #1A3C39; width: 200px;
-      outline: none;
+      padding: 6px 10px; border-radius: 4px; border: 1px solid #C8E0DC;
+      background: #FAFAF8; font-size: 11px; color: #002F32; width: 200px; outline: none;
     }
-    .custom-input:focus { border-color: #00A99D; }
+    .custom-input:focus { border-color: #008F83; }
     .custom-send-btn {
-      padding: 6px 12px; border-radius: 4px;
-      background: #006B63; color: #fff; border: none;
-      font-size: 11px; font-weight: 700; cursor: pointer;
-      transition: background 0.15s;
+      padding: 6px 12px; border-radius: 4px; background: #035C67;
+      color: #fff; border: none; font-size: 11px; font-weight: 700;
+      cursor: pointer; transition: background 0.15s;
     }
-    .custom-send-btn:hover:not(:disabled) { background: #004D47; }
+    .custom-send-btn:hover:not(:disabled) { background: #002F32; }
     .custom-send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
     /* Run History */
     .run-history {
-      background: #E8F5F3;
-      border-top: 1px solid #C8E0DC;
-      flex-shrink: 0;
-      max-height: 90px;
-      overflow: hidden;
+      background: #E0F2F0; border-top: 1px solid #C8E0DC;
+      flex-shrink: 0; max-height: 90px; overflow: hidden;
     }
     .history-header {
-      padding: 4px 14px;
-      font-size: 10px; font-weight: 700; color: #2A7A6E;
-      text-transform: uppercase; letter-spacing: 0.5px;
+      padding: 4px 14px; font-size: 10px; font-weight: 700;
+      color: #008F83; text-transform: uppercase; letter-spacing: 0.5px;
       display: flex; align-items: center; justify-content: space-between;
-      cursor: pointer;
     }
-    .history-items {
-      display: flex; gap: 8px; padding: 0 14px 6px;
-      overflow-x: auto;
-    }
+    .history-items { display: flex; gap: 8px; padding: 0 14px 6px; overflow-x: auto; }
     .history-item {
       background: #fff; border: 1px solid #C8E0DC; border-radius: 4px;
-      padding: 4px 8px; font-size: 10px; white-space: nowrap;
-      color: #1A3C39; flex-shrink: 0;
+      padding: 4px 8px; font-size: 10px; white-space: nowrap; color: #002F32; flex-shrink: 0;
     }
-    .history-item .hi-bot { font-weight: 700; color: #006B63; }
+    .history-item .hi-bot { font-weight: 700; color: #035C67; }
     .history-item .hi-time { color: #999; }
 
-    /* API Key Screen */
-    .api-screen {
-      height: 100vh; display: flex; align-items: center; justify-content: center;
-      background: linear-gradient(135deg, #006B63 0%, #004D47 40%, #1A3C39 100%);
+    /* ═══ CONFIG TAB ══════════════════════════════════════════════════════ */
+    .config-page { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #EDEBE7; }
+
+    .config-summary-bar {
+      background: #fff; border-bottom: 1px solid #D8E8E6;
+      padding: 8px 20px; display: flex; gap: 24px; flex-shrink: 0; align-items: center;
     }
-    .api-card {
-      background: #fff; border-radius: 12px;
-      padding: 40px 44px; width: 440px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    .summary-stat { font-size: 11px; color: #5A8A86; }
+    .summary-stat strong { color: #035C67; font-size: 14px; }
+
+    .config-subtabs {
+      display: flex; background: #fff;
+      border-bottom: 2px solid #D8E8E6; flex-shrink: 0;
     }
-    .api-card-logo {
-      font-size: 11px; font-weight: 700; color: #006B63;
-      letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px;
+    .config-subtab {
+      padding: 10px 20px; border: none; background: transparent;
+      font-size: 12px; font-weight: 600; color: #5A8A86; cursor: pointer;
+      border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.15s;
     }
-    .api-card h1 {
-      font-size: 22px; font-weight: 700; color: #1A3C39; margin-bottom: 6px;
+    .config-subtab:hover { color: #035C67; background: #F8FFFE; }
+    .config-subtab.active { color: #035C67; border-bottom-color: #035C67; background: #F0FAF8; }
+
+    .config-content { flex: 1; overflow-y: auto; padding: 20px; }
+
+    .config-section {
+      background: #fff; border-radius: 6px;
+      border: 1px solid #D8E8E6; margin-bottom: 16px; overflow: hidden;
     }
-    .api-card .subtitle {
-      font-size: 13px; color: #5A8A86; margin-bottom: 28px; line-height: 1.5;
+    .config-section-header {
+      background: #E0F2F0; padding: 10px 16px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid #C8E0DC;
     }
-    .api-label { font-size: 12px; font-weight: 700; color: #1A3C39; margin-bottom: 6px; display: block; }
-    .api-input {
-      width: 100%; padding: 10px 14px; border-radius: 6px;
-      border: 1px solid #C8E0DC; font-size: 13px; color: #1A3C39;
-      background: #F8FFFE; outline: none; margin-bottom: 14px;
-      font-family: 'Courier New', monospace;
+    .config-section-title {
+      font-size: 12px; font-weight: 700; color: #035C67;
+      text-transform: uppercase; letter-spacing: 0.5px;
     }
-    .api-input:focus { border-color: #006B63; box-shadow: 0 0 0 2px rgba(0,107,99,0.1); }
-    .api-submit {
-      width: 100%; padding: 11px; border-radius: 6px;
-      background: #006B63; color: #fff; border: none;
-      font-size: 14px; font-weight: 700; cursor: pointer;
-      transition: background 0.15s;
+    .config-section-sub { font-size: 11px; color: #5A8A86; }
+
+    .config-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .config-table th {
+      background: #F0FAF8; padding: 8px 14px; text-align: left;
+      font-size: 11px; font-weight: 700; color: #008F83;
+      border-bottom: 1px solid #D8E8E6;
     }
-    .api-submit:hover { background: #004D47; }
-    .api-submit:disabled { opacity: 0.5; cursor: not-allowed; }
-    .api-note {
-      font-size: 11px; color: #9ABEBC; margin-top: 16px; text-align: center; line-height: 1.5;
+    .config-table td {
+      padding: 9px 14px; border-bottom: 1px solid #F0F0F0; vertical-align: middle;
     }
-    .api-bots {
-      display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px;
+    .config-table tr:last-child td { border-bottom: none; }
+    .config-table tr:hover td { background: rgba(3,92,103,0.03); }
+
+    .badge {
+      display: inline-flex; align-items: center;
+      padding: 2px 9px; border-radius: 10px;
+      font-size: 10px; font-weight: 700;
     }
-    .api-bot-tag {
-      background: #E8F5F3; color: #006B63; border-radius: 10px;
-      padding: 3px 10px; font-size: 11px; font-weight: 600;
+    .badge-active   { background: rgba(218,250,135,0.6); color: #1B5E20; border: 1px solid #B5E060; }
+    .badge-inactive { background: #EEE; color: #888; border: 1px solid #DDD; }
+    .badge-phone    { background: rgba(144,185,255,0.25); color: #0D47A1; border: 1px solid #90B9FF; }
+    .badge-offline  { background: rgba(232,135,137,0.18); color: #8B0000; border: 1px solid #E88789; }
+    .badge-mint     { background: rgba(62,255,192,0.2); color: #035C67; border: 1px solid #3EFFC0; }
+
+    .icon-btn {
+      padding: 3px 9px; border-radius: 3px; border: 1px solid transparent;
+      background: transparent; cursor: pointer; font-size: 11px;
+      transition: all 0.12s; color: #5A8A86; white-space: nowrap;
+    }
+    .icon-btn:hover { background: #E0F2F0; border-color: #C8E0DC; color: #035C67; }
+    .icon-btn.danger:hover { background: rgba(234,83,83,0.1); border-color: rgba(234,83,83,0.3); color: #B71C1C; }
+
+    .inline-edit { display: flex; gap: 6px; align-items: center; }
+    .inline-input {
+      padding: 5px 8px; border: 1px solid #C8E0DC; border-radius: 4px;
+      font-size: 12px; outline: none; background: #FAFAF8; color: #002F32;
+    }
+    .inline-input:focus { border-color: #035C67; box-shadow: 0 0 0 2px rgba(3,92,103,0.1); }
+    .inline-select {
+      padding: 5px 8px; border: 1px solid #C8E0DC; border-radius: 4px;
+      font-size: 12px; outline: none; background: #FAFAF8; color: #002F32; cursor: pointer;
+    }
+    .inline-select:focus { border-color: #035C67; }
+
+    .add-row {
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+      padding: 10px 14px; background: #F8FFFE; border-top: 1px solid #EEE;
+    }
+    .add-row-label { font-size: 11px; color: #5A8A86; font-weight: 600; flex-shrink: 0; }
+
+    .btn-primary {
+      padding: 5px 14px; border-radius: 4px; background: #035C67; color: #fff;
+      border: none; font-size: 11px; font-weight: 700; cursor: pointer; transition: background 0.15s;
+    }
+    .btn-primary:hover { background: #002F32; }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-secondary {
+      padding: 5px 14px; border-radius: 4px; background: transparent;
+      color: #035C67; border: 1px solid #035C67;
+      font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.15s;
+    }
+    .btn-secondary:hover { background: #E0F2F0; }
+
+    /* Headcount grid */
+    .headcount-wrap { padding: 16px; overflow-x: auto; }
+    .headcount-table { border-collapse: collapse; font-size: 12px; white-space: nowrap; }
+    .headcount-table th {
+      padding: 8px 16px; background: #035C67; color: #fff;
+      font-size: 11px; font-weight: 700; text-align: center;
+    }
+    .headcount-table th:first-child { text-align: left; min-width: 140px; }
+    .headcount-table td { padding: 6px 10px; border: 1px solid #D8E8E6; text-align: center; }
+    .headcount-table .trc-cell {
+      background: #E0F2F0; font-weight: 700; color: #035C67;
+      text-align: left; padding: 6px 16px; border: 1px solid #C8E0DC;
+    }
+    .headcount-table .total-cell {
+      background: #F0FAF8; font-weight: 700; color: #035C67; border: 1px solid #C8E0DC;
+    }
+    .headcount-input {
+      width: 56px; text-align: center; padding: 4px 6px;
+      border: 1px solid #C8E0DC; border-radius: 4px;
+      font-size: 12px; font-weight: 600; color: #035C67; outline: none;
+    }
+    .headcount-input:focus { border-color: #035C67; }
+
+    /* Thresholds */
+    .threshold-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 16px; }
+    .threshold-card {
+      background: #F8FFFE; border: 1px solid #D8E8E6;
+      border-radius: 6px; padding: 14px;
+    }
+    .threshold-card-title {
+      font-size: 12px; font-weight: 700; color: #035C67;
+      margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+    }
+    .threshold-row {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 10px; gap: 12px;
+    }
+    .threshold-row:last-child { margin-bottom: 0; }
+    .threshold-label { font-size: 11px; color: #5A8A86; font-weight: 600; flex: 1; }
+    .threshold-hint { font-size: 10px; color: #9ABEBC; }
+    .threshold-input {
+      width: 64px; text-align: center; padding: 5px 6px;
+      border: 1px solid #C8E0DC; border-radius: 4px;
+      font-size: 12px; font-weight: 600; color: #002F32; outline: none;
+    }
+    .threshold-input:focus { border-color: #035C67; }
+    .threshold-divider { border: none; border-top: 1px solid #E0E0E0; margin: 10px 0; }
+
+    /* Queue accordion */
+    .queue-ws-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 16px; cursor: pointer; user-select: none;
+      border-bottom: 1px solid #F0F0F0; transition: background 0.12s;
+    }
+    .queue-ws-header:hover { background: #F8FFFE; }
+    .queue-ws-header.open { background: #F0FAF8; border-bottom-color: #D8E8E6; }
+    .queue-ws-name { font-weight: 700; color: #035C67; font-size: 12px; }
+    .queue-ws-meta { font-weight: 400; color: #5A8A86; font-size: 11px; margin-left: 6px; }
+    .queue-ws-count { font-size: 11px; color: #5A8A86; }
+
+    /* ═══ STUB TABS ═══════════════════════════════════════════════════════ */
+    .tab-stub {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: #EDEBE7; gap: 10px;
+    }
+    .stub-icon { font-size: 52px; }
+    .stub-title { font-size: 20px; font-weight: 700; color: #035C67; }
+    .stub-sub { font-size: 13px; color: #5A8A86; max-width: 400px; text-align: center; line-height: 1.6; }
+    .stub-coming {
+      padding: 5px 16px; border-radius: 12px; background: #3EFFC0;
+      color: #002F32; font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+    }
+    .stub-details {
+      font-size: 11px; color: #9ABEBC; text-align: center;
+      max-width: 360px; line-height: 1.7;
     }
   </style>
 </head>
 <body>
 
-<!-- ═══ BOT SYSTEM PROMPTS (stored as text/plain — no escaping needed) ════ -->
+<!-- ═══ BOT SYSTEM PROMPTS ════════════════════════════════════════════════════ -->
 
 <script type="text/plain" id="prompt-intraday">
 ## RMG INTRADAY BOT v2.1 | RMG Intelligent Operations Platform
@@ -695,82 +805,162 @@ RMG Intelligence Bot v1.0 | RMG Intelligent Operations Platform | Confidential
 <script type="text/babel">
 const { useState, useEffect, useCallback, useMemo, useRef } = React;
 
-// ─── BOT CONFIG ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// BRAND COLORS (canonical — never change hex values)
+// ─────────────────────────────────────────────────────────────────────────────
+const BRAND = {
+  tempermint:  '#035C67',
+  hypermint:   '#3EFFC0',
+  mediummint:  '#008F83',
+  darkmint:    '#002F32',
+  champagne:   '#EDEBE7',
+  coral:       '#EA5353',
+  softCoral:   '#E88789',
+  lightSpruce: '#DAFA87',
+  skyBlue:     '#90B9FF',
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DEFAULT CONFIGURATION (pre-loaded on first run)
+// ─────────────────────────────────────────────────────────────────────────────
+const DEFAULT_CONFIG = {
+  trcs: {
+    ONC:  { label: 'Oncology',     active: true },
+    RARE: { label: 'Rare Disease', active: true },
+    PACE: { label: 'PACE',         active: true },
+  },
+  workstreams: {
+    Pharmacist:    { active: true, complianceLevel: 'Clinical'   },
+    Technician:    { active: true, complianceLevel: 'Processing' },
+    PatientAccess: { active: true, complianceLevel: 'Access'     },
+    ContactCenter: { active: true, complianceLevel: 'Contact'    },
+  },
+  queueTemplates: {
+    Pharmacist: [
+      { id: 'Ph_ClinicalReview',  label: 'Clinical Review', priority: 1, channel: 'Offline' },
+      { id: 'Ph_PriorAuth',       label: 'Prior Auth',       priority: 1, channel: 'Offline' },
+      { id: 'Ph_NewRx',           label: 'New Rx',           priority: 2, channel: 'Offline' },
+      { id: 'Ph_Refill',          label: 'Refill',           priority: 3, channel: 'Offline' },
+      { id: 'Ph_Phone_Clinical',  label: 'Clinical Phone',   priority: 1, channel: 'Phone'   },
+      { id: 'Ph_Phone_Consult',   label: 'Consult Phone',    priority: 2, channel: 'Phone'   },
+    ],
+    Technician: [
+      { id: 'Tech_DataEntry',     label: 'Data Entry',       priority: 1, channel: 'Offline' },
+      { id: 'Tech_Insurance',     label: 'Insurance Verif',  priority: 1, channel: 'Offline' },
+      { id: 'Tech_Fulfillment',   label: 'Fulfillment',      priority: 2, channel: 'Offline' },
+      { id: 'Tech_Returns',       label: 'Returns',          priority: 3, channel: 'Offline' },
+      { id: 'Tech_Phone',         label: 'Tech Phone',       priority: 1, channel: 'Phone'   },
+    ],
+    PatientAccess: [
+      { id: 'PA_Enrollment',      label: 'Enrollment',       priority: 1, channel: 'Offline' },
+      { id: 'PA_Benefits',        label: 'Benefits Invest',  priority: 1, channel: 'Offline' },
+      { id: 'PA_Appeals',         label: 'Appeals',          priority: 2, channel: 'Offline' },
+      { id: 'PA_FollowUp',        label: 'Follow Up',        priority: 3, channel: 'Offline' },
+      { id: 'PA_Phone_Access',    label: 'Access Phone',     priority: 1, channel: 'Phone'   },
+      { id: 'PA_Phone_Appeals',   label: 'Appeals Phone',    priority: 2, channel: 'Phone'   },
+    ],
+    ContactCenter: [
+      { id: 'CC_Phone_Inbound',   label: 'Inbound General',  priority: 1, channel: 'Phone'   },
+      { id: 'CC_Phone_Escalation',label: 'Escalation Line',  priority: 1, channel: 'Phone'   },
+      { id: 'CC_Callbacks',       label: 'Callbacks',        priority: 2, channel: 'Offline' },
+    ],
+  },
+  headcount: {
+    ONC:  { Pharmacist: 12, Technician: 8, PatientAccess: 6, ContactCenter: 8 },
+    RARE: { Pharmacist: 10, Technician: 6, PatientAccess: 6, ContactCenter: 6 },
+    PACE: { Pharmacist: 8,  Technician: 6, PatientAccess: 6, ContactCenter: 6 },
+  },
+  thresholds: {
+    Phone:   { under: -1, escalate: -2, surplus: 2,  slTarget: 80,  tatTarget: null },
+    Offline: { under: -2, escalate: -3, surplus: 3,  slTarget: null, tatTarget: 4   },
+  },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BOT CONFIG
+// ─────────────────────────────────────────────────────────────────────────────
 const BOT_CONFIGS = {
   intraday: {
     id: 'intraday', name: 'Intraday Bot', version: 'v2.1', promptId: 'prompt-intraday',
+    icon: '⚡',
     triggers: [
       { label: 'Morning Outlook',  phrase: 'morning outlook' },
       { label: 'Midday Check-In',  phrase: 'midday check in' },
-      { label: 'EOD Post Mortem',  phrase: 'how did we do' },
-      { label: 'Daily Summary',    phrase: 'daily summary' },
-      { label: 'Next Day Outlook', phrase: 'next day' },
+      { label: 'EOD Post Mortem',  phrase: 'how did we do'   },
+      { label: 'Daily Summary',    phrase: 'daily summary'   },
+      { label: 'Next Day Outlook', phrase: 'next day'        },
     ],
     dataLoadFiles: (dateStr, actualsCount) => [
-      { icon: '✅', name: `RMG_Forecast_${dateStr}.xlsx`,           detail: '28 intervals' },
-      { icon: '✅', name: `RMG_Schedule_${dateStr}.xlsx`,           detail: '28 intervals' },
-      { icon: '✅', name: `RMG_Actuals_${dateStr}.xlsx`,            detail: `${actualsCount} intervals` },
-      { icon: '✅', name: 'RMG_Queue_Dimension_Table.xlsx',         detail: '3 queues' },
-      { icon: '⚠️', name: `RMG_Abandon_Rate_${dateStr}.xlsx`,       detail: 'not loaded (optional)' },
+      { icon: '✅', name: `RMG_Forecast_${dateStr}.xlsx`,         detail: '28 intervals'                },
+      { icon: '✅', name: `RMG_Schedule_${dateStr}.xlsx`,         detail: '28 intervals'                },
+      { icon: '✅', name: `RMG_Actuals_${dateStr}.xlsx`,          detail: `${actualsCount} intervals`   },
+      { icon: '✅', name: 'RMG_Queue_Dimension_Table.xlsx',       detail: '3 queues'                    },
+      { icon: '⚠️', name: `RMG_Abandon_Rate_${dateStr}.xlsx`,     detail: 'not loaded (optional)'       },
     ],
-    intelLoadFiles: null,
   },
   shortrange: {
     id: 'shortrange', name: 'Short Range Bot', version: 'v1.1', promptId: 'prompt-shortrange',
+    icon: '📅',
     triggers: [
-      { label: 'Week Outlook',       phrase: 'week outlook' },
-      { label: 'Optimize Schedule',  phrase: 'build the schedule' },
-      { label: 'Shift Bid',          phrase: 'run the bid' },
-      { label: 'Week Brief',         phrase: 'week brief' },
+      { label: 'Week Outlook',      phrase: 'week outlook'     },
+      { label: 'Optimize Schedule', phrase: 'build the schedule' },
+      { label: 'Shift Bid',         phrase: 'run the bid'      },
+      { label: 'Week Brief',        phrase: 'week brief'       },
     ],
     dataLoadFiles: (dateStr) => [
-      { icon: '✅', name: `RMG_Forecast_Week_${dateStr}.xlsx`,  detail: '7 days · 28 intervals/day' },
-      { icon: '✅', name: `RMG_Agent_Roster_${dateStr}.xlsx`,   detail: '24 agents · 3 queues' },
-      { icon: '✅', name: 'RMG_Queue_Dimension_Table.xlsx',     detail: '3 queues' },
-      { icon: '⚠️', name: `RMG_Shift_Patterns_${dateStr}.xlsx`, detail: 'not loaded (optional)' },
+      { icon: '✅', name: `RMG_Forecast_Week_${dateStr}.xlsx`,    detail: '7 days · 28 intervals/day'  },
+      { icon: '✅', name: `RMG_Agent_Roster_${dateStr}.xlsx`,     detail: '24 agents · 3 queues'        },
+      { icon: '✅', name: 'RMG_Queue_Dimension_Table.xlsx',       detail: '3 queues'                    },
+      { icon: '⚠️', name: `RMG_Shift_Patterns_${dateStr}.xlsx`,   detail: 'not loaded (optional)'       },
     ],
   },
   longrange: {
     id: 'longrange', name: 'Long Range Bot', version: 'v1.1', promptId: 'prompt-longrange',
+    icon: '📈',
     triggers: [
-      { label: 'Weekly Variance', phrase: 'weekly review' },
+      { label: 'Weekly Variance', phrase: 'weekly review'  },
       { label: 'Driver Analysis', phrase: 'driver analysis' },
-      { label: 'Meeting Prep',    phrase: 'meeting prep' },
-      { label: '13-Week Review',  phrase: '13-week' },
+      { label: 'Meeting Prep',    phrase: 'meeting prep'   },
+      { label: '13-Week Review',  phrase: '13-week'        },
     ],
     dataLoadFiles: (dateStr) => [
-      { icon: '✅', name: `RMG_LongRange_Weekly_${dateStr}.xlsx`,  detail: '5 weeks actuals' },
-      { icon: '✅', name: `RMG_Finance_Forecast_${dateStr}.xlsx`,  detail: '13 weeks' },
-      { icon: '✅', name: `RMG_Scenarios_${dateStr}.xlsx`,         detail: 'Base / Upside / Downside' },
-      { icon: '⚠️', name: `RMG_LongRange_Notes_${dateStr}.xlsx`,   detail: 'not loaded (optional)' },
+      { icon: '✅', name: `RMG_LongRange_Weekly_${dateStr}.xlsx`, detail: '5 weeks actuals'             },
+      { icon: '✅', name: `RMG_Finance_Forecast_${dateStr}.xlsx`, detail: '13 weeks'                    },
+      { icon: '✅', name: `RMG_Scenarios_${dateStr}.xlsx`,        detail: 'Base / Upside / Downside'    },
+      { icon: '⚠️', name: `RMG_LongRange_Notes_${dateStr}.xlsx`,  detail: 'not loaded (optional)'       },
     ],
   },
   intelligence: {
     id: 'intelligence', name: 'Intelligence Bot', version: 'v1.0', promptId: 'prompt-intelligence',
+    icon: '🧠',
     triggers: [
-      { label: 'Daily Brief',    phrase: 'daily brief' },
+      { label: 'Daily Brief',    phrase: 'daily brief'    },
       { label: 'Weekly Summary', phrase: 'weekly summary' },
       { label: 'Monthly Review', phrase: 'monthly review' },
     ],
-    dataLoadFiles: (dateStr, actualsCount) => [
-      { icon: '✅', name: `RMG_Daily_Summary_${dateStr}`,       detail: 'Intraday Bot output' },
-      { icon: '✅', name: 'RMG_Loop_Ops_Notes (simulated)',      detail: 'Teams Loop page' },
-      { icon: '⚠️', name: 'RMG_Weekly_Summaries (prior weeks)', detail: 'not loaded' },
+    dataLoadFiles: (dateStr) => [
+      { icon: '✅', name: `RMG_Daily_Summary_${dateStr}`,         detail: 'Intraday Bot output'         },
+      { icon: '✅', name: 'RMG_Loop_Ops_Notes (simulated)',        detail: 'Teams Loop page'             },
+      { icon: '⚠️', name: 'RMG_Weekly_Summaries (prior weeks)',   detail: 'not loaded'                  },
     ],
   },
 };
 
-// ─── SEEDED RANDOM ───────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// SEEDED RANDOM
+// ─────────────────────────────────────────────────────────────────────────────
 function makeRng(seed) {
   let s = Math.abs(Math.round(seed)) % 2147483647 || 1;
   return () => { s = s * 16807 % 2147483647; return (s - 1) / 2147483646; };
 }
 
-// ─── SYNTHETIC DATA ──────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// SYNTHETIC DATA ENGINE (legacy — feeds Operations tab until Module 2 is built)
+// ─────────────────────────────────────────────────────────────────────────────
 const QUEUE_CFG = {
-  ONC:  { baseSched: 12, baseVol: 44, baseAHT: 425, critFloor: -3, surplusCeil: 2, label: 'Oncology' },
+  ONC:  { baseSched: 12, baseVol: 44, baseAHT: 425, critFloor: -3, surplusCeil: 2, label: 'Oncology'     },
   RARE: { baseSched:  8, baseVol: 23, baseAHT: 488, critFloor: -2, surplusCeil: 2, label: 'Rare Disease' },
-  PACE: { baseSched:  9, baseVol: 30, baseAHT: 393, critFloor: -2, surplusCeil: 2, label: 'PACE' },
+  PACE: { baseSched:  9, baseVol: 30, baseAHT: 393, critFloor: -2, surplusCeil: 2, label: 'PACE'         },
 };
 
 function generateData(trc, date) {
@@ -794,20 +984,18 @@ function generateData(trc, date) {
 
         const volFcst = Math.max(4, Math.round(cfg.baseVol * volCurve * (0.88 + rng() * 0.24)));
         const volAct  = isActual ? Math.max(0, Math.round(volFcst * (0.80 + rng() * 0.40))) : null;
-
         const ahtFcst = Math.round(cfg.baseAHT * (0.94 + rng() * 0.12));
         const ahtAct  = isActual ? Math.round(ahtFcst * (0.88 + rng() * 0.24)) : null;
-
         const reqFTE  = Math.ceil((volFcst * cfg.baseAHT) / 1800 * 1.10);
         const schedHC = Math.max(2, Math.round(cfg.baseSched * volCurve * (0.85 + rng() * 0.30)));
         const actHC   = isActual ? Math.max(0, Math.round(schedHC * (0.86 + rng() * 0.26))) : null;
         const netStaff = actHC !== null ? actHC - reqFTE : schedHC - reqFTE;
 
         const status =
-          netStaff < cfg.critFloor    ? 'critical' :
-          netStaff < 0                ? 'at_risk'  :
+          netStaff < cfg.critFloor    ? 'critical'  :
+          netStaff < 0                ? 'at_risk'   :
           netStaff === 0              ? 'threshold' :
-          netStaff > cfg.surplusCeil  ? 'surplus'  : 'adequate';
+          netStaff > cfg.surplusCeil  ? 'surplus'   : 'adequate';
 
         rows.push({
           time: `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`,
@@ -823,7 +1011,6 @@ function generateData(trc, date) {
   return result;
 }
 
-// Generate weekly context for Short Range
 function generateWeeklyContext(trc, date) {
   const days = ['Mon','Tue','Wed','Thu','Fri'];
   const queues = trc === 'ALL' ? ['ONC','RARE','PACE'] : [trc];
@@ -831,7 +1018,6 @@ function generateWeeklyContext(trc, date) {
   days.forEach((day, di) => {
     md += `${day}:\n`;
     queues.forEach(q => {
-      const cfg = QUEUE_CFG[q];
       const rng = makeRng(date.getTime() + di * 997 + q.charCodeAt(0));
       const netAvg = ((rng() - 0.4) * 3).toFixed(1);
       const risk = parseFloat(netAvg) < 0 ? '⚠️ At Risk' : '✅ Adequate';
@@ -841,7 +1027,6 @@ function generateWeeklyContext(trc, date) {
   return md;
 }
 
-// Generate long range context
 function generateLongRangeContext(date) {
   const weeks = [];
   for (let i = 4; i >= 0; i--) {
@@ -866,11 +1051,10 @@ function generateLongRangeContext(date) {
   return md;
 }
 
-// Generate intel context
 function generateIntelContext(data, trc, date) {
   const queues = trc === 'ALL' ? ['ONC','RARE','PACE'] : [trc];
   const actuals = queues.flatMap(q => (data[q] || []).filter(r => r.isActual));
-  const issues = actuals.filter(r => r.status === 'critical' || r.status === 'at_risk');
+  const issues   = actuals.filter(r => r.status === 'critical' || r.status === 'at_risk');
   const surpluses = actuals.filter(r => r.status === 'surplus');
   let md = `INTEL SOURCE SUMMARY — ${date.toLocaleDateString()}\n\n`;
   md += `Queues active: ${queues.join(', ')}\n`;
@@ -883,7 +1067,6 @@ function generateIntelContext(data, trc, date) {
   return md;
 }
 
-// ─── FORMAT INTRADAY DATA AS MARKDOWN TABLE ──────────────────────────────────
 function dataToMarkdownTable(data, trc) {
   const queues = trc === 'ALL' ? ['ONC','RARE','PACE'] : [trc];
   let md = '';
@@ -899,21 +1082,14 @@ function dataToMarkdownTable(data, trc) {
   return md;
 }
 
-// ─── BUILD USER MESSAGE ──────────────────────────────────────────────────────
 function buildUserMessage(phrase, data, trc, dateStr, timeStr, botId) {
   const actualsCount = Object.values(data)[0]?.filter(r => r.isActual).length || 0;
   const todayDate = new Date();
-
   let context = '';
-  if (botId === 'shortrange') {
-    context = generateWeeklyContext(trc, todayDate);
-  } else if (botId === 'longrange') {
-    context = generateLongRangeContext(todayDate);
-  } else if (botId === 'intelligence') {
-    context = generateIntelContext(data, trc, todayDate);
-  } else {
-    context = dataToMarkdownTable(data, trc);
-  }
+  if      (botId === 'shortrange')   context = generateWeeklyContext(trc, todayDate);
+  else if (botId === 'longrange')    context = generateLongRangeContext(todayDate);
+  else if (botId === 'intelligence') context = generateIntelContext(data, trc, todayDate);
+  else                               context = dataToMarkdownTable(data, trc);
 
   const queueDims = Object.entries(QUEUE_CFG).map(([q, cfg]) =>
     `${q}: critFloor=${cfg.critFloor}, surplusCeil=${cfg.surplusCeil}, baseAHT=${cfg.baseAHT}s`
@@ -936,7 +1112,9 @@ ${context}
 Note: This is a prototype running on Claude. Data is synthetic and seeded by date. Bot prompts are production-identical.`;
 }
 
-// ─── CLAUDE API (via Vercel proxy — no CORS, no key in browser) ──────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// CLAUDE API (via Vercel proxy — no CORS, no key in browser)
+// ─────────────────────────────────────────────────────────────────────────────
 async function callClaude(systemPrompt, userMessage) {
   const resp = await fetch('/api/proxy', {
     method: 'POST',
@@ -956,52 +1134,641 @@ async function callClaude(systemPrompt, userMessage) {
   return json.content[0].text;
 }
 
-// ─── API KEY SCREEN ──────────────────────────────────────────────────────────
-function APIKeyScreen({ onActivate }) {
-  const [key, setKey] = useState('');
-  const [err, setErr] = useState('');
+// ═════════════════════════════════════════════════════════════════════════════
+// MODULE 1 — CONFIG TAB COMPONENTS
+// ═════════════════════════════════════════════════════════════════════════════
 
-  const handleActivate = () => {
-    if (!key.startsWith('sk-ant-')) {
-      setErr('Key should start with sk-ant-');
-      return;
-    }
-    onActivate(key.trim());
+// ─── TRC BUILDER ─────────────────────────────────────────────────────────────
+function TRCBuilder({ config, setConfig }) {
+  const [editId, setEditId]       = useState(null);
+  const [editLabel, setEditLabel] = useState('');
+  const [showAdd, setShowAdd]     = useState(false);
+  const [newId, setNewId]         = useState('');
+  const [newLabel, setNewLabel]   = useState('');
+
+  const trcs = config.trcs;
+
+  const handleAdd = () => {
+    const id = newId.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (!id || !newLabel.trim() || trcs[id]) return;
+    setConfig(prev => ({
+      ...prev,
+      trcs: { ...prev.trcs, [id]: { label: newLabel.trim(), active: true } },
+      headcount: {
+        ...prev.headcount,
+        [id]: Object.fromEntries(Object.keys(prev.workstreams).map(ws => [ws, 0])),
+      },
+    }));
+    setNewId(''); setNewLabel(''); setShowAdd(false);
+  };
+
+  const handleToggle = (id) => {
+    setConfig(prev => ({
+      ...prev,
+      trcs: { ...prev.trcs, [id]: { ...prev.trcs[id], active: !prev.trcs[id].active } },
+    }));
+  };
+
+  const handleSaveEdit = (id) => {
+    if (!editLabel.trim()) return;
+    setConfig(prev => ({
+      ...prev,
+      trcs: { ...prev.trcs, [id]: { ...prev.trcs[id], label: editLabel.trim() } },
+    }));
+    setEditId(null);
+  };
+
+  const handleDelete = (id) => {
+    setConfig(prev => {
+      const { [id]: _, ...trcsRest } = prev.trcs;
+      const { [id]: __, ...hcRest  } = prev.headcount;
+      return { ...prev, trcs: trcsRest, headcount: hcRest };
+    });
+  };
+
+  const totalQueues = Object.values(config.queueTemplates).reduce((n, qt) => n + qt.length, 0);
+
+  return (
+    <div className="config-section">
+      <div className="config-section-header">
+        <span className="config-section-title">TRCs — {Object.keys(trcs).length} configured</span>
+        <button className="btn-primary" onClick={() => setShowAdd(!showAdd)}>+ Add TRC</button>
+      </div>
+      <table className="config-table">
+        <thead>
+          <tr>
+            <th style={{width:80}}>ID</th>
+            <th>Label</th>
+            <th style={{width:90}}>Status</th>
+            <th style={{width:120}}>Total Queues</th>
+            <th style={{width:160}}>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Object.entries(trcs).map(([id, trc]) => (
+            <tr key={id}>
+              <td><strong style={{color:'#035C67',fontFamily:'monospace'}}>{id}</strong></td>
+              <td>
+                {editId === id ? (
+                  <span className="inline-edit">
+                    <input className="inline-input" value={editLabel} autoFocus
+                      onChange={e => setEditLabel(e.target.value)}
+                      onKeyDown={e => { if(e.key==='Enter') handleSaveEdit(id); if(e.key==='Escape') setEditId(null); }}
+                      style={{width:180}} />
+                    <button className="btn-primary" style={{padding:'3px 10px',fontSize:'11px'}} onClick={() => handleSaveEdit(id)}>Save</button>
+                    <button className="icon-btn" onClick={() => setEditId(null)}>✕</button>
+                  </span>
+                ) : trc.label}
+              </td>
+              <td>
+                <span className={`badge ${trc.active ? 'badge-active' : 'badge-inactive'}`}>
+                  {trc.active ? 'Active' : 'Inactive'}
+                </span>
+              </td>
+              <td style={{color:'#5A8A86',fontSize:'11px'}}>
+                {totalQueues} templates × <strong>{Object.keys(trcs).length}</strong> TRCs
+              </td>
+              <td>
+                <span style={{display:'flex',gap:'4px'}}>
+                  <button className="icon-btn" onClick={() => { setEditId(id); setEditLabel(trc.label); }}>Edit</button>
+                  <button className="icon-btn" onClick={() => handleToggle(id)}>{trc.active ? 'Disable' : 'Enable'}</button>
+                  <button className="icon-btn danger" onClick={() => handleDelete(id)}>Delete</button>
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {showAdd && (
+        <div className="add-row">
+          <span className="add-row-label">New TRC:</span>
+          <input className="inline-input" placeholder="ID (e.g. MED)" style={{width:80}}
+            value={newId} onChange={e => setNewId(e.target.value.toUpperCase())} maxLength={6}
+            onKeyDown={e => e.key==='Enter' && handleAdd()} />
+          <input className="inline-input" placeholder="Label (e.g. Medical)" style={{width:200}}
+            value={newLabel} onChange={e => setNewLabel(e.target.value)}
+            onKeyDown={e => e.key==='Enter' && handleAdd()} />
+          <button className="btn-primary" disabled={!newId.trim()||!newLabel.trim()} onClick={handleAdd}>Add TRC</button>
+          <button className="btn-secondary" onClick={() => { setShowAdd(false); setNewId(''); setNewLabel(''); }}>Cancel</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── WORKSTREAM BUILDER ───────────────────────────────────────────────────────
+function WorkstreamBuilder({ config, setConfig }) {
+  const [showAdd, setShowAdd]   = useState(false);
+  const [newId, setNewId]       = useState('');
+  const [newLabel, setNewLabel] = useState('');
+  const [newLevel, setNewLevel] = useState('Clinical');
+
+  const wss = config.workstreams;
+  const COMP_LEVELS = ['Clinical','Processing','Access','Contact','Operations','Support'];
+
+  const handleAdd = () => {
+    const id = newId.trim().replace(/\s+/g, '');
+    if (!id || wss[id]) return;
+    setConfig(prev => ({
+      ...prev,
+      workstreams: { ...prev.workstreams, [id]: { active: true, complianceLevel: newLevel } },
+      queueTemplates: { ...prev.queueTemplates, [id]: [] },
+      headcount: Object.fromEntries(
+        Object.entries(prev.headcount).map(([trc, hc]) => [trc, { ...hc, [id]: 0 }])
+      ),
+    }));
+    setNewId(''); setNewLabel(''); setShowAdd(false);
+  };
+
+  const handleToggle = (id) => {
+    setConfig(prev => ({
+      ...prev,
+      workstreams: { ...prev.workstreams, [id]: { ...prev.workstreams[id], active: !prev.workstreams[id].active } },
+    }));
   };
 
   return (
-    <div className="api-screen">
-      <div className="api-card">
-        <div className="api-card-logo">EVERNORTH · RMG</div>
-        <h1>Intelligent Operations Platform</h1>
-        <p className="subtitle">Claude-powered prototype. Enter your Anthropic API key to activate all four bots.</p>
-        <div className="api-bots">
-          {['Intraday v2.1','Short Range v1.1','Long Range v1.1','Intelligence v1.0'].map(b => (
-            <span key={b} className="api-bot-tag">{b}</span>
+    <div className="config-section">
+      <div className="config-section-header">
+        <span className="config-section-title">Workstreams — {Object.keys(wss).length} configured</span>
+        <button className="btn-primary" onClick={() => setShowAdd(!showAdd)}>+ Add Workstream</button>
+      </div>
+      <table className="config-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Compliance Level</th>
+            <th style={{width:100}}>Queue Templates</th>
+            <th style={{width:90}}>Status</th>
+            <th style={{width:120}}>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Object.entries(wss).map(([id, ws]) => (
+            <tr key={id}>
+              <td><strong style={{color:'#035C67'}}>{id}</strong></td>
+              <td>
+                <span className="badge badge-mint">{ws.complianceLevel}</span>
+              </td>
+              <td style={{color:'#5A8A86',fontSize:'11px'}}>
+                {(config.queueTemplates[id] || []).length} templates
+              </td>
+              <td>
+                <span className={`badge ${ws.active ? 'badge-active' : 'badge-inactive'}`}>
+                  {ws.active ? 'Active' : 'Inactive'}
+                </span>
+              </td>
+              <td>
+                <button className="icon-btn" onClick={() => handleToggle(id)}>
+                  {ws.active ? 'Disable' : 'Enable'}
+                </button>
+              </td>
+            </tr>
           ))}
+        </tbody>
+      </table>
+      {showAdd && (
+        <div className="add-row">
+          <span className="add-row-label">New Workstream:</span>
+          <input className="inline-input" placeholder="ID (no spaces)" style={{width:140}}
+            value={newId} onChange={e => setNewId(e.target.value)} />
+          <select className="inline-select" value={newLevel} onChange={e => setNewLevel(e.target.value)}>
+            {COMP_LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
+          </select>
+          <button className="btn-primary" disabled={!newId.trim()} onClick={handleAdd}>Add</button>
+          <button className="btn-secondary" onClick={() => setShowAdd(false)}>Cancel</button>
         </div>
-        <label className="api-label">Anthropic API Key</label>
-        <input
-          className="api-input"
-          type="password"
-          placeholder="sk-ant-api03-..."
-          value={key}
-          onChange={e => { setKey(e.target.value); setErr(''); }}
-          onKeyDown={e => e.key === 'Enter' && handleActivate()}
-        />
-        {err && <div style={{color:'#C62828',fontSize:'11px',marginBottom:'8px'}}>{err}</div>}
-        <button className="api-submit" onClick={handleActivate} disabled={!key}>
-          Activate Platform →
-        </button>
-        <p className="api-note">Key used only in your browser. Never stored or transmitted beyond the Claude API.</p>
+      )}
+    </div>
+  );
+}
+
+// ─── QUEUE BUILDER ────────────────────────────────────────────────────────────
+function QueueBuilder({ config, setConfig }) {
+  const [openWS, setOpenWS]           = useState(Object.keys(config.workstreams)[0] || '');
+  const [editQId, setEditQId]         = useState(null);
+  const [editQData, setEditQData]     = useState({});
+  const [newLabel, setNewLabel]       = useState('');
+  const [newPriority, setNewPriority] = useState(2);
+  const [newChannel, setNewChannel]   = useState('Offline');
+
+  const totalQueues = Object.values(config.queueTemplates).reduce((n, qt) => n + qt.length, 0);
+  const trcCount    = Object.keys(config.trcs).length;
+
+  const handleAddQueue = (wsId) => {
+    if (!newLabel.trim()) return;
+    const safeLabel = newLabel.trim().replace(/\s+/g, '_');
+    const id = `${wsId.slice(0,4)}_${safeLabel}`;
+    setConfig(prev => ({
+      ...prev,
+      queueTemplates: {
+        ...prev.queueTemplates,
+        [wsId]: [...(prev.queueTemplates[wsId] || []), { id, label: newLabel.trim(), priority: newPriority, channel: newChannel }],
+      },
+    }));
+    setNewLabel(''); setNewPriority(2); setNewChannel('Offline');
+  };
+
+  const handleDeleteQueue = (wsId, queueId) => {
+    setConfig(prev => ({
+      ...prev,
+      queueTemplates: {
+        ...prev.queueTemplates,
+        [wsId]: prev.queueTemplates[wsId].filter(q => q.id !== queueId),
+      },
+    }));
+  };
+
+  const handleSaveQueue = (wsId, queueId) => {
+    setConfig(prev => ({
+      ...prev,
+      queueTemplates: {
+        ...prev.queueTemplates,
+        [wsId]: prev.queueTemplates[wsId].map(q => q.id === queueId ? { ...q, ...editQData } : q),
+      },
+    }));
+    setEditQId(null); setEditQData({});
+  };
+
+  return (
+    <div className="config-section">
+      <div className="config-section-header">
+        <span className="config-section-title">Queue Templates</span>
+        <span className="config-section-sub">
+          {totalQueues} templates × {trcCount} TRCs = <strong style={{color:'#035C67'}}>{totalQueues * trcCount}</strong> active queues
+        </span>
+      </div>
+      {Object.entries(config.workstreams).map(([wsId, ws]) => {
+        const queues = config.queueTemplates[wsId] || [];
+        const isOpen = openWS === wsId;
+        return (
+          <div key={wsId} style={{borderBottom:'1px solid #F0F0F0'}}>
+            <div
+              className={`queue-ws-header ${isOpen ? 'open' : ''}`}
+              onClick={() => setOpenWS(isOpen ? null : wsId)}>
+              <span>
+                <span className="queue-ws-name">{wsId}</span>
+                <span className="queue-ws-meta">— {ws.complianceLevel}</span>
+              </span>
+              <span className="queue-ws-count">
+                {queues.length} template{queues.length!==1?'s':''} {isOpen ? '▲' : '▼'}
+              </span>
+            </div>
+            {isOpen && (
+              <div>
+                {queues.length > 0 ? (
+                  <table className="config-table">
+                    <thead>
+                      <tr>
+                        <th>Template ID</th>
+                        <th>Label</th>
+                        <th style={{width:70}}>Priority</th>
+                        <th style={{width:90}}>Channel</th>
+                        <th style={{width:130}}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {queues.map(q => (
+                        <tr key={q.id}>
+                          <td style={{fontFamily:'monospace',fontSize:'10.5px',color:'#5A8A86'}}>{q.id}</td>
+                          <td>
+                            {editQId === q.id ? (
+                              <input className="inline-input" style={{width:180}}
+                                value={editQData.label !== undefined ? editQData.label : q.label}
+                                onChange={e => setEditQData(p => ({...p, label: e.target.value}))} />
+                            ) : q.label}
+                          </td>
+                          <td>
+                            {editQId === q.id ? (
+                              <select className="inline-select"
+                                value={editQData.priority !== undefined ? editQData.priority : q.priority}
+                                onChange={e => setEditQData(p => ({...p, priority: parseInt(e.target.value)}))}>
+                                {[1,2,3,4].map(p => <option key={p} value={p}>P{p}</option>)}
+                              </select>
+                            ) : (
+                              <span style={{
+                                display:'inline-block', padding:'2px 8px', borderRadius:'4px',
+                                background: q.priority===1?'rgba(234,83,83,0.12)':q.priority===2?'rgba(255,193,7,0.15)':'#F0F0F0',
+                                color: q.priority===1?'#B71C1C':q.priority===2?'#6D4C41':'#5A8A86',
+                                fontWeight:700, fontSize:'11px'
+                              }}>P{q.priority}</span>
+                            )}
+                          </td>
+                          <td>
+                            {editQId === q.id ? (
+                              <select className="inline-select"
+                                value={editQData.channel !== undefined ? editQData.channel : q.channel}
+                                onChange={e => setEditQData(p => ({...p, channel: e.target.value}))}>
+                                <option>Phone</option><option>Offline</option>
+                              </select>
+                            ) : (
+                              <span className={`badge ${q.channel==='Phone'?'badge-phone':'badge-offline'}`}>{q.channel}</span>
+                            )}
+                          </td>
+                          <td>
+                            {editQId === q.id ? (
+                              <span style={{display:'flex',gap:'4px'}}>
+                                <button className="btn-primary" style={{padding:'3px 10px',fontSize:'11px'}}
+                                  onClick={() => handleSaveQueue(wsId, q.id)}>Save</button>
+                                <button className="icon-btn" onClick={() => setEditQId(null)}>✕</button>
+                              </span>
+                            ) : (
+                              <span style={{display:'flex',gap:'4px'}}>
+                                <button className="icon-btn"
+                                  onClick={() => { setEditQId(q.id); setEditQData({}); }}>Edit</button>
+                                <button className="icon-btn danger"
+                                  onClick={() => handleDeleteQueue(wsId, q.id)}>Delete</button>
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div style={{padding:'12px 16px',color:'#9ABEBC',fontSize:'12px',fontStyle:'italic'}}>
+                    No queue templates yet — add one below.
+                  </div>
+                )}
+                <div className="add-row">
+                  <span className="add-row-label">Add Queue:</span>
+                  <input className="inline-input" placeholder="Label" style={{width:180}}
+                    value={newLabel} onChange={e => setNewLabel(e.target.value)}
+                    onKeyDown={e => e.key==='Enter' && handleAddQueue(wsId)} />
+                  <select className="inline-select" value={newPriority}
+                    onChange={e => setNewPriority(parseInt(e.target.value))}>
+                    {[1,2,3,4].map(p => <option key={p} value={p}>Priority {p}</option>)}
+                  </select>
+                  <select className="inline-select" value={newChannel}
+                    onChange={e => setNewChannel(e.target.value)}>
+                    <option>Offline</option><option>Phone</option>
+                  </select>
+                  <button className="btn-primary" disabled={!newLabel.trim()}
+                    onClick={() => handleAddQueue(wsId)}>Add</button>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── THRESHOLD CONTROLS ───────────────────────────────────────────────────────
+function ThresholdControls({ config, setConfig }) {
+  const update = (channel, field, val) => {
+    const n = parseFloat(val);
+    if (isNaN(n)) return;
+    setConfig(prev => ({
+      ...prev,
+      thresholds: {
+        ...prev.thresholds,
+        [channel]: { ...prev.thresholds[channel], [field]: n },
+      },
+    }));
+  };
+
+  return (
+    <div className="config-section">
+      <div className="config-section-header">
+        <span className="config-section-title">Threshold Controls</span>
+        <span className="config-section-sub">Applies channel-wide. Override per queue in Queue Builder.</span>
+      </div>
+      <div className="threshold-grid">
+        {Object.entries(config.thresholds).map(([channel, t]) => (
+          <div key={channel} className="threshold-card">
+            <div className="threshold-card-title">
+              <span className={`badge ${channel==='Phone' ? 'badge-phone' : 'badge-offline'}`}>{channel}</span>
+              {channel} Thresholds
+            </div>
+            <div className="threshold-row">
+              <div>
+                <div className="threshold-label">Under Threshold</div>
+                <div className="threshold-hint">Net staff ≤ this → ALERT</div>
+              </div>
+              <input className="threshold-input" type="number" step="0.5"
+                value={t.under} onChange={e => update(channel, 'under', e.target.value)} />
+            </div>
+            <div className="threshold-row">
+              <div>
+                <div className="threshold-label">Escalate Threshold</div>
+                <div className="threshold-hint">Net staff ≤ this → ESCALATE</div>
+              </div>
+              <input className="threshold-input" type="number" step="0.5"
+                value={t.escalate} onChange={e => update(channel, 'escalate', e.target.value)} />
+            </div>
+            <div className="threshold-row">
+              <div>
+                <div className="threshold-label">Surplus Threshold</div>
+                <div className="threshold-hint">Net staff ≥ this → SURPLUS</div>
+              </div>
+              <input className="threshold-input" type="number" step="0.5"
+                value={t.surplus} onChange={e => update(channel, 'surplus', e.target.value)} />
+            </div>
+            <hr className="threshold-divider" />
+            <div className="threshold-row">
+              <div>
+                <div className="threshold-label">
+                  {channel === 'Phone' ? 'SL Target (%)' : 'TAT Target (hrs)'}
+                </div>
+                <div className="threshold-hint">
+                  {channel === 'Phone' ? 'Speed of Answer % goal' : 'Turnaround time goal'}
+                </div>
+              </div>
+              <input className="threshold-input" type="number"
+                step={channel === 'Phone' ? 5 : 0.5}
+                value={channel === 'Phone' ? (t.slTarget ?? 80) : (t.tatTarget ?? 4)}
+                onChange={e => update(channel, channel==='Phone'?'slTarget':'tatTarget', e.target.value)} />
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
 }
 
-// ─── DATA LOAD BLOCK ─────────────────────────────────────────────────────────
+// ─── HEADCOUNT GRID ───────────────────────────────────────────────────────────
+function HeadcountGrid({ config, setConfig }) {
+  const trcs = Object.keys(config.trcs);
+  const wss  = Object.keys(config.workstreams);
+
+  const total = trcs.reduce((sum, trc) =>
+    sum + wss.reduce((s2, ws) => s2 + (config.headcount[trc]?.[ws] || 0), 0), 0
+  );
+
+  const update = (trc, ws, val) => {
+    const n = Math.max(0, parseInt(val) || 0);
+    setConfig(prev => ({
+      ...prev,
+      headcount: {
+        ...prev.headcount,
+        [trc]: { ...prev.headcount[trc], [ws]: n },
+      },
+    }));
+  };
+
+  return (
+    <div className="config-section">
+      <div className="config-section-header">
+        <span className="config-section-title">Headcount Grid</span>
+        <span className="config-section-sub">
+          Total: <strong style={{color:'#035C67'}}>{total}</strong> agents across all TRCs
+        </span>
+      </div>
+      <div className="headcount-wrap">
+        <table className="headcount-table">
+          <thead>
+            <tr>
+              <th>TRC</th>
+              {wss.map(ws => <th key={ws}>{ws}</th>)}
+              <th>Row Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {trcs.map(trc => {
+              const rowTotal = wss.reduce((s, ws) => s + (config.headcount[trc]?.[ws] || 0), 0);
+              return (
+                <tr key={trc}>
+                  <td className="trc-cell">
+                    <strong>{trc}</strong>
+                    <span style={{fontWeight:400,color:'#5A8A86',marginLeft:6,fontSize:'11px'}}>
+                      {config.trcs[trc]?.label}
+                    </span>
+                  </td>
+                  {wss.map(ws => (
+                    <td key={ws}>
+                      <input className="headcount-input" type="number" min="0" max="99"
+                        value={config.headcount[trc]?.[ws] || 0}
+                        onChange={e => update(trc, ws, e.target.value)} />
+                    </td>
+                  ))}
+                  <td className="total-cell">{rowTotal}</td>
+                </tr>
+              );
+            })}
+            <tr>
+              <td className="trc-cell" style={{fontWeight:700,color:'#002F32'}}>Col Total</td>
+              {wss.map(ws => (
+                <td key={ws} className="total-cell">
+                  {trcs.reduce((s, trc) => s + (config.headcount[trc]?.[ws] || 0), 0)}
+                </td>
+              ))}
+              <td className="total-cell" style={{fontSize:'14px'}}><strong>{total}</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ─── CONFIG TAB (container) ───────────────────────────────────────────────────
+function ConfigTab({ config, setConfig }) {
+  const [subTab, setSubTab] = useState('trcs');
+
+  const queueCount = Object.values(config.queueTemplates).reduce((n, qt) => n + qt.length, 0)
+                   * Object.keys(config.trcs).length;
+  const agentCount = Object.values(config.headcount).reduce(
+    (sum, hc) => sum + Object.values(hc).reduce((s, n) => s + n, 0), 0
+  );
+
+  const subTabs = [
+    { id: 'trcs',        label: '⚙ TRCs'             },
+    { id: 'workstreams', label: '🏗 Workstreams'       },
+    { id: 'queues',      label: '📋 Queue Templates'  },
+    { id: 'thresholds',  label: '📏 Thresholds'       },
+    { id: 'headcount',   label: '👥 Headcount'        },
+  ];
+
+  return (
+    <div className="config-page">
+      {/* Summary bar */}
+      <div className="config-summary-bar">
+        <div className="summary-stat"><strong>{Object.keys(config.trcs).length}</strong> TRCs</div>
+        <div className="summary-stat"><strong>{Object.keys(config.workstreams).length}</strong> Workstreams</div>
+        <div className="summary-stat"><strong>{Object.values(config.queueTemplates).reduce((n,qt) => n+qt.length, 0)}</strong> Templates</div>
+        <div className="summary-stat"><strong>{queueCount}</strong> Active Queues</div>
+        <div className="summary-stat"><strong>{agentCount}</strong> Agents</div>
+      </div>
+      {/* Sub-tabs */}
+      <div className="config-subtabs">
+        {subTabs.map(t => (
+          <button key={t.id} className={`config-subtab ${subTab===t.id?'active':''}`}
+            onClick={() => setSubTab(t.id)}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+      {/* Content */}
+      <div className="config-content">
+        {subTab === 'trcs'        && <TRCBuilder config={config} setConfig={setConfig} />}
+        {subTab === 'workstreams' && <WorkstreamBuilder config={config} setConfig={setConfig} />}
+        {subTab === 'queues'      && <QueueBuilder config={config} setConfig={setConfig} />}
+        {subTab === 'thresholds'  && <ThresholdControls config={config} setConfig={setConfig} />}
+        {subTab === 'headcount'   && <HeadcountGrid config={config} setConfig={setConfig} />}
+      </div>
+    </div>
+  );
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// MODULE 1 — EMPLOYEES TAB (stub — next build)
+// ═════════════════════════════════════════════════════════════════════════════
+function EmployeesTab({ config }) {
+  const agentCount = Object.values(config.headcount).reduce(
+    (s, hc) => s + Object.values(hc).reduce((s2, n) => s2 + n, 0), 0
+  );
+  return (
+    <div className="tab-stub">
+      <div className="stub-icon">👥</div>
+      <div className="stub-title">Employees Module</div>
+      <p className="stub-sub">
+        Auto-generate {agentCount} agent profiles from your headcount grid, then configure
+        skills matrices and base schedules. Compliance rules enforce skill eligibility automatically.
+      </p>
+      <span className="stub-coming">Next Build</span>
+      <p className="stub-details">
+        Coming: Profile generator · Skills matrix (compliance-enforced) ·
+        Schedule builder · Shift templates · Break auto-generation
+      </p>
+    </div>
+  );
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// MODULE 2 — DATA TAB (stub — next build)
+// ═════════════════════════════════════════════════════════════════════════════
+function DataTab({ config }) {
+  const queueCount = Object.values(config.queueTemplates).reduce((n, qt) => n + qt.length, 0)
+                   * Object.keys(config.trcs).length;
+  const agentCount = Object.values(config.headcount).reduce(
+    (s, hc) => s + Object.values(hc).reduce((s2, n) => s2 + n, 0), 0
+  );
+  return (
+    <div className="tab-stub">
+      <div className="stub-icon">📊</div>
+      <div className="stub-title">Data Engine</div>
+      <p className="stub-sub">
+        Generate {queueCount} queue × 14-day interval dataset ({agentCount} agent schedules),
+        13-week daily history, 4-week forward forecast, and pre-ranked risk windows.
+        Pick a scenario or customize per queue.
+      </p>
+      <span className="stub-coming">Next Build</span>
+      <p className="stub-details">
+        Coming: Scenario picker (Baseline / High Volume / Understaffed / Surplus / Custom) ·
+        Interval generator · Daily history · Weekly forecast · Risk window engine · DataPacket assembly
+      </p>
+    </div>
+  );
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// MODULE 3 — OPERATIONS TAB COMPONENTS
+// ═════════════════════════════════════════════════════════════════════════════
+
 function DataLoadBlock({ bot, dateStr, timeStr, actualsCount }) {
-  const cfg = BOT_CONFIGS[bot];
+  const cfg   = BOT_CONFIGS[bot];
   const files = cfg.dataLoadFiles ? cfg.dataLoadFiles(dateStr, actualsCount) : [];
   const loadType = bot === 'intelligence' ? 'INTEL LOAD' : 'DATA LOAD';
 
@@ -1017,19 +1784,15 @@ function DataLoadBlock({ bot, dateStr, timeStr, actualsCount }) {
   );
 }
 
-// ─── STAFFING GRID ───────────────────────────────────────────────────────────
 function StaffingGrid({ data, trc }) {
   const queues = trc === 'ALL' ? ['ONC','RARE','PACE'] : [trc];
-  const activeQ = queues[0];
-  const [viewQ, setViewQ] = useState(activeQ);
+  const [viewQ, setViewQ] = useState(queues[0]);
   useEffect(() => { setViewQ(queues[0]); }, [trc]);
 
   const rows = data[viewQ] || [];
-
   const statusClass = (s) => ({
-    critical: 'status-critical', at_risk: 'status-at_risk',
-    threshold: 'status-threshold', adequate: 'status-adequate',
-    surplus: 'status-surplus',
+    critical:'status-critical', at_risk:'status-at_risk',
+    threshold:'status-threshold', adequate:'status-adequate', surplus:'status-surplus',
   }[s] || '');
 
   return (
@@ -1037,14 +1800,13 @@ function StaffingGrid({ data, trc }) {
       {trc === 'ALL' && (
         <div style={{display:'flex',gap:'4px',padding:'6px 12px',background:'#F0FAF8',borderBottom:'1px solid #C8E0DC'}}>
           {queues.map(q => (
-            <button key={q} onClick={() => setViewQ(q)}
-              style={{padding:'2px 10px',borderRadius:'10px',border:'1px solid',
-                borderColor: viewQ===q ? '#006B63':'#C8E0DC',
-                background: viewQ===q ? '#006B63':'transparent',
-                color: viewQ===q ? '#fff':'#2A7A6E',
-                fontSize:'11px',fontWeight:600,cursor:'pointer'}}>
-              {q}
-            </button>
+            <button key={q} onClick={() => setViewQ(q)} style={{
+              padding:'2px 10px', borderRadius:'10px', border:'1px solid',
+              borderColor: viewQ===q ? '#035C67' : '#C8E0DC',
+              background: viewQ===q ? '#035C67' : 'transparent',
+              color: viewQ===q ? '#fff' : '#5A8A86',
+              fontSize:'11px', fontWeight:600, cursor:'pointer',
+            }}>{q}</button>
           ))}
         </div>
       )}
@@ -1052,14 +1814,8 @@ function StaffingGrid({ data, trc }) {
         <table className="staffing-table">
           <thead>
             <tr>
-              <th>Time</th>
-              <th>Sched</th>
-              <th>Act</th>
-              <th>Req</th>
-              <th>Net</th>
-              <th>VolF</th>
-              <th>VolA</th>
-              <th>Type</th>
+              <th>Time</th><th>Sched</th><th>Act</th>
+              <th>Req</th><th>Net</th><th>VolF</th><th>VolA</th><th>Type</th>
             </tr>
           </thead>
           <tbody>
@@ -1074,7 +1830,7 @@ function StaffingGrid({ data, trc }) {
                 </td>
                 <td>{r.volFcst}</td>
                 <td>{r.volAct !== null ? r.volAct : '—'}</td>
-                <td style={{fontSize:'9px',color: r.isActual ? '#006B63':'#AAA'}}>
+                <td style={{fontSize:'9px',color: r.isActual ? '#035C67':'#AAA'}}>
                   {r.isActual ? 'ACT' : 'FCST'}
                 </td>
               </tr>
@@ -1084,11 +1840,11 @@ function StaffingGrid({ data, trc }) {
       </div>
       <div className="legend">
         {[
-          {cls:'status-critical',  label:'Critical'},
-          {cls:'status-at_risk',   label:'At Risk'},
-          {cls:'status-threshold', label:'Threshold'},
-          {cls:'status-adequate',  label:'Adequate'},
-          {cls:'status-surplus',   label:'Surplus'},
+          {cls:'status-critical', label:'Escalate'},
+          {cls:'status-at_risk',  label:'At Risk'},
+          {cls:'status-threshold',label:'Threshold'},
+          {cls:'status-adequate', label:'Adequate'},
+          {cls:'status-surplus',  label:'Surplus'},
         ].map(({cls, label}) => (
           <div key={label} className="legend-item">
             <div className={`legend-dot ${cls}`}/>
@@ -1100,12 +1856,9 @@ function StaffingGrid({ data, trc }) {
   );
 }
 
-// ─── ANALYSIS PANEL ──────────────────────────────────────────────────────────
 function AnalysisPanel({ output, isLoading, onCopy, onClear }) {
   const scrollRef = useRef(null);
-  useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = 0;
-  }, [output]);
+  useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = 0; }, [output]);
 
   return (
     <div className="analysis-panel">
@@ -1124,7 +1877,7 @@ function AnalysisPanel({ output, isLoading, onCopy, onClear }) {
         {isLoading && (
           <div className="loading-indicator">
             <div className="spinner"/>
-            <span style={{fontSize:'12px',color:'#2A7A6E'}}>Claude is analyzing… </span>
+            <span style={{fontSize:'12px',color:'#008F83'}}>Claude is analyzing…</span>
           </div>
         )}
         {!isLoading && output && (
@@ -1134,7 +1887,10 @@ function AnalysisPanel({ output, isLoading, onCopy, onClear }) {
           <div className="output-placeholder">
             <div className="ph-icon">⚡</div>
             <div className="ph-title">Ready for Analysis</div>
-            <p className="ph-sub">Select a trigger below or type a custom phrase. Claude will load the data and run the full analysis.</p>
+            <p className="ph-sub">
+              Select a trigger below or type a custom phrase.
+              Claude will load the data and run the full analysis.
+            </p>
           </div>
         )}
       </div>
@@ -1142,7 +1898,6 @@ function AnalysisPanel({ output, isLoading, onCopy, onClear }) {
   );
 }
 
-// ─── TRIGGER BAR ─────────────────────────────────────────────────────────────
 function TriggerBar({ activeBot, onTrigger, isLoading }) {
   const [custom, setCustom] = useState('');
   const cfg = BOT_CONFIGS[activeBot];
@@ -1183,7 +1938,6 @@ function TriggerBar({ activeBot, onTrigger, isLoading }) {
   );
 }
 
-// ─── RUN HISTORY ─────────────────────────────────────────────────────────────
 function RunHistory({ history }) {
   if (history.length === 0) return null;
   return (
@@ -1195,8 +1949,7 @@ function RunHistory({ history }) {
         {history.map((h, i) => (
           <div key={i} className="history-item">
             <span className="hi-bot">{h.bot} {h.version}</span>
-            {' · '}{h.trc}{' · '}<em>{h.phrase}</em>
-            {' '}
+            {' · '}{h.trc}{' · '}<em>{h.phrase}</em>{' '}
             <span className="hi-time">{h.time}</span>
           </div>
         ))}
@@ -1205,20 +1958,17 @@ function RunHistory({ history }) {
   );
 }
 
-// ─── MAIN APP ────────────────────────────────────────────────────────────────
-function App() {
-  const [active,    setActive]    = useState(true); // no key needed — proxy handles auth
+// ─── OPERATIONS TAB (wrapper) ─────────────────────────────────────────────────
+function OperationsTab({ activeTRC }) {
   const [activeBot, setActiveBot] = useState('intraday');
-  const [activeTRC, setActiveTRC] = useState('ONC');
   const [output,    setOutput]    = useState('');
   const [loading,   setLoading]   = useState(false);
   const [history,   setHistory]   = useState([]);
 
-  const today = useMemo(() => new Date(), []);
-  const dateStr = today.toISOString().split('T')[0];
-  const timeStr = today.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-
-  const data = useMemo(() => generateData(activeTRC, today), [activeTRC]);
+  const today       = useMemo(() => new Date(), []);
+  const dateStr     = today.toISOString().split('T')[0];
+  const timeStr     = today.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  const data        = useMemo(() => generateData(activeTRC, today), [activeTRC]);
   const actualsCount = useMemo(() => {
     const rows = Object.values(data)[0] || [];
     return rows.filter(r => r.isActual).length;
@@ -1227,7 +1977,7 @@ function App() {
   const handleTrigger = useCallback(async (phrase) => {
     const bot = BOT_CONFIGS[activeBot];
     const systemPrompt = document.getElementById(bot.promptId)?.textContent?.trim() || '';
-    const userMessage = buildUserMessage(phrase, data, activeTRC, dateStr, timeStr, activeBot);
+    const userMessage  = buildUserMessage(phrase, data, activeTRC, dateStr, timeStr, activeBot);
 
     setLoading(true);
     setOutput('');
@@ -1236,13 +1986,64 @@ function App() {
       setOutput(result);
       setHistory(prev => [
         { bot: bot.name, version: bot.version, phrase, trc: activeTRC, time: timeStr },
-        ...prev.slice(0, 11)
+        ...prev.slice(0, 11),
       ]);
     } catch (err) {
-      setOutput(`❌ Error: ${err.message}\n\nTip: Make sure ANTHROPIC_API_KEY is set in your Vercel environment variables.`);
+      setOutput(`❌ Error: ${err.message}\n\nTip: Make sure ANTHROPIC_API_KEY is set in Vercel environment variables.`);
     }
     setLoading(false);
   }, [activeBot, activeTRC, data, dateStr, timeStr]);
+
+  return (
+    <div className="ops-shell">
+      {/* Bot sub-tabs */}
+      <div className="ops-bot-tabs">
+        {Object.values(BOT_CONFIGS).map(b => (
+          <button key={b.id}
+            className={`ops-bot-tab ${activeBot===b.id ? 'active' : ''}`}
+            onClick={() => { setActiveBot(b.id); setOutput(''); }}>
+            {b.icon} {b.name} <span className="ver">{b.version}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Data panel + Analysis panel */}
+      <div className="main-content">
+        <div className="data-panel">
+          <div className="panel-header">
+            DATA PANEL — {activeTRC} · {BOT_CONFIGS[activeBot].name.toUpperCase()}
+          </div>
+          <DataLoadBlock bot={activeBot} dateStr={dateStr} timeStr={timeStr} actualsCount={actualsCount} />
+          <StaffingGrid data={data} trc={activeTRC} />
+        </div>
+        <AnalysisPanel
+          output={output}
+          isLoading={loading}
+          onCopy={() => navigator.clipboard.writeText(output).catch(() => {})}
+          onClear={() => setOutput('')}
+        />
+      </div>
+
+      <TriggerBar activeBot={activeBot} onTrigger={handleTrigger} isLoading={loading} />
+      <RunHistory history={history} />
+    </div>
+  );
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// ROOT APP
+// ═════════════════════════════════════════════════════════════════════════════
+function App() {
+  const [activeModule, setActiveModule] = useState('operations');
+  const [activeTRC,    setActiveTRC]    = useState('ONC');
+  const [config,       setConfig]       = useState(() => JSON.parse(JSON.stringify(DEFAULT_CONFIG)));
+
+  const modules = [
+    { id: 'config',     label: '⚙ Config'     },
+    { id: 'employees',  label: '👥 Employees'  },
+    { id: 'data',       label: '📊 Data'       },
+    { id: 'operations', label: '🤖 Operations' },
+  ];
 
   return (
     <div className="app-shell">
@@ -1251,49 +2052,31 @@ function App() {
         <div className="header-logo">
           EVERNORTH · <span>RMG</span> · Intelligent Ops
         </div>
-        <div className="bot-tabs">
-          {Object.values(BOT_CONFIGS).map(b => (
-            <button key={b.id} className={`bot-tab ${activeBot === b.id ? 'active' : ''}`}
-              onClick={() => { setActiveBot(b.id); setOutput(''); }}>
-              {b.name} <span className="ver">{b.version}</span>
+        <div className="module-tabs">
+          {modules.map(m => (
+            <button key={m.id}
+              className={`module-tab ${activeModule===m.id ? 'active' : ''}`}
+              onClick={() => setActiveModule(m.id)}>
+              {m.label}
             </button>
           ))}
         </div>
+        {/* TRC selector — always visible */}
         <div className="trc-selector">
           {['ONC','RARE','PACE','ALL'].map(t => (
-            <button key={t} className={`trc-btn ${activeTRC === t ? 'active' : ''}`}
-              onClick={() => { setActiveTRC(t); setOutput(''); }}>
+            <button key={t} className={`trc-btn ${activeTRC===t ? 'active' : ''}`}
+              onClick={() => setActiveTRC(t)}>
               {t}
             </button>
           ))}
         </div>
       </div>
 
-      {/* MAIN */}
-      <div className="main-content">
-        {/* DATA PANEL */}
-        <div className="data-panel">
-          <div className="panel-header">
-            DATA PANEL — {activeTRC} · {BOT_CONFIGS[activeBot].name.toUpperCase()}
-          </div>
-          <DataLoadBlock bot={activeBot} dateStr={dateStr} timeStr={timeStr} actualsCount={actualsCount} />
-          <StaffingGrid data={data} trc={activeTRC} />
-        </div>
-
-        {/* ANALYSIS PANEL */}
-        <AnalysisPanel
-          output={output}
-          isLoading={loading}
-          onCopy={() => navigator.clipboard.writeText(output).catch(()=>{})}
-          onClear={() => setOutput('')}
-        />
-      </div>
-
-      {/* TRIGGER BAR */}
-      <TriggerBar activeBot={activeBot} onTrigger={handleTrigger} isLoading={loading} />
-
-      {/* RUN HISTORY */}
-      <RunHistory history={history} />
+      {/* MODULE CONTENT */}
+      {activeModule === 'config'     && <ConfigTab config={config} setConfig={setConfig} />}
+      {activeModule === 'employees'  && <EmployeesTab config={config} />}
+      {activeModule === 'data'       && <DataTab config={config} />}
+      {activeModule === 'operations' && <OperationsTab activeTRC={activeTRC} />}
     </div>
   );
 }
