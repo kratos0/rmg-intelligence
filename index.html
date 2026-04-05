@@ -402,6 +402,79 @@
       font-size: 11px; color: #9ABEBC; text-align: center;
       max-width: 360px; line-height: 1.7;
     }
+
+    /* ═══ EMPLOYEES TAB ═══════════════════════════════════════════════════════ */
+    .emp-shell { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #EDEBE7; }
+    .emp-subtabs {
+      display: flex; background: #fff;
+      border-bottom: 2px solid #D8E8E6; flex-shrink: 0; padding: 0 8px;
+    }
+    .emp-subtab {
+      padding: 0 16px; height: 40px; border: none;
+      background: transparent; color: #5A8A86;
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px; transition: all 0.15s;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .emp-subtab:hover { color: #035C67; background: #F0FAF8; }
+    .emp-subtab.active { color: #035C67; border-bottom-color: #035C67; }
+    .emp-toolbar {
+      background: #fff; border-bottom: 1px solid #D8E8E6;
+      padding: 10px 20px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; flex-shrink: 0;
+    }
+    /* Profiles table */
+    .profiles-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .profiles-table thead th {
+      background: #035C67; color: #fff; padding: 7px 10px; font-size: 10.5px; font-weight: 700;
+      position: sticky; top: 0; z-index: 1; text-align: left; white-space: nowrap;
+    }
+    .profiles-table tbody td { padding: 7px 10px; border-bottom: 1px solid #EEE; vertical-align: middle; }
+    .profiles-table tbody tr:hover td { background: rgba(3,92,103,0.04); }
+    .badge-trainee { background: rgba(232,135,137,0.2); color: #8B0000; border: 1px solid #E88789; }
+    .badge-senior  { background: rgba(218,250,135,0.4); color: #1B5E20; border: 1px solid #B5E060; }
+    .badge-primary-skill { background: rgba(62,255,192,0.2); color: #035C67; border: 1px solid #3EFFC0; }
+    .badge-secondary-skill { background: rgba(144,185,255,0.2); color: #0D47A1; border: 1px solid #90B9FF; }
+    /* Skills matrix */
+    .skills-selector {
+      display: flex; gap: 10px; align-items: center; padding: 12px 20px;
+      background: #fff; border-bottom: 1px solid #D8E8E6; flex-shrink: 0; flex-wrap: wrap;
+    }
+    .skills-selector label { font-size: 11px; font-weight: 700; color: #5A8A86; }
+    .skills-selector select {
+      padding: 5px 10px; border: 1px solid #C8E0DC; border-radius: 4px;
+      font-size: 12px; color: #002F32; background: #FAFAF8; outline: none; min-width: 260px;
+    }
+    .skills-selector select:focus { border-color: #035C67; }
+    .skills-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    .skills-table thead th {
+      background: #035C67; color: #fff;
+      padding: 6px 10px; font-size: 10.5px; font-weight: 700;
+      position: sticky; top: 0; z-index: 1; white-space: nowrap;
+    }
+    .skills-table tbody td { padding: 6px 10px; border-bottom: 1px solid #EEE; }
+    .skills-table tbody tr:hover td { background: rgba(3,92,103,0.04); }
+    .skill-blocked { color: #CCC; font-style: italic; font-size: 10px; }
+    /* Schedules table */
+    .schedules-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .schedules-table thead th {
+      background: #035C67; color: #fff;
+      padding: 7px 10px; font-size: 10.5px; font-weight: 700;
+      position: sticky; top: 0; z-index: 1; white-space: nowrap;
+    }
+    .schedules-table tbody td { padding: 7px 10px; border-bottom: 1px solid #EEE; }
+    .schedules-table tbody tr:hover td { background: rgba(3,92,103,0.04); }
+    .break-tag {
+      display: inline-block; margin: 1px 2px; padding: 1px 6px;
+      border-radius: 8px; font-size: 10px; font-weight: 600;
+      background: rgba(144,185,255,0.25); color: #0D47A1; border: 1px solid #90B9FF;
+    }
+    .lunch-tag { background: rgba(218,250,135,0.4); color: #1B5E20; border: 1px solid #B5E060; }
+    /* Data readiness */
+    .readiness-item { display: flex; align-items: center; gap: 10px; padding: 7px 16px;
+      background: #fff; margin-bottom: 4px; border-radius: 4px; border: 1px solid #E8E8E8; }
+    .readiness-item.ready { color: #1B5E20; }
+    .readiness-item.pending-item { color: #8B6914; }
   </style>
 </head>
 <body>
@@ -947,6 +1020,62 @@ const BOT_CONFIGS = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// EMPLOYEE ENGINE CONSTANTS & COMPLIANCE
+// ─────────────────────────────────────────────────────────────────────────────
+const FIRST_NAMES = ['James','Mary','Robert','Patricia','John','Jennifer','Michael','Linda',
+  'David','Barbara','William','Susan','Richard','Jessica','Joseph','Sarah',
+  'Thomas','Karen','Charles','Lisa','Christopher','Nancy','Daniel','Betty',
+  'Matthew','Margaret','Anthony','Sandra','Mark','Ashley','Donald','Dorothy',
+  'Steven','Kimberly','Paul','Emily','Andrew','Donna','Joshua','Michelle',
+  'Kenneth','Carol','Kevin','Amanda','Brian','Melissa','George','Deborah',
+  'Timothy','Stephanie'];
+const LAST_NAMES = ['Smith','Johnson','Williams','Brown','Jones','Garcia','Miller','Davis',
+  'Wilson','Anderson','Taylor','Thomas','Hernandez','Moore','Martin','Jackson',
+  'Thompson','White','Lopez','Lee','Harris','Clark','Lewis','Robinson',
+  'Walker','Perez','Hall','Young','Allen','Sanchez','Wright','King',
+  'Scott','Green','Baker','Adams','Nelson','Carter','Mitchell','Roberts',
+  'Turner','Phillips','Campbell','Parker','Evans','Edwards','Collins','Stewart',
+  'Morris','Murphy'];
+const ROLES_MAP = {
+  Pharmacist:    ['Trainee Pharmacist',    'Pharmacist',          'Sr. Pharmacist'      ],
+  Technician:    ['Trainee Technician',    'Pharmacy Technician', 'Sr. Technician'      ],
+  PatientAccess: ['Trainee PA Specialist', 'PA Specialist',       'Sr. PA Specialist'   ],
+  ContactCenter: ['Trainee CC Agent',      'CC Agent',            'Sr. CC Agent'        ],
+};
+const SHIFT_TEMPLATES = {
+  'SH-0700': { start: '07:00', end: '15:30' },
+  'SH-0800': { start: '08:00', end: '16:30' },
+  'SH-0900': { start: '09:00', end: '17:30' },
+  'SH-1000': { start: '10:00', end: '18:30' },
+  'SH-1030': { start: '10:30', end: '19:00' },
+};
+const COMPLIANCE_BLOCKED = [
+  { from: 'Technician',    to: 'Pharmacist'    },
+  { from: 'PatientAccess', to: 'Pharmacist'    },
+  { from: 'PatientAccess', to: 'Technician'    },
+  { from: 'ContactCenter', to: 'Pharmacist'    },
+  { from: 'ContactCenter', to: 'Technician'    },
+];
+const COMPLIANCE_ALLOWED = [
+  { from: 'Pharmacist',    to: 'PatientAccess' },
+  { from: 'Technician',    to: 'PatientAccess' },
+  { from: 'ContactCenter', to: 'PatientAccess' },
+];
+function getComplianceStatus(fromWS, toWS) {
+  if (fromWS === toWS) return { status: 'same', label: '' };
+  if (COMPLIANCE_BLOCKED.some(r => r.from === fromWS && r.to === toWS))
+    return { status: 'blocked', label: 'Compliance Block' };
+  if (COMPLIANCE_ALLOWED.some(r => r.from === fromWS && r.to === toWS))
+    return { status: 'allowed', label: 'Requires Approval' };
+  return { status: 'blocked', label: 'Not Eligible' };
+}
+function addMins(timeStr, mins) {
+  const [h, m] = timeStr.split(':').map(Number);
+  const total = h * 60 + m + mins;
+  return `${String(Math.floor(total/60)).padStart(2,'0')}:${String(total%60).padStart(2,'0')}`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // SEEDED RANDOM
 // ─────────────────────────────────────────────────────────────────────────────
 function makeRng(seed) {
@@ -1132,6 +1261,114 @@ async function callClaude(systemPrompt, userMessage) {
   }
   const json = await resp.json();
   return json.content[0].text;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EMPLOYEE ENGINE
+// ─────────────────────────────────────────────────────────────────────────────
+function generateEmployees(config) {
+  const rng = makeRng(42);
+  const employees = [];
+  let n = 1;
+  const activeTRCs = Object.entries(config.trcs).filter(([,t]) => t.active).map(([id]) => id);
+  const activeWSs  = Object.entries(config.workstreams).filter(([,w]) => w.active).map(([id]) => id);
+  activeTRCs.forEach(trc => {
+    activeWSs.forEach(ws => {
+      const count = config.headcount[trc]?.[ws] || 0;
+      const roles = ROLES_MAP[ws] || ['Associate','Specialist','Senior Specialist'];
+      for (let i = 0; i < count; i++) {
+        const r = rng();
+        const roleIdx = r < 0.10 ? 0 : r < 0.75 ? 1 : 2;
+        const role = roles[roleIdx];
+        const seniority = roleIdx === 0 ? parseFloat((0.1 + rng() * 1.4).toFixed(1))
+                        : roleIdx === 1 ? parseFloat((1.0 + rng() * 4.0).toFixed(1))
+                        :                 parseFloat((3.0 + rng() * 7.0).toFixed(1));
+        const today = new Date(2026, 3, 5);
+        const hireDate = new Date(today);
+        hireDate.setFullYear(today.getFullYear() - Math.floor(seniority));
+        hireDate.setMonth(Math.floor(rng() * 12));
+        hireDate.setDate(Math.floor(rng() * 28) + 1);
+        const hireDateStr = hireDate.toISOString().split('T')[0];
+        const fn = FIRST_NAMES[Math.floor(rng() * FIRST_NAMES.length)];
+        const ln = LAST_NAMES[Math.floor(rng() * LAST_NAMES.length)];
+        employees.push({
+          empId: `EMP${String(n).padStart(3,'0')}`,
+          name: `${fn.charAt(0)}. ${ln}`, firstName: fn, lastName: ln,
+          trc, workstream: ws, role, seniorityYears: seniority,
+          hireDate: hireDateStr, status: 'Active',
+        });
+        n++;
+      }
+    });
+  });
+  return employees;
+}
+
+function generateSkills(employees, config) {
+  const rng = makeRng(1337);
+  const activeTRCs = Object.entries(config.trcs).filter(([,t]) => t.active).map(([id]) => id);
+  const activeWSs  = Object.entries(config.workstreams).filter(([,w]) => w.active).map(([id]) => id);
+  return employees.map(emp => {
+    const skills = [];
+    activeTRCs.forEach(trc => {
+      activeWSs.forEach(ws => {
+        const queues = config.queueTemplates[ws] || [];
+        const compliance = getComplianceStatus(emp.workstream, ws);
+        queues.forEach(q => {
+          const queueId = `${trc}_${q.id}`;
+          const ownTRC = trc === emp.trc;
+          const ownWS  = ws  === emp.workstream;
+          if (ownTRC && ownWS) {
+            skills.push({ queueId, eligible: true, proficiency: 'Primary', certDate: emp.hireDate });
+          } else if (!ownTRC && ownWS) {
+            if (emp.seniorityYears >= 3 && rng() < 0.25) {
+              const [y,m,d] = emp.hireDate.split('-').map(Number);
+              const cert = new Date(y, m+5, d).toISOString().split('T')[0];
+              skills.push({ queueId, eligible: true, proficiency: 'Secondary', certDate: cert });
+            } else { rng(); }
+          } else if (!ownWS && compliance.status === 'allowed') {
+            if (emp.seniorityYears >= 2 && rng() < 0.30) {
+              const [y,m,d] = emp.hireDate.split('-').map(Number);
+              const cert = new Date(y, m+8, d).toISOString().split('T')[0];
+              skills.push({ queueId, eligible: true, proficiency: 'Secondary', certDate: cert });
+            } else { rng(); }
+          }
+        });
+      });
+    });
+    return { empId: emp.empId, skills };
+  });
+}
+
+function generateSchedules(employees, skills) {
+  const templateKeys = Object.keys(SHIFT_TEMPLATES);
+  return employees.map(emp => {
+    const isTrainee = emp.role.toLowerCase().startsWith('trainee');
+    const isSenior  = emp.role.toLowerCase().startsWith('sr.');
+    const tIdx = isTrainee ? Math.min(3, templateKeys.length - 1)
+               : isSenior  ? 0
+               : Math.floor(templateKeys.length / 2);
+    const templateKey  = templateKeys[tIdx];
+    const template     = SHIFT_TEMPLATES[templateKey];
+    const empSkillRec  = skills.find(s => s.empId === emp.empId);
+    const primaryQ     = empSkillRec?.skills?.find(s => s.proficiency === 'Primary');
+    const primaryQueue = primaryQ?.queueId || '';
+    const [sh, sm] = template.start.split(':').map(Number);
+    const [eh, em] = template.end.split(':').map(Number);
+    const shiftMins = (eh * 60 + em) - (sh * 60 + sm);
+    const breaks = shiftMins >= 480 ? [
+      { start: addMins(template.start, Math.round(shiftMins * 0.25)), duration: 15, type: 'Break' },
+      { start: addMins(template.start, Math.round(shiftMins * 0.50)), duration: 30, type: 'Lunch' },
+      { start: addMins(template.start, Math.round(shiftMins * 0.75)), duration: 15, type: 'Break' },
+    ] : [];
+    return {
+      empId: emp.empId, shiftTemplate: templateKey,
+      shiftStart: template.start, shiftEnd: template.end,
+      shiftHours: parseFloat((shiftMins / 60).toFixed(1)),
+      daysOn: ['Mon','Tue','Wed','Thu','Fri'], daysOff: ['Sat','Sun'],
+      breaks, primaryQueue,
+    };
+  });
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -1713,52 +1950,383 @@ function ConfigTab({ config, setConfig }) {
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
-// MODULE 1 — EMPLOYEES TAB (stub — next build)
+// MODULE 2 — EMPLOYEES TAB COMPONENTS
 // ═════════════════════════════════════════════════════════════════════════════
-function EmployeesTab({ config }) {
+
+// ─── PROFILES VIEW ────────────────────────────────────────────────────────────
+function ProfilesView({ employees, config }) {
+  const [filterTRC, setFilterTRC] = useState('ALL');
+  const [filterWS,  setFilterWS]  = useState('ALL');
+  const [search,    setSearch]    = useState('');
+
+  const activeTRCs = ['ALL', ...Object.keys(config.trcs).filter(id => config.trcs[id].active)];
+  const activeWSs  = ['ALL', ...Object.keys(config.workstreams).filter(id => config.workstreams[id].active)];
+
+  const filtered = employees.filter(e => {
+    if (filterTRC !== 'ALL' && e.trc !== filterTRC) return false;
+    if (filterWS  !== 'ALL' && e.workstream !== filterWS) return false;
+    if (search && !e.name.toLowerCase().includes(search.toLowerCase()) &&
+        !e.empId.toLowerCase().includes(search.toLowerCase()) &&
+        !e.role.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
+
+  const roleBadge = (role) => {
+    const r = role.toLowerCase();
+    if (r.startsWith('trainee')) return <span className="badge badge-trainee">{role}</span>;
+    if (r.startsWith('sr.'))     return <span className="badge badge-senior">{role}</span>;
+    return <span className="badge badge-mint">{role}</span>;
+  };
+
+  return (
+    <>
+      <div className="emp-toolbar">
+        <input className="custom-input" placeholder="Search name, ID, role…"
+          value={search} onChange={e => setSearch(e.target.value)} style={{width:180}} />
+        <select className="inline-select" value={filterTRC} onChange={e => setFilterTRC(e.target.value)}>
+          {activeTRCs.map(t => <option key={t}>{t}</option>)}
+        </select>
+        <select className="inline-select" value={filterWS} onChange={e => setFilterWS(e.target.value)}>
+          {activeWSs.map(w => <option key={w}>{w}</option>)}
+        </select>
+        <span style={{fontSize:11, color:'#5A8A86', marginLeft:4}}>
+          {filtered.length} of {employees.length} shown
+        </span>
+      </div>
+      <div style={{flex:1, overflowY:'auto', padding:'0 20px 20px'}}>
+        <table className="profiles-table">
+          <thead>
+            <tr>
+              <th>Emp ID</th><th>Name</th><th>TRC</th><th>Workstream</th>
+              <th>Role</th><th>Seniority (yrs)</th><th>Hire Date</th><th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map(emp => (
+              <tr key={emp.empId}>
+                <td style={{fontFamily:'Courier New', color:'#035C67', fontWeight:700, fontSize:11}}>{emp.empId}</td>
+                <td style={{fontWeight:600}}>{emp.name}</td>
+                <td><span className="badge badge-mint">{emp.trc}</span></td>
+                <td style={{fontSize:11}}>{emp.workstream}</td>
+                <td>{roleBadge(emp.role)}</td>
+                <td style={{textAlign:'center', fontFamily:'Courier New', fontSize:11}}>{emp.seniorityYears.toFixed(1)}</td>
+                <td style={{fontFamily:'Courier New', fontSize:10.5, color:'#5A8A86'}}>{emp.hireDate}</td>
+                <td><span className="badge badge-active">{emp.status}</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
+// ─── SKILLS MATRIX VIEW ───────────────────────────────────────────────────────
+function SkillsMatrixView({ employees, skills, config }) {
+  const [selectedEmp, setSelectedEmp] = useState('');
+
+  const emp = employees.find(e => e.empId === selectedEmp);
+  const empSkills = skills.find(s => s.empId === selectedEmp)?.skills || [];
+
+  const activeTRCs = Object.entries(config.trcs).filter(([,t]) => t.active).map(([id]) => id);
+  const activeWSs  = Object.entries(config.workstreams).filter(([,w]) => w.active).map(([id]) => id);
+
+  const primaryCount   = empSkills.filter(s => s.proficiency === 'Primary').length;
+  const secondaryCount = empSkills.filter(s => s.proficiency === 'Secondary').length;
+
+  const rows = [];
+  if (emp) {
+    activeTRCs.forEach(trc => {
+      activeWSs.forEach(ws => {
+        const compliance = getComplianceStatus(emp.workstream, ws);
+        const queues = config.queueTemplates[ws] || [];
+        queues.forEach(q => {
+          const queueId = `${trc}_${q.id}`;
+          const skill = empSkills.find(s => s.queueId === queueId);
+          rows.push({
+            trc, ws, queueId,
+            queueLabel: q.label || q.id,
+            proficiency: skill?.proficiency || null,
+            certDate: skill?.certDate || null,
+            isEligible: !!skill,
+            complianceLabel: compliance.label,
+            complianceStatus: compliance.status,
+          });
+        });
+      });
+    });
+  }
+
+  return (
+    <>
+      <div className="skills-selector">
+        <label>Select Employee:</label>
+        <select value={selectedEmp} onChange={e => setSelectedEmp(e.target.value)}>
+          <option value="">— choose employee —</option>
+          {employees.map(e => (
+            <option key={e.empId} value={e.empId}>
+              {e.empId} · {e.name} · {e.trc} / {e.workstream}
+            </option>
+          ))}
+        </select>
+        {emp && (
+          <div style={{display:'flex', gap:8, marginLeft:8}}>
+            <span className="badge badge-primary-skill">Primary: {primaryCount}</span>
+            <span className="badge badge-secondary-skill">Secondary: {secondaryCount}</span>
+            <span className="badge badge-inactive">Blocked: {rows.length - primaryCount - secondaryCount}</span>
+          </div>
+        )}
+      </div>
+      {!emp ? (
+        <div className="output-placeholder" style={{flex:1}}>
+          <div className="ph-icon">🎓</div>
+          <div className="ph-title">Select an employee</div>
+          <p className="ph-sub">Choose an employee to view their complete queue skill certifications and compliance status.</p>
+        </div>
+      ) : (
+        <div style={{flex:1, overflowY:'auto', padding:'0 20px 20px'}}>
+          <div style={{padding:'10px 0', fontSize:11, color:'#5A8A86', marginBottom:6}}>
+            Skills for <strong style={{color:'#035C67'}}>{emp.name}</strong> — {emp.role} · {emp.trc} / {emp.workstream} · {emp.seniorityYears.toFixed(1)} yrs seniority
+          </div>
+          <table className="skills-table">
+            <thead>
+              <tr>
+                <th>Queue ID</th><th>Queue Label</th><th>TRC</th><th>Workstream</th>
+                <th>Proficiency</th><th>Cert Date</th><th>Compliance</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => (
+                <tr key={i}>
+                  <td style={{fontFamily:'Courier New', fontSize:10.5}}>{r.queueId}</td>
+                  <td style={{fontSize:11}}>{r.queueLabel}</td>
+                  <td><span className="badge badge-mint" style={{fontSize:9.5}}>{r.trc}</span></td>
+                  <td style={{fontSize:11}}>{r.ws}</td>
+                  <td>
+                    {r.proficiency === 'Primary'   && <span className="badge badge-primary-skill">Primary</span>}
+                    {r.proficiency === 'Secondary' && <span className="badge badge-secondary-skill">Secondary</span>}
+                    {!r.proficiency && <span className="skill-blocked">—</span>}
+                  </td>
+                  <td style={{fontFamily:'Courier New', fontSize:10.5, color:'#5A8A86'}}>{r.certDate || '—'}</td>
+                  <td style={{fontSize:10.5}}>
+                    {r.isEligible
+                      ? <span style={{color:'#1B5E20'}}>✓ Certified</span>
+                      : r.complianceLabel
+                        ? <span style={{color:'#B71C1C'}}>⛔ {r.complianceLabel}</span>
+                        : <span style={{color:'#999'}}>Not trained</span>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </>
+  );
+}
+
+// ─── SCHEDULES VIEW ───────────────────────────────────────────────────────────
+function SchedulesView({ employees, schedules, config }) {
+  const [filterTRC,  setFilterTRC]  = useState('ALL');
+  const [filterTmpl, setFilterTmpl] = useState('ALL');
+
+  const activeTRCs  = ['ALL', ...Object.keys(config.trcs).filter(id => config.trcs[id].active)];
+  const templateKeys = ['ALL', ...Object.keys(SHIFT_TEMPLATES)];
+
+  const templateCounts = {};
+  schedules.forEach(s => { templateCounts[s.shiftTemplate] = (templateCounts[s.shiftTemplate] || 0) + 1; });
+
+  const rows = employees.map(emp => {
+    const sched = schedules.find(s => s.empId === emp.empId) || {};
+    return { ...emp, ...sched };
+  }).filter(r => {
+    if (filterTRC   !== 'ALL' && r.trc           !== filterTRC)   return false;
+    if (filterTmpl  !== 'ALL' && r.shiftTemplate  !== filterTmpl)  return false;
+    return true;
+  });
+
+  return (
+    <>
+      <div className="emp-toolbar">
+        <select className="inline-select" value={filterTRC} onChange={e => setFilterTRC(e.target.value)}>
+          {activeTRCs.map(t => <option key={t}>{t}</option>)}
+        </select>
+        <select className="inline-select" value={filterTmpl} onChange={e => setFilterTmpl(e.target.value)}>
+          {templateKeys.map(t => <option key={t}>{t}</option>)}
+        </select>
+        <span style={{fontSize:11, color:'#5A8A86'}}>{rows.length} shown</span>
+        <div style={{display:'flex', gap:6, marginLeft:'auto', flexWrap:'wrap'}}>
+          {Object.entries(SHIFT_TEMPLATES).map(([k]) => (
+            <span key={k} style={{
+              fontSize:10, background:'#E0F2F0', padding:'2px 8px',
+              borderRadius:8, color:'#035C67', fontWeight:700
+            }}>
+              {k}: {templateCounts[k] || 0}
+            </span>
+          ))}
+        </div>
+      </div>
+      <div style={{flex:1, overflowY:'auto', padding:'0 20px 20px'}}>
+        <table className="schedules-table">
+          <thead>
+            <tr>
+              <th>Emp ID</th><th>Name</th><th>TRC</th><th>WS</th>
+              <th>Template</th><th>Shift</th><th>Hrs</th>
+              <th>Days On</th><th>Breaks</th><th>Primary Queue</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(r => (
+              <tr key={r.empId}>
+                <td style={{fontFamily:'Courier New', color:'#035C67', fontWeight:700, fontSize:11}}>{r.empId}</td>
+                <td style={{fontWeight:600, fontSize:11}}>{r.name}</td>
+                <td><span className="badge badge-mint" style={{fontSize:9.5}}>{r.trc}</span></td>
+                <td style={{fontSize:10.5}}>{r.workstream}</td>
+                <td style={{fontFamily:'Courier New', fontSize:11, color:'#035C67', fontWeight:700}}>{r.shiftTemplate}</td>
+                <td style={{fontFamily:'Courier New', fontSize:11}}>{r.shiftStart} – {r.shiftEnd}</td>
+                <td style={{textAlign:'center', fontFamily:'Courier New', fontSize:11}}>{r.shiftHours}</td>
+                <td style={{fontSize:10.5}}>{r.daysOn?.join(', ')}</td>
+                <td>
+                  {(r.breaks || []).map((b, i) => (
+                    <span key={i} className={`break-tag ${b.type === 'Lunch' ? 'lunch-tag' : ''}`}>
+                      {b.start} {b.type !== 'Break' ? b.type : ''}{b.duration !== 15 ? ` ${b.duration}m` : ''}
+                    </span>
+                  ))}
+                </td>
+                <td style={{fontFamily:'Courier New', fontSize:10, color:'#5A8A86'}}>{r.primaryQueue || '—'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
+// ─── EMPLOYEES TAB (3 sub-tabs) ───────────────────────────────────────────────
+function EmployeesTab({ config, employees, setEmployees, skills, setSkills, schedules, setSchedules }) {
+  const [activeView, setActiveView] = useState('profiles');
+  const generated = employees.length > 0;
+
+  const handleGenerate = () => {
+    const emps = generateEmployees(config);
+    const skls = generateSkills(emps, config);
+    const schs = generateSchedules(emps, skls);
+    setEmployees(emps);
+    setSkills(skls);
+    setSchedules(schs);
+    setActiveView('profiles');
+  };
+
   const agentCount = Object.values(config.headcount).reduce(
     (s, hc) => s + Object.values(hc).reduce((s2, n) => s2 + n, 0), 0
   );
+
+  const views = [
+    { id: 'profiles',  label: '👤 Profiles'     },
+    { id: 'skills',    label: '🎓 Skills Matrix' },
+    { id: 'schedules', label: '🗓 Schedules'     },
+  ];
+
+  if (!generated) {
+    return (
+      <div className="emp-shell">
+        <div className="tab-stub">
+          <div className="stub-icon">👥</div>
+          <div className="stub-title">Employees Module</div>
+          <p className="stub-sub">
+            Generate {agentCount} agent profiles from your headcount configuration.
+            Skills matrices and schedules are auto-built with full compliance enforcement.
+          </p>
+          <button className="btn-primary" style={{padding:'10px 28px', fontSize:13, marginTop:4}}
+            onClick={handleGenerate}>
+            ⚡ Generate {agentCount} Employees
+          </button>
+          <p className="stub-details">
+            Profiles · Skills matrix (compliance-enforced) · Shift schedules · Break auto-generation
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const totalSkills = skills.reduce((n, s) => n + s.skills.length, 0);
+
   return (
-    <div className="tab-stub">
-      <div className="stub-icon">👥</div>
-      <div className="stub-title">Employees Module</div>
-      <p className="stub-sub">
-        Auto-generate {agentCount} agent profiles from your headcount grid, then configure
-        skills matrices and base schedules. Compliance rules enforce skill eligibility automatically.
-      </p>
-      <span className="stub-coming">Next Build</span>
-      <p className="stub-details">
-        Coming: Profile generator · Skills matrix (compliance-enforced) ·
-        Schedule builder · Shift templates · Break auto-generation
-      </p>
+    <div className="emp-shell">
+      <div style={{display:'flex', alignItems:'center', background:'#fff', borderBottom:'2px solid #D8E8E6', flexShrink:0}}>
+        <div className="emp-subtabs" style={{flex:1, borderBottom:'none'}}>
+          {views.map(v => (
+            <button key={v.id}
+              className={`emp-subtab ${activeView === v.id ? 'active' : ''}`}
+              onClick={() => setActiveView(v.id)}>
+              {v.label}
+            </button>
+          ))}
+        </div>
+        <div style={{padding:'0 14px', display:'flex', gap:10, alignItems:'center', flexShrink:0}}>
+          <span style={{fontSize:11, color:'#5A8A86'}}>
+            <strong style={{color:'#035C67'}}>{employees.length}</strong> agents ·{' '}
+            <strong style={{color:'#035C67'}}>{totalSkills}</strong> skill records
+          </span>
+          <button className="btn-secondary" style={{fontSize:11}} onClick={handleGenerate}>↺ Regenerate</button>
+        </div>
+      </div>
+      {activeView === 'profiles'  && <ProfilesView  employees={employees} config={config} />}
+      {activeView === 'skills'    && <SkillsMatrixView employees={employees} skills={skills} config={config} />}
+      {activeView === 'schedules' && <SchedulesView employees={employees} schedules={schedules} config={config} />}
     </div>
   );
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
-// MODULE 2 — DATA TAB (stub — next build)
+// MODULE 3 — DATA TAB
 // ═════════════════════════════════════════════════════════════════════════════
-function DataTab({ config }) {
+function DataTab({ config, employees, schedules }) {
+  const activeTRCCount = Object.values(config.trcs).filter(t => t.active).length;
+  const activeWSCount  = Object.values(config.workstreams).filter(w => w.active).length;
   const queueCount = Object.values(config.queueTemplates).reduce((n, qt) => n + qt.length, 0)
-                   * Object.keys(config.trcs).length;
-  const agentCount = Object.values(config.headcount).reduce(
-    (s, hc) => s + Object.values(hc).reduce((s2, n) => s2 + n, 0), 0
-  );
+                   * activeTRCCount;
+  const profilesReady  = employees.length > 0;
+  const schedulesReady = schedules.length > 0;
+  const configReady    = activeTRCCount > 0 && activeWSCount > 0 && queueCount > 0;
+
+  const checks = [
+    { label: 'TRCs active',             done: activeTRCCount > 0,  detail: `${activeTRCCount} active`                             },
+    { label: 'Workstreams active',       done: activeWSCount > 0,   detail: `${activeWSCount} active`                              },
+    { label: 'Queue templates defined',  done: queueCount > 0,      detail: `${queueCount} queues`                                 },
+    { label: 'Employee profiles built',  done: profilesReady,       detail: profilesReady ? `${employees.length} agents` : 'Go to Employees → Generate' },
+    { label: 'Schedules generated',      done: schedulesReady,      detail: schedulesReady ? `${schedules.length} schedules`       : 'Go to Employees → Generate' },
+  ];
+
+  const allReady = checks.every(c => c.done);
+
   return (
-    <div className="tab-stub">
-      <div className="stub-icon">📊</div>
-      <div className="stub-title">Data Engine</div>
-      <p className="stub-sub">
-        Generate {queueCount} queue × 14-day interval dataset ({agentCount} agent schedules),
-        13-week daily history, 4-week forward forecast, and pre-ranked risk windows.
-        Pick a scenario or customize per queue.
-      </p>
-      <span className="stub-coming">Next Build</span>
-      <p className="stub-details">
-        Coming: Scenario picker (Baseline / High Volume / Understaffed / Surplus / Custom) ·
-        Interval generator · Daily history · Weekly forecast · Risk window engine · DataPacket assembly
-      </p>
+    <div className="emp-shell">
+      <div className="tab-stub">
+        <div className="stub-icon">📊</div>
+        <div className="stub-title">Data Engine</div>
+        <p className="stub-sub">
+          {allReady
+            ? `Ready — ${queueCount} queues · ${employees.length} agents · 14-day interval dataset pending.`
+            : 'Complete the setup checklist below before generating your dataset.'}
+        </p>
+        {allReady
+          ? <span className="stub-coming" style={{background:'#3EFFC0', color:'#002F32'}}>✅ Ready to Build</span>
+          : <span className="stub-coming">Setup Required</span>}
+        <div style={{width:'100%', maxWidth:500, marginTop:12}}>
+          {checks.map((c, i) => (
+            <div key={i} className={`readiness-item ${c.done ? 'ready' : 'pending-item'}`}>
+              <span style={{fontSize:16}}>{c.done ? '✅' : '⏳'}</span>
+              <span style={{flex:1, fontWeight:600, fontSize:12}}>{c.label}</span>
+              <span style={{fontSize:11, color:'#9ABEBC'}}>{c.detail}</span>
+            </div>
+          ))}
+        </div>
+        <p className="stub-details" style={{marginTop:14}}>
+          Coming — Build Pass 3: Scenario picker · Interval generator · 13-week history · Forward forecast · Risk windows · DataPacket assembly
+        </p>
+      </div>
     </div>
   );
 }
@@ -2037,6 +2605,9 @@ function App() {
   const [activeModule, setActiveModule] = useState('operations');
   const [activeTRC,    setActiveTRC]    = useState('ONC');
   const [config,       setConfig]       = useState(() => JSON.parse(JSON.stringify(DEFAULT_CONFIG)));
+  const [employees,    setEmployees]    = useState([]);
+  const [skills,       setSkills]       = useState([]);
+  const [schedules,    setSchedules]    = useState([]);
 
   const modules = [
     { id: 'config',     label: '⚙ Config'     },
@@ -2074,8 +2645,15 @@ function App() {
 
       {/* MODULE CONTENT */}
       {activeModule === 'config'     && <ConfigTab config={config} setConfig={setConfig} />}
-      {activeModule === 'employees'  && <EmployeesTab config={config} />}
-      {activeModule === 'data'       && <DataTab config={config} />}
+      {activeModule === 'employees'  && (
+        <EmployeesTab
+          config={config}
+          employees={employees}   setEmployees={setEmployees}
+          skills={skills}         setSkills={setSkills}
+          schedules={schedules}   setSchedules={setSchedules}
+        />
+      )}
+      {activeModule === 'data'       && <DataTab config={config} employees={employees} schedules={schedules} />}
       {activeModule === 'operations' && <OperationsTab activeTRC={activeTRC} />}
     </div>
   );
