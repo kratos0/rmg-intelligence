@@ -936,16 +936,11 @@ ${context}
 Note: This is a prototype running on Claude. Data is synthetic and seeded by date. Bot prompts are production-identical.`;
 }
 
-// ─── CLAUDE API ──────────────────────────────────────────────────────────────
-async function callClaude(apiKey, systemPrompt, userMessage) {
-  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+// ─── CLAUDE API (via Vercel proxy — no CORS, no key in browser) ──────────────
+async function callClaude(systemPrompt, userMessage) {
+  const resp = await fetch('/api/proxy', {
     method: 'POST',
-    headers: {
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'content-type': 'application/json',
-      'anthropic-dangerous-request-override': 'allow',
-    },
+    headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
       model: 'claude-sonnet-4-6',
       max_tokens: 2048,
@@ -1212,8 +1207,7 @@ function RunHistory({ history }) {
 
 // ─── MAIN APP ────────────────────────────────────────────────────────────────
 function App() {
-  const [apiKey,    setApiKey]    = useState('');
-  const [active,    setActive]    = useState(false);
+  const [active,    setActive]    = useState(true); // no key needed — proxy handles auth
   const [activeBot, setActiveBot] = useState('intraday');
   const [activeTRC, setActiveTRC] = useState('ONC');
   const [output,    setOutput]    = useState('');
@@ -1238,21 +1232,17 @@ function App() {
     setLoading(true);
     setOutput('');
     try {
-      const result = await callClaude(apiKey, systemPrompt, userMessage);
+      const result = await callClaude(systemPrompt, userMessage);
       setOutput(result);
       setHistory(prev => [
         { bot: bot.name, version: bot.version, phrase, trc: activeTRC, time: timeStr },
         ...prev.slice(0, 11)
       ]);
     } catch (err) {
-      setOutput(`❌ Error: ${err.message}\n\nTips:\n• Check that your API key is valid\n• Ensure you have API access at console.anthropic.com\n• If CORS error: try from a local server instead of file:// protocol`);
+      setOutput(`❌ Error: ${err.message}\n\nTip: Make sure ANTHROPIC_API_KEY is set in your Vercel environment variables.`);
     }
     setLoading(false);
-  }, [apiKey, activeBot, activeTRC, data, dateStr, timeStr]);
-
-  if (!active) {
-    return <APIKeyScreen onActivate={(k) => { setApiKey(k); setActive(true); }} />;
-  }
+  }, [activeBot, activeTRC, data, dateStr, timeStr]);
 
   return (
     <div className="app-shell">
