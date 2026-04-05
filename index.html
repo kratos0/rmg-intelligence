@@ -586,7 +586,7 @@
     .sched-body { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
     .sched-timeline-wrap { flex: 1; overflow-y: auto; overflow-x: hidden; min-height: 0; }
     .sched-row { display: flex; border-bottom: 1px solid #EEEEEE; flex-shrink: 0; }
-    .sched-label-col { width: 155px; flex-shrink: 0; border-right: 2px solid #D8E8E6; background: #F8FFFE; padding: 4px 7px; display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
+    .sched-label-col { width: 160px; flex-shrink: 0; border-right: 2px solid #D8E8E6; background: #F8FFFE; padding: 5px 8px; display: flex; flex-direction: column; justify-content: center; overflow: visible; }
     .sched-bar-col { flex: 1; position: relative; overflow: hidden; min-width: 0; }
     .sched-header-row { height: 28px; position: sticky; top: 0; z-index: 10; background: #fff; border-bottom: 2px solid #D8E8E6; }
     .sched-hour-grid { position: absolute; inset: 0; pointer-events: none; }
@@ -597,11 +597,11 @@
     .sched-cov-bar { position: absolute; border-radius: 2px 2px 0 0; transition: opacity 0.1s; box-sizing: border-box; }
     .sched-cov-bar:hover { opacity: 0.75; }
     .sched-cov-label { position: absolute; top: 2px; font-size: 7.5px; font-weight: 700; white-space: nowrap; font-family: 'Courier New', monospace; pointer-events: none; }
-    .sched-ws-divider { display: flex; height: 18px; flex-shrink: 0; border-bottom: 1px solid #C8E0DC; }
-    .sched-agent-row { height: 34px; }
+    .sched-ws-divider { display: flex; height: 20px; flex-shrink: 0; border-bottom: 1px solid #C8E0DC; }
+    .sched-agent-row { height: 42px; }
     .sched-agent-row:hover { background: rgba(3,92,103,0.04); }
-    .sched-agent-name { font-size: 11px; font-weight: 600; color: #002F32; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .sched-agent-meta { margin-top: 1px; }
+    .sched-agent-name { font-size: 11.5px; font-weight: 600; color: #002F32; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.35; }
+    .sched-agent-meta { margin-top: 2px; }
     .sched-gridline { position: absolute; top: 0; bottom: 0; border-left: 1px solid rgba(200,224,220,0.4); pointer-events: none; }
     .sched-shift-bar { position: absolute; top: 3px; bottom: 3px; border-radius: 3px; }
     .sched-callout-stripe { position: absolute; top: 3px; bottom: 3px; border-radius: 3px; border: 1px dashed #EA5353; background: repeating-linear-gradient(45deg, rgba(234,83,83,0.15), rgba(234,83,83,0.15) 4px, transparent 4px, transparent 8px); }
@@ -2810,17 +2810,14 @@ function EmployeesTab({ config, employees, setEmployees, skills, setSkills, sche
       <div className="emp-shell">
         <div className="tab-stub">
           <div className="stub-icon">👥</div>
-          <div className="stub-title">Employees Module</div>
+          <div className="stub-title">Employees Auto-Generated</div>
           <p className="stub-sub">
-            Generate {agentCount} agent profiles from your headcount configuration.
-            Skills matrices and schedules are auto-built with full compliance enforcement.
+            Employee profiles, skills, and schedules are automatically sized to demand
+            when you click <strong>⚡ Generate Data</strong> on the Data tab.
+            Headcount is computed from volume, AHT, and scenario parameters — no manual entry needed.
           </p>
-          <button className="btn-primary" style={{padding:'10px 28px', fontSize:13, marginTop:4}}
-            onClick={handleGenerate}>
-            ⚡ Generate {agentCount} Employees
-          </button>
-          <p className="stub-details">
-            Profiles · Skills matrix (compliance-enforced) · Shift schedules · Break auto-generation
+          <p className="stub-details" style={{marginTop:12}}>
+            📊 Data tab → pick a scenario → Generate Data
           </p>
         </div>
       </div>
@@ -2842,11 +2839,14 @@ function EmployeesTab({ config, employees, setEmployees, skills, setSkills, sche
           ))}
         </div>
         <div style={{padding:'0 14px', display:'flex', gap:10, alignItems:'center', flexShrink:0}}>
+          <span style={{fontSize:10, padding:'2px 8px', borderRadius:8, background:'rgba(62,255,192,0.15)',
+            color:'#035C67', fontWeight:700, border:'1px solid rgba(62,255,192,0.4)'}}>
+            ✦ Auto-generated
+          </span>
           <span style={{fontSize:11, color:'#5A8A86'}}>
             <strong style={{color:'#035C67'}}>{employees.length}</strong> agents ·{' '}
             <strong style={{color:'#035C67'}}>{totalSkills}</strong> skill records
           </span>
-          <button className="btn-secondary" style={{fontSize:11}} onClick={handleGenerate}>↺ Regenerate</button>
         </div>
       </div>
       {activeView === 'profiles'  && <ProfilesView  employees={employees} config={config} />}
@@ -2856,10 +2856,37 @@ function EmployeesTab({ config, employees, setEmployees, skills, setSkills, sche
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// DEMAND-FIRST STAFFING PLANNER
+// Computes required headcount per TRC/WS from volume + AHT + scenario params.
+// Returns { [trc]: { [ws]: agentCount } }
+// ─────────────────────────────────────────────────────────────────────────────
+function computeRequiredHeadcount(config, scenarioParams) {
+  const peakCurve = Math.max(...TIME_CURVE); // 1.40
+  const headcount = {};
+  Object.entries(config.trcs).filter(([,t])=>t.active).forEach(([trc])=>{
+    headcount[trc] = {};
+    Object.entries(config.workstreams).filter(([,w])=>w.active).forEach(([ws])=>{
+      const queues  = config.queueTemplates[ws]||[];
+      const qCount  = queues.length||1;
+      const wsBase  = WS_BASE[ws]||{baseVol:8,baseAHT:360};
+      // Peak FTE needed per queue (vol is per-queue per-slot)
+      const peakVol   = wsBase.baseVol * peakCurve * scenarioParams.volumeModifier;
+      const peakReq   = peakVol * wsBase.baseAHT / 1800;
+      // Effective utilization: adherence × (1 − callout − VTO) × 0.88 shrinkage/breaks
+      const effUtil   = Math.max(0.3,
+        scenarioParams.adherenceBase * (1 - scenarioParams.calloutRate - scenarioParams.vtoRate) * 0.88);
+      const perQueue  = Math.max(1, Math.ceil(peakReq / effUtil));
+      headcount[trc][ws] = perQueue * qCount;
+    });
+  });
+  return headcount;
+}
+
 // ═════════════════════════════════════════════════════════════════════════════
 // MODULE 3 — DATA TAB (full — Build Pass 3)
 // ═════════════════════════════════════════════════════════════════════════════
-function DataTab({ config, employees, schedules, generatedData, setGeneratedData }) {
+function DataTab({ config, generatedData, setGeneratedData, setEmployees, setSkills, setSchedules }) {
   const [scenario,    setScenario]    = useState('Baseline');
   const [driverEvent, setDriverEvent] = useState('None');
   const [custom, setCustom] = useState({ volumeModifier:1.00, adherenceBase:0.92, calloutRate:0.04, vtoRate:0.02 });
@@ -2868,11 +2895,11 @@ function DataTab({ config, employees, schedules, generatedData, setGeneratedData
 
   const activeTRCCount = Object.values(config.trcs).filter(t=>t.active).length;
   const queueCount     = Object.values(config.queueTemplates).reduce((n,qt)=>n+qt.length,0)*activeTRCCount;
-  const allReady = activeTRCCount>0 && employees.length>0 && schedules.length>0 && queueCount>0;
+  const allReady    = activeTRCCount>0 && queueCount>0; // employees auto-generated — no pre-req
   const isGenerated = !!(generatedData?.intervals?.length);
 
   const getParams = () => {
-    const base = scenario==='Custom' ? {...custom} : {...SCENARIOS[scenario]};
+    const base   = scenario==='Custom' ? {...custom} : {...SCENARIOS[scenario]};
     const driver = DRIVER_EVENTS.find(d=>d.type===driverEvent)||DRIVER_EVENTS[0];
     return {
       ...base,
@@ -2882,30 +2909,54 @@ function DataTab({ config, employees, schedules, generatedData, setGeneratedData
     };
   };
 
+  // Live projected headcount so the user can see what will be generated
+  const projectedHeadcount = useMemo(()=>{
+    if(!allReady) return null;
+    return computeRequiredHeadcount(config, getParams());
+  },[config, scenario, driverEvent, custom]);
+
+  const projectedTotal = useMemo(()=>{
+    if(!projectedHeadcount) return 0;
+    return Object.values(projectedHeadcount).reduce((s,ws)=>s+Object.values(ws).reduce((a,b)=>a+b,0),0);
+  },[projectedHeadcount]);
+
   const handleGenerate = () => {
     if(!allReady||generating) return;
     setGenerating(true);
-    // setTimeout allows React to render the "Generating…" state before blocking
     setTimeout(()=>{
       try {
-        const params    = getParams();
-        // Compute most recent Monday so day-0 is always a workday
+        const params = getParams();
+        // Nearest Monday — always a workday for day-0
         const startDate = (()=>{ const d=new Date(); const dow=d.getDay(); d.setDate(d.getDate()-(dow===0?6:dow-1)); d.setHours(0,0,0,0); return d; })();
-        const ql  = buildQueueList(config);
-        const as  = generateAgentSchedules(employees, schedules, params, startDate, 14);
-        const iv  = generateIntervals(as, ql, params, startDate, 14);
-        const rw  = generateRiskWindows(iv);
-        const dh  = generateDailyHistory(ql, params, startDate, 13);
-        const wh  = aggregateWeeklyHistory(dh);
-        const wf  = generateWeeklyForecast(wh, params);
-        const ta  = generateTRCAggregates(iv, config);
-        const ss  = calculateScheduleScore(as, ql);
+        const ql = buildQueueList(config);
+
+        // ── DEMAND-FIRST: compute headcount from requirements ──────────────
+        const autoHC    = computeRequiredHeadcount(config, params);
+        const emps      = generateEmployees({...config, headcount: autoHC});
+        const skls      = generateSkills(emps, config);
+        const scheds    = generateSchedules(emps, skls);
+
+        // ── GENERATE OPERATIONAL DATA ──────────────────────────────────────
+        const as = generateAgentSchedules(emps, scheds, params, startDate, 14);
+        const iv = generateIntervals(as, ql, params, startDate, 14);
+        const rw = generateRiskWindows(iv);
+        const dh = generateDailyHistory(ql, params, startDate, 13);
+        const wh = aggregateWeeklyHistory(dh);
+        const wf = generateWeeklyForecast(wh, params);
+        const ta = generateTRCAggregates(iv, config);
+        const ss = calculateScheduleScore(as, ql);
+
+        // Propagate to all dependent tabs
+        setEmployees(emps);
+        setSkills(skls);
+        setSchedules(scheds);
         setGeneratedData({ scenario, driverEvent, scenarioParams:params,
           queueList:ql, agentSchedules:as, intervals:iv,
           riskWindows:rw, dailyHistory:dh, weeklyHistory:wh,
-          weeklyForecast:wf, trcAggregates:ta, scheduleScore:ss });
+          weeklyForecast:wf, trcAggregates:ta, scheduleScore:ss,
+          autoHeadcount:autoHC, totalAgents:emps.length });
         setView('preview');
-      } catch(e){ console.error(e); }
+      } catch(e){ console.error('Generate error:', e); }
       setGenerating(false);
     },50);
   };
@@ -2920,10 +2971,8 @@ function DataTab({ config, employees, schedules, generatedData, setGeneratedData
   ];
 
   const checks = [
-    { label:'TRCs active',          done:activeTRCCount>0,     detail:`${activeTRCCount} active`                                             },
-    { label:'Queue templates',      done:queueCount>0,         detail:`${queueCount} queues`                                                 },
-    { label:'Employee profiles',    done:employees.length>0,   detail:employees.length>0?`${employees.length} agents`:'Go to Employees tab'  },
-    { label:'Schedules generated',  done:schedules.length>0,   detail:schedules.length>0?`${schedules.length} schedules`:'Go to Employees tab'},
+    { label:'TRCs active',     done:activeTRCCount>0, detail:`${activeTRCCount} active` },
+    { label:'Queue templates', done:queueCount>0,     detail:`${queueCount} queues`     },
   ];
 
   return (
@@ -3008,6 +3057,26 @@ function DataTab({ config, employees, schedules, generatedData, setGeneratedData
                   <div className="custom-control-val">{ctrl.fmt(custom[ctrl.key])}</div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Projected headcount preview */}
+          {allReady && projectedHeadcount && (
+            <div style={{padding:'10px 20px', background:'#F0FAF8', borderBottom:'1px solid #D8E8E6', borderTop:'1px solid #D8E8E6', display:'flex', alignItems:'center', gap:8, flexWrap:'wrap'}}>
+              <span style={{fontSize:11, fontWeight:700, color:'#5A8A86', flexShrink:0}}>📊 Will generate:</span>
+              <span style={{fontSize:14, fontWeight:800, color:'#035C67'}}>{projectedTotal} agents</span>
+              <span style={{fontSize:11, color:'#B0C8C6', margin:'0 2px'}}>·</span>
+              {Object.entries(projectedHeadcount).flatMap(([trc, wsList])=>
+                Object.entries(wsList).map(([ws, cnt])=>(
+                  <span key={`${trc}-${ws}`} style={{fontSize:11, padding:'2px 9px', borderRadius:10,
+                    background:'#E0FAF5', color:'#035C67', fontWeight:600, border:'1px solid #B5E8DC'}}>
+                    {trc}/{ws}: {cnt}
+                  </span>
+                ))
+              )}
+              <span style={{marginLeft:'auto', fontSize:10, color:'#8AB0AC', fontStyle:'italic'}}>
+                Auto-sized to peak demand
+              </span>
             </div>
           )}
 
@@ -4452,8 +4521,8 @@ function App() {
           schedules={schedules}   setSchedules={setSchedules}
         />
       )}
-      {activeModule === 'data'       && <DataTab config={config} employees={employees} schedules={schedules}
-                                          generatedData={generatedData} setGeneratedData={setGeneratedData} />}
+      {activeModule === 'data'       && <DataTab config={config} generatedData={generatedData} setGeneratedData={setGeneratedData}
+                                          setEmployees={setEmployees} setSkills={setSkills} setSchedules={setSchedules} />}
       {activeModule === 'schedule'   && <ScheduleTab employees={employees} generatedData={generatedData} />}
       {activeModule === 'operations' && <OperationsTab generatedData={generatedData} />}
     </div>
