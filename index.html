@@ -562,6 +562,63 @@
     .preview-risk-table tbody td { padding: 6px 10px; border-bottom: 1px solid #EEE; }
     .preview-risk-table tbody tr:hover td { background: rgba(3,92,103,0.04); }
 
+    /* ═══ SCHEDULE TAB ════════════════════════════════════════════════════════ */
+    .sched-shell { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #EDEBE7; }
+    .sched-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
+    .sched-filters {
+      background: #fff; border-bottom: 2px solid #D8E8E6;
+      padding: 8px 16px; display: flex; gap: 14px; align-items: center; flex-shrink: 0; flex-wrap: wrap;
+    }
+    .sched-filter-group { display: flex; align-items: center; gap: 6px; }
+    .sched-filter-group label { font-size: 10px; font-weight: 700; color: #5A8A86; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+    .sched-filter-group select { padding: 4px 8px; border: 1px solid #C8E0DC; border-radius: 4px; font-size: 11px; color: #002F32; background: #FAFAF8; outline: none; cursor: pointer; }
+    .sched-filter-group select:focus { border-color: #035C67; }
+    .sched-filter-group input[type=date] { padding: 4px 8px; border: 1px solid #C8E0DC; border-radius: 4px; font-size: 11px; color: #002F32; background: #FAFAF8; outline: none; }
+    .sched-filter-group input[type=date]:focus { border-color: #035C67; }
+    .sched-day-nav { display: flex; align-items: center; gap: 3px; }
+    .sched-day-btn { padding: 3px 8px; border: 1px solid #C8E0DC; border-radius: 4px; background: #FAFAF8; color: #035C67; font-size: 11px; font-weight: 700; cursor: pointer; }
+    .sched-day-btn:hover { background: #E0F2F0; border-color: #008F83; }
+    .sched-view-toggle { display: flex; border: 1px solid #C8E0DC; border-radius: 4px; overflow: hidden; margin-left: auto; }
+    .sched-view-btn { padding: 4px 12px; border: none; background: transparent; color: #5A8A86; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.12s; }
+    .sched-view-btn:hover { background: #E0F2F0; color: #035C67; }
+    .sched-view-btn.active { background: #035C67; color: #3EFFC0; }
+    /* Graph view */
+    .sched-body { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .sched-timeline-wrap { flex: 1; overflow-y: auto; overflow-x: hidden; min-height: 0; }
+    .sched-row { display: flex; border-bottom: 1px solid #EEEEEE; flex-shrink: 0; }
+    .sched-label-col { width: 130px; flex-shrink: 0; border-right: 2px solid #D8E8E6; background: #F8FFFE; padding: 3px 6px; display: flex; flex-direction: column; justify-content: center; }
+    .sched-bar-col { flex: 1; position: relative; overflow: hidden; min-width: 0; }
+    .sched-header-row { height: 28px; position: sticky; top: 0; z-index: 10; background: #fff; border-bottom: 2px solid #D8E8E6; }
+    .sched-hour-grid { position: absolute; inset: 0; pointer-events: none; }
+    .sched-hour-tick { position: absolute; top: 0; bottom: 0; border-left: 1px solid #D8E8E6; font-size: 9px; font-weight: 700; color: #035C67; padding-left: 3px; display: flex; align-items: center; white-space: nowrap; }
+    .sched-half-tick { position: absolute; top: 50%; bottom: 0; border-left: 1px dashed #E8E8E8; pointer-events: none; }
+    .sched-coverage-row { height: 76px; flex-shrink: 0; background: #F8FFFE; border-bottom: 2px solid #C8E0DC; }
+    .sched-cov-bars { background: #F0FAF8; }
+    .sched-cov-bar { position: absolute; border-radius: 2px 2px 0 0; transition: opacity 0.1s; box-sizing: border-box; }
+    .sched-cov-bar:hover { opacity: 0.75; }
+    .sched-cov-label { position: absolute; top: 2px; font-size: 7.5px; font-weight: 700; white-space: nowrap; font-family: 'Courier New', monospace; pointer-events: none; }
+    .sched-ws-divider { display: flex; height: 18px; flex-shrink: 0; border-bottom: 1px solid #C8E0DC; }
+    .sched-agent-row { height: 24px; }
+    .sched-agent-row:hover { background: rgba(3,92,103,0.04); }
+    .sched-agent-name { font-size: 10px; font-weight: 600; color: #002F32; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sched-agent-meta { margin-top: 1px; }
+    .sched-gridline { position: absolute; top: 0; bottom: 0; border-left: 1px solid rgba(200,224,220,0.4); pointer-events: none; }
+    .sched-shift-bar { position: absolute; top: 3px; bottom: 3px; border-radius: 3px; }
+    .sched-callout-stripe { position: absolute; top: 3px; bottom: 3px; border-radius: 3px; border: 1px dashed #EA5353; background: repeating-linear-gradient(45deg, rgba(234,83,83,0.15), rgba(234,83,83,0.15) 4px, transparent 4px, transparent 8px); }
+    /* Text view */
+    .sched-text-body { flex: 1; overflow: auto; padding: 0; }
+    .sched-text-section { margin-bottom: 0; }
+    .sched-text-section-header { padding: 6px 16px; background: #E0F2F0; border-bottom: 1px solid #C8E0DC; font-size: 10px; font-weight: 700; color: #035C67; text-transform: uppercase; letter-spacing: 0.5px; position: sticky; top: 0; z-index: 2; }
+    .sched-text-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    .sched-text-table thead th { background: #035C67; color: #fff; padding: 6px 10px; font-size: 10px; font-weight: 700; position: sticky; top: 32px; text-align: left; white-space: nowrap; z-index: 1; }
+    .sched-text-table tbody td { padding: 5px 10px; border-bottom: 1px solid #F0F0F0; white-space: nowrap; }
+    .sched-text-table tbody tr:hover td { background: rgba(3,92,103,0.04); }
+    /* Legend */
+    .sched-legend { background: #fff; border-top: 1px solid #D8E8E6; padding: 6px 16px; display: flex; gap: 20px; flex-shrink: 0; flex-wrap: wrap; }
+    .sched-legend-section { display: flex; align-items: center; gap: 8px; }
+    .sched-legend-title { font-size: 9px; font-weight: 700; color: #035C67; text-transform: uppercase; letter-spacing: 0.5px; }
+    .sched-legend-item { display: flex; align-items: center; gap: 4px; font-size: 9.5px; color: #5A8A86; }
+
     /* ═══ BUILD PASS 4: DYNAMIC BOT VIEWS ═══════════════════════════════════ */
     .bp4-view { flex: 1; overflow-y: auto; min-height: 0; }
     .bp4-kpi-row {
@@ -3834,6 +3891,360 @@ Note: This is a prototype running on Claude. Data is synthetic and deterministic
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
+// SCHEDULE TAB
+// ═════════════════════════════════════════════════════════════════════════════
+function ScheduleTab({ employees, generatedData, activeTRC }) {
+  const T_START = 7*60, T_END = 19*60, T_RANGE = T_END - T_START;
+  const wsShort = {Pharmacist:'Pharm',Technician:'Tech',PatientAccess:'PtAcc',ContactCenter:'CC'};
+  const wsColors = {Pharmacist:'#3EFFC0',Technician:'#90B9FF',PatientAccess:'#DAFA87',ContactCenter:'#E88789'};
+  const statusFill = {critical:'#EA5353',at_risk:'#E88789',threshold:'#F9A825',adequate:'#DAFA87',surplus:'#90B9FF'};
+  const agentStatusColor = {Active:'#008F83',CallOut:'#EA5353',VTO:'#90B9FF'};
+  const HOURS = [7,8,9,10,11,12,13,14,15,16,17,18,19];
+
+  const [viewMode, setViewMode] = useState('graph'); // 'graph' | 'text'
+  const [filterTRC, setFilterTRC] = useState(activeTRC==='ALL'?'ONC':activeTRC);
+  const [filterWS,  setFilterWS]  = useState('ALL');
+  const [filterQ,   setFilterQ]   = useState('ALL');
+  const [viewDate,  setViewDate]  = useState(()=>new Date().toISOString().split('T')[0]);
+
+  useEffect(()=>{ if(activeTRC!=='ALL') setFilterTRC(activeTRC); },[activeTRC]);
+  useEffect(()=>setFilterQ('ALL'),[filterWS]);
+  useEffect(()=>{ setFilterWS('ALL'); setFilterQ('ALL'); },[filterTRC]);
+
+  const toMin = t => { const [h,m]=t.split(':').map(Number); return h*60+m; };
+  const shiftDate = d => {
+    const dt = new Date(d); dt.setDate(dt.getDate()+1);
+    return dt.toISOString().split('T')[0];
+  };
+  const prevDate = d => {
+    const dt = new Date(d); dt.setDate(dt.getDate()-1);
+    return dt.toISOString().split('T')[0];
+  };
+
+  const hasData = !!(generatedData?.intervals?.length);
+
+  // Available workstreams for filterTRC + viewDate
+  const wsList = useMemo(()=>{
+    if(!generatedData?.intervals) return ['ALL'];
+    const ws=[...new Set(generatedData.intervals
+      .filter(iv=>iv.date===viewDate&&iv.trc===filterTRC)
+      .map(iv=>iv.workstream))].sort();
+    return ['ALL',...ws];
+  },[generatedData,viewDate,filterTRC]);
+
+  // Available queues for filterTRC + filterWS + viewDate
+  const queueOpts = useMemo(()=>{
+    if(!generatedData?.intervals) return ['ALL'];
+    let ivs=generatedData.intervals.filter(iv=>iv.date===viewDate&&iv.trc===filterTRC);
+    if(filterWS!=='ALL') ivs=ivs.filter(iv=>iv.workstream===filterWS);
+    return ['ALL',...[...new Set(ivs.map(iv=>iv.queueId))].sort()];
+  },[generatedData,viewDate,filterTRC,filterWS]);
+
+  // Coverage slots (aggregated 30-min intervals → display as bars)
+  const coverageSlots = useMemo(()=>{
+    if(!generatedData?.intervals) return [];
+    let ivs=generatedData.intervals.filter(iv=>iv.date===viewDate&&iv.trc===filterTRC);
+    if(filterWS!=='ALL') ivs=ivs.filter(iv=>iv.workstream===filterWS);
+    if(filterQ!=='ALL')  ivs=ivs.filter(iv=>iv.queueId===filterQ);
+    const m={};
+    ivs.forEach(iv=>(iv.slots||[]).forEach(s=>{
+      if(!m[s.time]) m[s.time]={time:s.time,sch:0,act:0,req:0,net:0};
+      m[s.time].sch+=s.scheduledFTE||0;
+      m[s.time].act+=s.actualFTE||0;
+      m[s.time].req+=s.requiredFTE||0;
+      m[s.time].net+=s.netStaffing||0;
+    }));
+    return Object.values(m).sort((a,b)=>a.time.localeCompare(b.time)).map(sl=>({
+      ...sl,
+      status: sl.net<-3?'critical':sl.net<0?'at_risk':sl.net===0?'threshold':sl.net<=3?'adequate':'surplus',
+    }));
+  },[generatedData,viewDate,filterTRC,filterWS,filterQ]);
+
+  const maxSch = useMemo(()=>Math.max(1,...coverageSlots.map(s=>s.sch)),[coverageSlots]);
+
+  // Employee name lookup
+  const empMap = useMemo(()=>{
+    const m={};
+    (employees||[]).forEach(e=>{ m[e.empId]=`${e.firstName||''} ${e.lastName||''}`.trim()||e.empId; });
+    return m;
+  },[employees]);
+
+  // Agent rows — filtered + sorted by WS then name
+  const agentRows = useMemo(()=>{
+    if(!generatedData?.agentSchedules) return [];
+    let rows=generatedData.agentSchedules.filter(a=>a.date===viewDate&&a.trc===filterTRC);
+    if(filterWS!=='ALL') rows=rows.filter(a=>a.workstream===filterWS);
+    return rows.map(a=>({...a, name:empMap[a.empId]||a.empId}))
+      .sort((a,b)=>a.workstream.localeCompare(b.workstream)||a.name.localeCompare(b.name));
+  },[generatedData,employees,viewDate,filterTRC,filterWS,empMap]);
+
+  if(!hasData) return (
+    <div className="sched-empty">
+      <div className="stub-icon">📅</div>
+      <div className="stub-title">No Data Generated</div>
+      <p className="stub-sub">Go to the 📊 Data tab and generate data first, then return here.</p>
+    </div>
+  );
+
+  const filterBar = (
+    <div className="sched-filters">
+      <div className="sched-filter-group">
+        <label>TRC</label>
+        <select value={filterTRC} onChange={e=>setFilterTRC(e.target.value)}>
+          {['ONC','RARE','PACE'].map(t=><option key={t} value={t}>{t}</option>)}
+        </select>
+      </div>
+      <div className="sched-filter-group">
+        <label>Workstream</label>
+        <select value={filterWS} onChange={e=>setFilterWS(e.target.value)}>
+          {wsList.map(w=><option key={w} value={w}>{w==='ALL'?'All Workstreams':(wsShort[w]||w)}</option>)}
+        </select>
+      </div>
+      <div className="sched-filter-group">
+        <label>Queue</label>
+        <select value={filterQ} onChange={e=>setFilterQ(e.target.value)}>
+          {queueOpts.map(q=><option key={q} value={q}>{q==='ALL'?'All Queues':q}</option>)}
+        </select>
+      </div>
+      <div className="sched-filter-group">
+        <label>Date</label>
+        <div className="sched-day-nav">
+          <button className="sched-day-btn" onClick={()=>setViewDate(prevDate(viewDate))}>‹</button>
+          <input type="date" value={viewDate} onChange={e=>setViewDate(e.target.value)} />
+          <button className="sched-day-btn" onClick={()=>setViewDate(shiftDate(viewDate))}>›</button>
+        </div>
+      </div>
+      <span style={{fontSize:10,color:'#5A8A86'}}>{agentRows.length} agents · {coverageSlots.length} slots</span>
+      <div className="sched-view-toggle">
+        <button className={`sched-view-btn ${viewMode==='graph'?'active':''}`} onClick={()=>setViewMode('graph')}>📊 Graph</button>
+        <button className={`sched-view-btn ${viewMode==='text'?'active':''}`} onClick={()=>setViewMode('text')}>≡ Text</button>
+      </div>
+    </div>
+  );
+
+  // ── GRAPH VIEW ──────────────────────────────────────────────────────────────
+  if(viewMode==='graph') return (
+    <div className="sched-shell">
+      {filterBar}
+      <div className="sched-body">
+        <div className="sched-timeline-wrap">
+          {/* Hour header */}
+          <div className="sched-row sched-header-row">
+            <div className="sched-label-col" style={{background:'#035C67',color:'#3EFFC0',fontSize:9,fontWeight:700,paddingLeft:8}}>
+              {filterTRC} · {filterWS==='ALL'?'ALL WS':(wsShort[filterWS]||filterWS)}
+            </div>
+            <div className="sched-bar-col">
+              <div className="sched-hour-grid">
+                {HOURS.map(h=>(
+                  <div key={h} className="sched-hour-tick"
+                    style={{left:`${((h*60-T_START)/T_RANGE)*100}%`}}>
+                    {String(h).padStart(2,'0')}:00
+                  </div>
+                ))}
+                {HOURS.slice(0,-1).map(h=>(
+                  <div key={h+'h'} className="sched-half-tick"
+                    style={{left:`${((h*60+30-T_START)/T_RANGE)*100}%`}} />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Coverage chart */}
+          <div className="sched-row sched-coverage-row">
+            <div className="sched-label-col" style={{fontSize:9.5,fontWeight:700,color:'#035C67'}}>
+              COVERAGE<br/>
+              <span style={{fontSize:8.5,fontWeight:400,color:'#5A8A86'}}>Sch FTE</span>
+            </div>
+            <div className="sched-bar-col sched-cov-bars">
+              {coverageSlots.map((sl,i)=>{
+                const lp=((toMin(sl.time)-T_START)/T_RANGE)*100;
+                const wp=(30/T_RANGE)*100;
+                const hp=Math.max(5,(sl.sch/maxSch)*92);
+                return (
+                  <div key={i} className="sched-cov-bar"
+                    style={{left:`${lp}%`,width:`calc(${wp}% - 1px)`,height:`${hp}%`,bottom:0,background:statusFill[sl.status]}}
+                    title={`${sl.time} Sch:${Math.round(sl.sch*10)/10} Act:${Math.round(sl.act*10)/10} Req:${Math.round(sl.req*10)/10} Net:${sl.net>=0?'+':''}${Math.round(sl.net)}`}
+                  />
+                );
+              })}
+              {coverageSlots.filter((_,i)=>i%2===0).map((sl,i)=>{
+                const lp=((toMin(sl.time)-T_START)/T_RANGE)*100;
+                return (
+                  <div key={i} className="sched-cov-label"
+                    style={{left:`${lp+0.3}%`,color:sl.net<0?'#B71C1C':'#1B5E20'}}>
+                    {sl.net>=0?'+':''}{Math.round(sl.net)}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Agent rows grouped by workstream */}
+          {agentRows.length===0&&(
+            <div style={{padding:'20px',textAlign:'center',color:'#9ABEBC',fontSize:12}}>
+              No agents for {filterTRC} · {filterWS==='ALL'?'all workstreams':(wsShort[filterWS]||filterWS)} on {viewDate}
+            </div>
+          )}
+          {agentRows.map((agent,i)=>{
+            const prevWS=i===0?null:agentRows[i-1].workstream;
+            const isNewWS=agent.workstream!==prevWS;
+            const startMin=toMin(agent.shiftStart);
+            const endMin=toMin(agent.shiftEnd);
+            const lp=Math.max(0,((startMin-T_START)/T_RANGE)*100);
+            const wp=Math.min(100-lp,((endMin-startMin)/T_RANGE)*100);
+            const barColor=agentStatusColor[agent.status]||'#008F83';
+            return (
+              <React.Fragment key={i}>
+                {isNewWS&&(
+                  <div className="sched-ws-divider">
+                    <div className="sched-label-col" style={{background:wsColors[agent.workstream]||'#E0F2F0',color:'#002F32',fontSize:9,fontWeight:700,paddingLeft:8,justifyContent:'center',borderRight:'2px solid #C8E0DC'}}>
+                      {wsShort[agent.workstream]||agent.workstream}
+                    </div>
+                    <div className="sched-bar-col" style={{background:wsColors[agent.workstream]||'#E0F2F0',opacity:0.2}} />
+                  </div>
+                )}
+                <div className="sched-row sched-agent-row">
+                  <div className="sched-label-col">
+                    <div className="sched-agent-name" title={agent.name}>{agent.name}</div>
+                    <div className="sched-agent-meta">
+                      <span style={{fontSize:8,color:barColor,fontWeight:700}}>{agent.status}</span>
+                      {agent.status!=='CallOut'&&<span style={{fontSize:8,color:'#9ABEBC',marginLeft:3}}>{agent.shiftStart}–{agent.shiftEnd}</span>}
+                    </div>
+                  </div>
+                  <div className="sched-bar-col" style={{position:'relative'}}>
+                    {HOURS.map(h=>(
+                      <div key={h} className="sched-gridline"
+                        style={{left:`${((h*60-T_START)/T_RANGE)*100}%`}} />
+                    ))}
+                    {agent.status==='CallOut'?(
+                      <div className="sched-callout-stripe"
+                        style={{left:`${lp}%`,width:`${wp}%`}}
+                        title={`${agent.name} · CALL OUT`} />
+                    ):(
+                      <div className="sched-shift-bar"
+                        style={{left:`${lp}%`,width:`${wp}%`,background:barColor,opacity:agent.status==='VTO'?0.35:0.85}}
+                        title={`${agent.name} · ${agent.shiftStart}–${agent.shiftEnd} · ${agent.status}`} />
+                    )}
+                  </div>
+                </div>
+              </React.Fragment>
+            );
+          })}
+        </div>
+
+        {/* Legend */}
+        <div className="sched-legend">
+          <div className="sched-legend-section">
+            <span className="sched-legend-title">Coverage:</span>
+            {Object.entries(statusFill).map(([k,v])=>(
+              <div key={k} className="sched-legend-item">
+                <div style={{width:9,height:9,background:v,borderRadius:2,flexShrink:0}}/>
+                <span>{k.replace('_',' ')}</span>
+              </div>
+            ))}
+          </div>
+          <div className="sched-legend-section">
+            <span className="sched-legend-title">Agents:</span>
+            {Object.entries(agentStatusColor).map(([k,v])=>(
+              <div key={k} className="sched-legend-item">
+                <div style={{width:9,height:9,background:v,borderRadius:2,flexShrink:0}}/>
+                <span>{k}</span>
+              </div>
+            ))}
+          </div>
+          <div className="sched-legend-section">
+            <span className="sched-legend-title">Workstreams:</span>
+            {Object.entries(wsShort).map(([k,v])=>(
+              <div key={k} className="sched-legend-item">
+                <div style={{width:9,height:9,background:wsColors[k]||'#ccc',borderRadius:2,flexShrink:0}}/>
+                <span>{v}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ── TEXT VIEW ───────────────────────────────────────────────────────────────
+  // Group agents by workstream for text table
+  const wsSections = useMemo(()=>{
+    const groups={};
+    agentRows.forEach(a=>{
+      (groups[a.workstream]=groups[a.workstream]||[]).push(a);
+    });
+    return Object.entries(groups);
+  },[agentRows]);
+
+  return (
+    <div className="sched-shell">
+      {filterBar}
+      <div className="sched-text-body">
+        {/* Coverage summary table */}
+        <div className="sched-text-section">
+          <div className="sched-text-section-header">
+            INTERVAL COVERAGE — {filterTRC} · {filterWS==='ALL'?'All Workstreams':(wsShort[filterWS]||filterWS)} · {viewDate}
+          </div>
+          <table className="sched-text-table">
+            <thead><tr><th>Time</th><th>Sch FTE</th><th>Act FTE</th><th>Req FTE</th><th>Net</th><th>Status</th></tr></thead>
+            <tbody>
+              {coverageSlots.map((sl,i)=>(
+                <tr key={i}>
+                  <td style={{fontFamily:'Courier New',fontWeight:700,color:'#035C67'}}>{sl.time}</td>
+                  <td>{Math.round(sl.sch*10)/10}</td>
+                  <td>{Math.round(sl.act*10)/10}</td>
+                  <td>{Math.round(sl.req*10)/10}</td>
+                  <td style={{fontFamily:'Courier New',fontWeight:700,
+                    color:sl.net<0?'#EA5353':sl.net>3?'#0D47A1':'#1B5E20'}}>
+                    {sl.net>=0?'+':''}{Math.round(sl.net)}
+                  </td>
+                  <td>
+                    <span style={{fontSize:10,padding:'1px 7px',borderRadius:8,fontWeight:600,
+                      background:statusFill[sl.status]+'33',color:sl.net<0?'#B71C1C':'#1B5E20'}}>
+                      {sl.status.replace('_',' ')}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Agent schedule table per workstream */}
+        {wsSections.map(([ws, agents])=>(
+          <div key={ws} className="sched-text-section">
+            <div className="sched-text-section-header" style={{background:wsColors[ws]||'#E0F2F0',color:'#002F32'}}>
+              {wsShort[ws]||ws} — {agents.length} agents
+            </div>
+            <table className="sched-text-table">
+              <thead><tr><th>Agent</th><th>Shift Start</th><th>Shift End</th><th>Hours</th><th>Queue</th><th>Status</th></tr></thead>
+              <tbody>
+                {agents.map((a,i)=>(
+                  <tr key={i}>
+                    <td style={{fontWeight:600,color:'#002F32'}}>{a.name}</td>
+                    <td style={{fontFamily:'Courier New'}}>{a.status==='CallOut'?'—':a.shiftStart}</td>
+                    <td style={{fontFamily:'Courier New'}}>{a.status==='CallOut'?'—':a.shiftEnd}</td>
+                    <td>{a.status==='CallOut'?'—':`${a.shiftHours||7.5}h`}</td>
+                    <td style={{fontSize:10,color:'#5A8A86'}}>{a.primaryQueue||'—'}</td>
+                    <td>
+                      <span style={{fontSize:10,fontWeight:700,padding:'1px 7px',borderRadius:8,
+                        background:(agentStatusColor[a.status]||'#ccc')+'22',
+                        color:agentStatusColor[a.status]||'#5A8A86'}}>
+                        {a.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
 // ROOT APP
 // ═════════════════════════════════════════════════════════════════════════════
 function App() {
@@ -3849,6 +4260,7 @@ function App() {
     { id: 'config',     label: '⚙ Config'     },
     { id: 'employees',  label: '👥 Employees'  },
     { id: 'data',       label: '📊 Data'       },
+    { id: 'schedule',   label: '📅 Schedule'   },
     { id: 'operations', label: '🤖 Operations' },
   ];
 
@@ -3891,6 +4303,7 @@ function App() {
       )}
       {activeModule === 'data'       && <DataTab config={config} employees={employees} schedules={schedules}
                                           generatedData={generatedData} setGeneratedData={setGeneratedData} />}
+      {activeModule === 'schedule'   && <ScheduleTab employees={employees} generatedData={generatedData} activeTRC={activeTRC} />}
       {activeModule === 'operations' && <OperationsTab activeTRC={activeTRC} generatedData={generatedData} />}
     </div>
   );
