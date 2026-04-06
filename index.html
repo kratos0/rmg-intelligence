@@ -675,6 +675,53 @@
     .bp4-hist-item { padding: 6px 10px; border-bottom: 1px solid #F0F0F0; }
     .bp4-hist-top { display: flex; justify-content: space-between; align-items: center; font-size: 11px; }
 
+    /* ─── Step 10: World State + Event Injector + SimClock ───────────────── */
+    .world-state-bar {
+      display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+      padding: 5px 10px; background: #012830;
+      border-bottom: 1px solid rgba(62,255,192,0.15); flex-shrink: 0;
+    }
+    .wsb-left  { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+    .wsb-kpis  { display: flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 700; font-family: 'Courier New'; flex-shrink: 0; }
+    .wsb-events{ display: flex; flex-wrap: wrap; gap: 3px; flex: 1; }
+    .wsb-badge {
+      font-size: 9px; font-weight: 700; padding: 1px 7px; border-radius: 8px;
+      font-family: 'Courier New'; letter-spacing: 0.3px;
+    }
+    .wsb-scenario { background: rgba(3,92,103,0.4); color: #3EFFC0; border: 1px solid rgba(62,255,192,0.3); }
+    .wsb-driver   { background: rgba(255,209,102,0.15); color: #FFD166; border: 1px solid rgba(255,209,102,0.3); }
+    .wsb-live     { background: rgba(234,83,83,0.15); color: #EA5353; border: 1px solid rgba(234,83,83,0.3); animation: pulse-red 1.5s ease-in-out infinite; }
+    @keyframes pulse-red { 0%,100%{opacity:1} 50%{opacity:0.5} }
+    .wsb-chip {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-size: 9px; padding: 1px 5px 1px 7px; border-radius: 8px;
+      background: rgba(255,209,102,0.12); color: #FFD166;
+      border: 1px solid rgba(255,209,102,0.3); font-weight: 600;
+    }
+    .wsb-chip-x {
+      background: none; border: none; color: #FFD166; cursor: pointer; padding: 0 1px;
+      font-size: 11px; line-height: 1; opacity: 0.7;
+    }
+    .wsb-chip-x:hover { opacity: 1; }
+    /* Event Injector bar */
+    .event-injector {
+      display: flex; align-items: center; gap: 3px; flex-wrap: wrap;
+      padding: 4px 10px; background: #011E26;
+      border-bottom: 1px solid rgba(62,255,192,0.1); flex-shrink: 0;
+    }
+    .ei-label {
+      font-size: 8px; font-weight: 700; color: #3EFFC0; text-transform: uppercase;
+      letter-spacing: 0.8px; flex-shrink: 0; margin-right: 2px;
+    }
+    .ei-btn {
+      font-size: 9px; padding: 2px 8px; border-radius: 10px; cursor: pointer;
+      background: rgba(62,255,192,0.07); color: #5A8A86;
+      border: 1px solid rgba(62,255,192,0.2); transition: all 0.15s; white-space: nowrap;
+    }
+    .ei-btn:hover { background: rgba(62,255,192,0.18); color: #3EFFC0; border-color: rgba(62,255,192,0.5); }
+    .ei-clear { color: #FFD166 !important; border-color: rgba(255,209,102,0.4) !important; }
+    .ei-clear:hover { background: rgba(255,209,102,0.1) !important; }
+
     /* ─── Step 9: Dynamic charts per bot tab ─────────────────────────────── */
     /* Mini horizontal bar chart (ShortRange coverage, Intelligence net) */
     .mini-bar-chart {
@@ -1389,6 +1436,16 @@ const DRIVER_EVENTS = [
   { type:'SystemOutage',  label:'System Outage',  volumeImpact: 0.45, adherenceImpact:-0.08  },
   { type:'StaffingShort', label:'Staffing Short', volumeImpact: 0.00, adherenceImpact:-0.12  },
 ];
+
+// Quick-fire intraday events for Event Injector (Step 10)
+const QUICK_EVENTS = [
+  { type:'Callout',      icon:'📞', label:'+2 CO',       count:2,    desc:'Mark 2 active agents called out — reduces scheduledFTE & actualFTE now' },
+  { type:'Callout',      icon:'📞📞', label:'+5 CO',      count:5,    desc:'Mass callout — 5 agents out simultaneously' },
+  { type:'VTO',          icon:'🏖',  label:'+2 VTO',      count:2,    desc:'Open VTO — 2 agents released, reduces coverage' },
+  { type:'VolumeSurge',  icon:'📈',  label:'+20% Vol',    magnitude:0.20, desc:'Inbound volume surge +20% for remaining intervals' },
+  { type:'VolumeSurge',  icon:'📈📈', label:'+40% Vol',   magnitude:0.40, desc:'Major volume spike +40% — high pressure scenario' },
+  { type:'SystemOutage', icon:'💻',  label:'Sys Outage',  magnitude:0.18, durationSlots:4, desc:'System outage — 18% adherence drop for next 2 hours' },
+];
 // 30-min slot weights 07:00–18:30 (24 slots) — morning peak, lunch dip, afternoon peak
 const TIME_CURVE = [
   0.55, 0.65, 0.80, 1.00, 1.20, 1.35,   // 07:00–09:30
@@ -1978,6 +2035,104 @@ function calculateScheduleScore(agentSchedules, queueList) {
   if(vto/Math.max(total,1)>0.06){ score-=5; penalties.push({type:'High VTO',impact:-5,detail:`${vto} agents on VTO`}); }
   return { score:Math.max(0,score), grade:score>=90?'A':score>=80?'B':score>=70?'C':score>=60?'D':'F',
            calloutPct:parseFloat((cotPct*100).toFixed(1)), penalties };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STEP 10 — EVENT OVERLAY ENGINE
+// Applies injected intraday events as non-destructive overlays on generatedData.
+// Returns a new effectiveData object — generatedData is never mutated.
+// ─────────────────────────────────────────────────────────────────────────────
+function recomputeRiskWindows(intervals) {
+  const windows = [];
+  intervals.forEach(iv => {
+    const slots = iv.slots||[];
+    let run = [];
+    const flush = () => {
+      if(run.length >= 2) {
+        const nets = run.map(s=>s.netStaffing);
+        const netAvg = parseFloat((nets.reduce((a,b)=>a+b,0)/nets.length).toFixed(1));
+        windows.push({
+          queueId:iv.queueId, trc:iv.trc, workstream:iv.workstream, date:iv.date,
+          start:run[0].time, end:run[run.length-1].time,
+          durationMins:run.length*30, netAvg, hasCritical:nets.some(n=>n<-3),
+          timeBucket:run[0].time<'10:00'?'PEAK':run[0].time<'14:00'?'MID':'EOD',
+        });
+      }
+      run=[];
+    };
+    slots.forEach(s=>{ if(s.netStaffing<0) run.push(s); else flush(); });
+    flush();
+  });
+  return windows.sort((a,b)=>(b.hasCritical?1:0)-(a.hasCritical?1:0)||(a.netAvg-b.netAvg));
+}
+
+function applyEventOverlay(generatedData, injectedEvents, simTimeSlot) {
+  if(!generatedData || !injectedEvents?.length) return generatedData;
+
+  // Work on shallow copies — only mutate what changes
+  let agentSchedules = [...(generatedData.agentSchedules||[])];
+  let intervals = (generatedData.intervals||[]).map(iv=>({
+    ...iv, slots:[...(iv.slots||[]).map(s=>({...s}))]
+  }));
+
+  const today = new Date().toISOString().split('T')[0];
+  // "Now" = sim time override or real time string like "10:30"
+  const nowTime = (simTimeSlot && simTimeSlot!=='Live')
+    ? simTimeSlot
+    : new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false}).slice(0,5);
+
+  injectedEvents.forEach((ev, evIdx) => {
+    const trcOk = a => ev.trc==='ALL'||a.trc===ev.trc||!ev.trc;
+
+    if(ev.type==='Callout' || ev.type==='VTO') {
+      const newStatus = ev.type==='Callout' ? 'CallOut' : 'VTO';
+      // Deterministic: sort active agents by empId, then take a window based on evIdx
+      const pool = agentSchedules
+        .filter(a=>a.status==='Active' && trcOk(a) && a.date===today)
+        .sort((a,b)=>a.empId.localeCompare(b.empId));
+      const offset = evIdx * (ev.count||2);
+      const targets = new Set(pool.slice(offset, offset+(ev.count||2)).map(a=>`${a.empId}|${a.date}`));
+      agentSchedules = agentSchedules.map(a=>
+        targets.has(`${a.empId}|${a.date}`) ? {...a, status:newStatus, _injected:ev.type} : a
+      );
+    }
+
+    if(ev.type==='VolumeSurge') {
+      intervals = intervals.map(iv=>{
+        if(!trcOk(iv)) return iv;
+        return { ...iv, slots: iv.slots.map(s=>{
+          if(s.time < nowTime) return s; // only affect future/current slots
+          const newReq = parseFloat((s.requiredFTE*(1+(ev.magnitude||0.20))).toFixed(1));
+          const newNet = parseFloat((s.actualFTE - newReq).toFixed(1));
+          const status = newNet<-3?'critical':newNet<0?'at_risk':newNet>3?'surplus':'adequate';
+          return {...s, requiredFTE:newReq, netStaffing:newNet, status, _injected:'VolumeSurge'};
+        })};
+      });
+    }
+
+    if(ev.type==='SystemOutage') {
+      const outageEnd = (() => {
+        const [h,m] = nowTime.split(':').map(Number);
+        const endMin = h*60+m + (ev.durationSlots||4)*30;
+        return `${String(Math.floor(endMin/60)).padStart(2,'0')}:${String(endMin%60).padStart(2,'0')}`;
+      })();
+      intervals = intervals.map(iv=>{
+        if(!trcOk(iv)) return iv;
+        return { ...iv, slots: iv.slots.map(s=>{
+          if(s.time < nowTime || s.time > outageEnd) return s;
+          const newAct = parseFloat((s.actualFTE*(1-(ev.magnitude||0.18))).toFixed(1));
+          const newNet = parseFloat((newAct - s.requiredFTE).toFixed(1));
+          const status = newNet<-3?'critical':newNet<0?'at_risk':newNet>3?'surplus':'adequate';
+          return {...s, actualFTE:newAct, netStaffing:newNet, status, _injected:'SystemOutage'};
+        })};
+      });
+    }
+  });
+
+  // Recompute risk windows from modified intervals
+  const riskWindows = recomputeRiskWindows(intervals);
+
+  return {...generatedData, agentSchedules, intervals, riskWindows};
 }
 
 function assembleDataPacket(generatedData, trc, simDate, simTime, botRunHistory=[]) {
@@ -3660,6 +3815,98 @@ function RunHistory({ history }) {
 
 // ─── BUILD PASS 4: DYNAMIC BOT VIEWS ─────────────────────────────────────────
 
+// ─── STEP 10: SIM CLOCK (advanceable) ─────────────────────────────────────────
+const SIM_TIME_SLOTS = ['07:00','09:00','10:30','12:00','13:30','15:00','17:00','Live'];
+
+function SimClockAdvanced({ simTimeSlot, setSimTimeSlot }) {
+  const [realTime, setRealTime] = useState(()=>new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}));
+  useEffect(()=>{
+    const id=setInterval(()=>setRealTime(new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})),30000);
+    return ()=>clearInterval(id);
+  },[]);
+  const display = simTimeSlot==='Live' ? realTime : simTimeSlot;
+  const isSim   = simTimeSlot!=='Live';
+  return (
+    <div style={{display:'flex',alignItems:'center',gap:4,flexWrap:'wrap'}}>
+      <span style={{fontFamily:'Courier New',fontSize:11,color:isSim?'#90B9FF':'#3EFFC0',fontWeight:700}}>
+        ⏱ {display}{isSim&&<span style={{fontSize:8,color:'#5A8A86',marginLeft:2}}>SIM</span>}
+      </span>
+      <div style={{display:'flex',gap:1}}>
+        {SIM_TIME_SLOTS.map(t=>{
+          const active=simTimeSlot===t;
+          return (
+            <button key={t} onClick={()=>setSimTimeSlot(t)}
+              style={{fontSize:8,padding:'1px 5px',borderRadius:3,cursor:'pointer',lineHeight:1.5,
+                background:active?(t==='Live'?'#3EFFC0':'#90B9FF'):'transparent',
+                color:active?'#002F32':(t==='Live'?'#3EFFC0':'#5A8A86'),
+                border:'1px solid '+(active?(t==='Live'?'#3EFFC0':'#90B9FF'):'rgba(62,255,192,0.15)')}}>
+              {t}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── STEP 10: WORLD STATE BANNER ──────────────────────────────────────────────
+function WorldStateBar({ generatedData, injectedEvents, onRemoveEvent, simTimeSlot }) {
+  if(!generatedData) return null;
+  const scenario    = generatedData.scenario||'Baseline';
+  const driverEv    = generatedData.driverEvent&&generatedData.driverEvent!=='None' ? generatedData.driverEvent : null;
+  const today       = new Date().toISOString().split('T')[0];
+  const tF          = arr=>(arr||[]).filter(a=>a.date===today);
+  const activeCount = tF(generatedData.agentSchedules||[]).filter(a=>a.status==='Active').length;
+  const coCount     = tF(generatedData.agentSchedules||[]).filter(a=>a.status==='CallOut').length;
+  const vtoCount    = tF(generatedData.agentSchedules||[]).filter(a=>a.status==='VTO').length;
+  const riskCount   = tF(generatedData.riskWindows||[]).length;
+  const hasEvents   = injectedEvents.length>0;
+
+  return (
+    <div className="world-state-bar">
+      <div className="wsb-left">
+        <span className="wsb-badge wsb-scenario">{scenario}</span>
+        {driverEv&&<span className="wsb-badge wsb-driver">{driverEv}</span>}
+        {hasEvents&&<span className="wsb-badge wsb-live">⚡ LIVE EVENTS</span>}
+      </div>
+      <div className="wsb-kpis">
+        <span title="Active agents today" style={{color:'#3EFFC0'}}>✓{activeCount}</span>
+        {coCount>0&&<span title="Call-outs today" style={{color:'#EA5353'}}>✗{coCount}CO</span>}
+        {vtoCount>0&&<span title="VTO today" style={{color:'#90B9FF'}}>~{vtoCount}VTO</span>}
+        {riskCount>0&&<span title="Risk windows today" style={{color:'#E88789'}}>⚠{riskCount}</span>}
+      </div>
+      <div className="wsb-events">
+        {injectedEvents.map((ev,i)=>(
+          <span key={i} className="wsb-chip">
+            {ev.icon} {ev.label}
+            <button className="wsb-chip-x" onClick={()=>onRemoveEvent(i)}>×</button>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── STEP 10: EVENT INJECTOR ──────────────────────────────────────────────────
+function EventInjector({ activeTRC, injectedEvents, onInject, onClear }) {
+  return (
+    <div className="event-injector">
+      <span className="ei-label">INJECT</span>
+      {QUICK_EVENTS.map((ev,i)=>(
+        <button key={i} className="ei-btn" title={ev.desc}
+          onClick={()=>onInject({...ev, trc:activeTRC})}>
+          {ev.icon} {ev.label}
+        </button>
+      ))}
+      {injectedEvents.length>0&&(
+        <button className="ei-btn ei-clear" onClick={onClear} title="Remove all injected events">
+          🔄 Clear ({injectedEvents.length})
+        </button>
+      )}
+    </div>
+  );
+}
+
 function SimClock() {
   const [time, setTime] = useState(() => new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}));
   useEffect(() => {
@@ -4389,59 +4636,74 @@ function BotDataView({ activeBot, activeTRC, generatedData, legacyData, history 
 
 // ─── OPERATIONS TAB (wrapper) ─────────────────────────────────────────────────
 function OperationsTab({ generatedData }) {
-  const [activeTRC,  setActiveTRC] = useState('ONC');
-  const [activeBot, setActiveBot] = useState('intraday');
-  const [output,    setOutput]    = useState('');
-  const [loading,   setLoading]   = useState(false);
-  const [history,   setHistory]   = useState([]);
+  const [activeTRC,       setActiveTRC]       = useState('ONC');
+  const [activeBot,       setActiveBot]       = useState('intraday');
+  const [output,          setOutput]          = useState('');
+  const [loading,         setLoading]         = useState(false);
+  const [history,         setHistory]         = useState([]);
+  // Step 10: injected events + advanceable sim clock
+  const [injectedEvents,  setInjectedEvents]  = useState([]);
+  const [simTimeSlot,     setSimTimeSlot]     = useState('Live');
 
-  const today    = useMemo(() => new Date(), []);
-  const dateStr  = today.toISOString().split('T')[0];
-  const timeStr  = today.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  const today   = useMemo(() => new Date(), []);
+  const dateStr = today.toISOString().split('T')[0];
+  // Effective sim time — wall clock or override
+  const timeStr = useMemo(()=>{
+    if(simTimeSlot!=='Live') return simTimeSlot;
+    return today.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  },[simTimeSlot, today]);
 
-  // Legacy stub data (fallback when no generatedData)
-  const legacyData = useMemo(() => generateData(activeTRC, today), [activeTRC]);
-  const actualsCount = useMemo(() => {
-    const rows = Object.values(legacyData)[0] || [];
-    return rows.filter(r => r.isActual).length;
-  }, [legacyData]);
+  const legacyData   = useMemo(()=>generateData(activeTRC,today),[activeTRC]);
+  const actualsCount = useMemo(()=>{ const rows=Object.values(legacyData)[0]||[]; return rows.filter(r=>r.isActual).length; },[legacyData]);
+  const hasRealData  = !!(generatedData?.intervals?.length);
 
-  const hasRealData = !!(generatedData?.intervals?.length);
+  // Step 10: effectiveData = base + injected event overlays
+  const effectiveData = useMemo(()=>
+    applyEventOverlay(generatedData, injectedEvents, simTimeSlot)
+  ,[generatedData, injectedEvents, simTimeSlot]);
 
-  // Build DataLoad summary from real data or fallback
-  const dataLoadSummary = useMemo(() => {
+  const injectEvent  = useCallback(ev => setInjectedEvents(prev=>[...prev, {...ev, _id:Date.now()}]),[]);
+  const removeEvent  = useCallback(i  => setInjectedEvents(prev=>prev.filter((_,j)=>j!==i)),[]);
+  const clearEvents  = useCallback(()  => setInjectedEvents([]),[]);
+
+  // DataLoad summary — reflects effectiveData
+  const dataLoadSummary = useMemo(()=>{
     if(!hasRealData) return null;
     const tF = arr=>activeTRC==='ALL'?arr:arr.filter(x=>x.trc===activeTRC);
+    const eff = effectiveData||generatedData;
     return {
-      queues:     tF(generatedData.queueList||[]).length,
-      history:    tF(generatedData.dailyHistory||[]).length,
-      agents:     tF(generatedData.agentSchedules||[]).length,
-      riskWins:   tF((generatedData.riskWindows||[]).filter(w=>w.date===dateStr)).length,
-      scenario:   generatedData.scenario||'Baseline',
+      queues:   tF(eff.queueList||[]).length,
+      history:  tF(eff.dailyHistory||[]).length,
+      agents:   tF(eff.agentSchedules||[]).length,
+      riskWins: tF((eff.riskWindows||[]).filter(w=>w.date===dateStr)).length,
+      scenario: eff.scenario||'Baseline',
+      events:   injectedEvents.length,
     };
-  }, [generatedData, activeTRC, dateStr]);
+  },[effectiveData, generatedData, activeTRC, dateStr, injectedEvents]);
 
-  // Route to per-bot packet assembly (Step 6-8: each bot gets its own tailored packet)
-  const buildBotPacket = useCallback((bot, hist) => {
+  // Per-bot packet — uses effectiveData so injected events are reflected in bot output
+  const buildBotPacket = useCallback((bot, hist)=>{
     const rawHist = hist.map(h=>h.raw).filter(Boolean);
+    const data = effectiveData||generatedData;
     switch(bot){
-      case 'intraday':    return assembleIntradayPacket(generatedData, activeTRC, dateStr, timeStr, rawHist);
-      case 'shortrange':  return assembleShortRangePacket(generatedData, activeTRC, dateStr, timeStr, rawHist);
-      case 'longrange':   return assembleLongRangePacket(generatedData, activeTRC, dateStr, timeStr);
-      case 'intelligence':return assembleIntelligencePacket(generatedData, activeTRC, dateStr, timeStr, rawHist);
-      default:            return assembleIntradayPacket(generatedData, activeTRC, dateStr, timeStr, rawHist);
+      case 'intraday':    return assembleIntradayPacket(data, activeTRC, dateStr, timeStr, rawHist);
+      case 'shortrange':  return assembleShortRangePacket(data, activeTRC, dateStr, timeStr, rawHist);
+      case 'longrange':   return assembleLongRangePacket(data, activeTRC, dateStr, timeStr);
+      case 'intelligence':return assembleIntelligencePacket(data, activeTRC, dateStr, timeStr, rawHist);
+      default:            return assembleIntradayPacket(data, activeTRC, dateStr, timeStr, rawHist);
     }
-  }, [generatedData, activeTRC, dateStr, timeStr]);
+  },[effectiveData, generatedData, activeTRC, dateStr, timeStr]);
 
-  const handleTrigger = useCallback(async (phrase) => {
+  const handleTrigger = useCallback(async (phrase)=>{
     const bot = BOT_CONFIGS[activeBot];
-    const systemPrompt = document.getElementById(bot.promptId)?.textContent?.trim() || '';
-
+    const systemPrompt = document.getElementById(bot.promptId)?.textContent?.trim()||'';
     let userMessage;
     if(hasRealData){
       const packet = buildBotPacket(activeBot, history);
+      const evNote = injectedEvents.length ? `\nACTIVE INJECTED EVENTS: ${injectedEvents.map(e=>e.label).join(', ')}` : '';
+      const clockNote = simTimeSlot!=='Live' ? `\nSIM CLOCK ADVANCED TO: ${simTimeSlot}` : '';
       userMessage = `Trigger: ${phrase}
-Date: ${dateStr} | Time: ${timeStr} | TRC: ${activeTRC}
+Date: ${dateStr} | Time: ${timeStr} | TRC: ${activeTRC}${evNote}${clockNote}
 
 ${packet}
 
@@ -4450,30 +4712,27 @@ Note: This is a prototype running on Claude. Data is generated from your configu
     } else {
       userMessage = buildUserMessage(phrase, legacyData, activeTRC, dateStr, timeStr, activeBot);
     }
-
-    setLoading(true);
-    setOutput('');
+    setLoading(true); setOutput('');
     try {
       const result = await callClaude(systemPrompt, userMessage);
       setOutput(result);
-      const todayRisks = (generatedData?.riskWindows||[]).filter(w=>w.date===dateStr&&(activeTRC==='ALL'||w.trc===activeTRC));
-      setHistory(prev => [
-        { bot: bot.name, version: bot.version, phrase, trc: activeTRC, time: timeStr,
+      const data = effectiveData||generatedData;
+      const todayRisks = (data?.riskWindows||[]).filter(w=>w.date===dateStr&&(activeTRC==='ALL'||w.trc===activeTRC));
+      setHistory(prev=>[
+        { bot:bot.name, version:bot.version, phrase, trc:activeTRC, time:timeStr,
           raw: hasRealData ? { bot:activeBot, trigger:phrase, trc:activeTRC,
-            summary:{ riskCount:todayRisks.length,
-                      topQueue:todayRisks[0]?.queueId||'',
-                      netAvgWorst:todayRisks[0]?.netAvg||0 }} : null },
-        ...prev.slice(0, 11),
+            summary:{ riskCount:todayRisks.length, topQueue:todayRisks[0]?.queueId||'', netAvgWorst:todayRisks[0]?.netAvg||0 }} : null },
+        ...prev.slice(0,11),
       ]);
-    } catch (err) {
+    } catch(err){
       setOutput(`❌ Error: ${err.message}\n\nTip: Make sure ANTHROPIC_API_KEY is set in Vercel environment variables.`);
     }
     setLoading(false);
-  }, [activeBot, activeTRC, hasRealData, generatedData, legacyData, dateStr, timeStr, history, buildBotPacket]);
+  },[activeBot, activeTRC, hasRealData, effectiveData, generatedData, legacyData, dateStr, timeStr, history, buildBotPacket, injectedEvents, simTimeSlot]);
 
   return (
     <div className="ops-shell">
-      {/* Bot sub-tabs + TRC dropdown (left) */}
+      {/* Bot sub-tabs + TRC dropdown */}
       <div className="ops-bot-tabs" style={{display:'flex',alignItems:'center',gap:0}}>
         <div style={{display:'flex',alignItems:'center',gap:6,padding:'0 12px',borderRight:'1px solid rgba(62,255,192,0.2)',flexShrink:0}}>
           <span style={{fontSize:10,fontWeight:700,color:'#3EFFC0',textTransform:'uppercase',letterSpacing:'0.5px'}}>TRC</span>
@@ -4486,48 +4745,77 @@ Note: This is a prototype running on Claude. Data is generated from your configu
           </select>
         </div>
         <div style={{display:'flex',gap:4,padding:'0 8px'}}>
-          {Object.values(BOT_CONFIGS).map(b => (
-            <button key={b.id}
-              className={`ops-bot-tab ${activeBot===b.id ? 'active' : ''}`}
-              onClick={() => { setActiveBot(b.id); setOutput(''); }}>
+          {Object.values(BOT_CONFIGS).map(b=>(
+            <button key={b.id} className={`ops-bot-tab ${activeBot===b.id?'active':''}`}
+              onClick={()=>{ setActiveBot(b.id); setOutput(''); }}>
               {b.icon} {b.name} <span className="ver">{b.version}</span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* Data panel + Analysis panel */}
       <div className="main-content">
         <div className="data-panel">
-          <div className="panel-header" style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          {/* Panel header with advanceable SimClock */}
+          <div className="panel-header" style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:4}}>
             <span>DATA PANEL — {activeTRC} · {BOT_CONFIGS[activeBot].name.toUpperCase()}</span>
-            <SimClock />
+            <SimClockAdvanced simTimeSlot={simTimeSlot} setSimTimeSlot={setSimTimeSlot}/>
           </div>
-          {hasRealData && dataLoadSummary ? (
+
+          {/* World State banner — always visible when real data loaded */}
+          {hasRealData&&(
+            <WorldStateBar
+              generatedData={effectiveData||generatedData}
+              injectedEvents={injectedEvents}
+              onRemoveEvent={removeEvent}
+              simTimeSlot={simTimeSlot}
+            />
+          )}
+
+          {/* Event Injector — quick-fire event buttons */}
+          {hasRealData&&(
+            <EventInjector
+              activeTRC={activeTRC}
+              injectedEvents={injectedEvents}
+              onInject={injectEvent}
+              onClear={clearEvents}
+            />
+          )}
+
+          {/* DataLoad block */}
+          {hasRealData&&dataLoadSummary ? (
             <div className="data-load-block">
-              <div className="dl-header">DATA LOAD | {dateStr} | {timeStr}</div>
+              <div className="dl-header">DATA LOAD | {dateStr} | {timeStr}{simTimeSlot!=='Live'?' (SIM)':''}</div>
               <div className="dl-row">✅ Scenario — <span style={{color:'#5A8A86'}}>{dataLoadSummary.scenario}</span></div>
               <div className="dl-row">✅ Interval Data — <span style={{color:'#5A8A86'}}>{dataLoadSummary.queues} queues · 24 slots each</span></div>
               <div className="dl-row">✅ Daily History — <span style={{color:'#5A8A86'}}>{dataLoadSummary.history} records (13 weeks)</span></div>
               <div className="dl-row">✅ Agent Schedules — <span style={{color:'#5A8A86'}}>{dataLoadSummary.agents} agent-day records</span></div>
-              <div className="dl-row">✅ Risk Windows — <span style={{color:'#5A8A86'}}>{dataLoadSummary.riskWins} windows today (pre-ranked)</span></div>
-              <div className="dl-row" style={{color:'#3EFFC0', fontWeight:700}}>⚡ DataPacket ready — real data</div>
+              <div className="dl-row">✅ Risk Windows — <span style={{color:'#5A8A86'}}>{dataLoadSummary.riskWins} windows today (recomputed)</span></div>
+              {dataLoadSummary.events>0&&(
+                <div className="dl-row" style={{color:'#FFD166',fontWeight:700}}>
+                  ⚡ {dataLoadSummary.events} live event{dataLoadSummary.events>1?'s':''} injected — data overlaid
+                </div>
+              )}
+              <div className="dl-row" style={{color:'#3EFFC0',fontWeight:700}}>⚡ DataPacket ready — real data</div>
             </div>
           ) : (
-            <DataLoadBlock bot={activeBot} dateStr={dateStr} timeStr={timeStr} actualsCount={actualsCount} />
+            <DataLoadBlock bot={activeBot} dateStr={dateStr} timeStr={timeStr} actualsCount={actualsCount}/>
           )}
-          <BotDataView activeBot={activeBot} activeTRC={activeTRC} generatedData={generatedData} legacyData={legacyData} history={history} />
+
+          {/* Bot data view — receives effectiveData (base + overlays) */}
+          <BotDataView activeBot={activeBot} activeTRC={activeTRC}
+            generatedData={effectiveData||generatedData} legacyData={legacyData} history={history}/>
         </div>
         <AnalysisPanel
           output={output}
           isLoading={loading}
-          onCopy={() => navigator.clipboard.writeText(output).catch(() => {})}
-          onClear={() => setOutput('')}
+          onCopy={()=>navigator.clipboard.writeText(output).catch(()=>{})}
+          onClear={()=>setOutput('')}
         />
       </div>
 
-      <TriggerBar activeBot={activeBot} onTrigger={handleTrigger} isLoading={loading} />
-      <RunHistory history={history} />
+      <TriggerBar activeBot={activeBot} onTrigger={handleTrigger} isLoading={loading}/>
+      <RunHistory history={history}/>
     </div>
   );
 }
