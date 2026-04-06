@@ -5405,7 +5405,9 @@ Note: This is a prototype running on Claude. Data is generated from your configu
       )}
 
       {/* ── Bot views ── */}
-      {!activeAnalytic&&<div className="main-content">
+      {!activeAnalytic&&(
+      <React.Fragment>
+      <div className="main-content">
         <div className="data-panel">
           {/* Panel header with advanceable SimClock */}
           <div className="panel-header" style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:4}}>
@@ -5465,9 +5467,11 @@ Note: This is a prototype running on Claude. Data is generated from your configu
         />
       </div>
 
+      </div>
       <TriggerBar activeBot={activeBot} onTrigger={handleTrigger} isLoading={loading}/>
       <RunHistory history={history}/>
-      </div>}{/* end !activeAnalytic bot view */}
+      </React.Fragment>
+      )}{/* end !activeAnalytic bot view */}
     </div>
   );
 }
