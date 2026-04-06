@@ -675,6 +675,60 @@
     .bp4-hist-item { padding: 6px 10px; border-bottom: 1px solid #F0F0F0; }
     .bp4-hist-top { display: flex; justify-content: space-between; align-items: center; font-size: 11px; }
 
+    /* ─── Step 11: Demo Polish ────────────────────────────────────────────── */
+    /* Header version badge */
+    .header-version {
+      font-size: 9px; font-weight: 500; color: rgba(62,255,192,0.5);
+      font-family: 'Courier New'; margin-left: 10px; letter-spacing: 0.5px;
+    }
+    /* Demo button in header */
+    .demo-btn {
+      margin-left: auto; padding: 5px 14px; border-radius: 16px; cursor: pointer;
+      background: linear-gradient(135deg, #3EFFC0 0%, #00CFAB 100%);
+      color: #002F32; font-weight: 800; font-size: 12px; border: none;
+      box-shadow: 0 0 12px rgba(62,255,192,0.35); transition: all 0.2s; white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .demo-btn:hover { box-shadow: 0 0 20px rgba(62,255,192,0.6); transform: translateY(-1px); }
+    .demo-btn:active { transform: translateY(0); }
+    /* Toast notification */
+    .toast {
+      position: fixed; top: 48px; left: 50%; transform: translateX(-50%);
+      padding: 8px 20px; border-radius: 20px; font-size: 12px; font-weight: 600;
+      z-index: 9999; pointer-events: none;
+      animation: toast-in 0.3s ease, toast-out 0.4s ease 3s forwards;
+      white-space: nowrap;
+    }
+    .toast-success { background: #3EFFC0; color: #002F32; box-shadow: 0 4px 20px rgba(62,255,192,0.5); }
+    .toast-error   { background: #EA5353; color: #fff;    box-shadow: 0 4px 20px rgba(234,83,83,0.4);  }
+    @keyframes toast-in  { from{opacity:0;top:36px} to{opacity:1;top:48px} }
+    @keyframes toast-out { from{opacity:1}          to{opacity:0}          }
+    /* Scenario description subtitle */
+    .scenario-desc { font-size: 9px; color: #5A8A86; margin-top: 2px; font-style: italic; text-align: center; line-height: 1.3; max-width: 80px; }
+    /* Operations empty / onboarding state */
+    .ops-onboard {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      flex: 1; padding: 40px 24px; text-align: center; background: #011E26;
+    }
+    .ops-onboard-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.8; }
+    .ops-onboard-title { font-size: 20px; font-weight: 800; color: #3EFFC0; margin-bottom: 6px; }
+    .ops-onboard-sub   { font-size: 12px; color: #5A8A86; max-width: 380px; line-height: 1.6; margin-bottom: 24px; }
+    .ops-steps { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 340px; }
+    .ops-step {
+      display: flex; align-items: flex-start; gap: 12px; padding: 10px 14px;
+      background: rgba(62,255,192,0.05); border: 1px solid rgba(62,255,192,0.12);
+      border-radius: 8px; text-align: left;
+    }
+    .ops-step-n {
+      width: 22px; height: 22px; border-radius: 50%; background: rgba(62,255,192,0.15);
+      color: #3EFFC0; font-size: 11px; font-weight: 800; display: flex; align-items: center;
+      justify-content: center; flex-shrink: 0; font-family: 'Courier New';
+    }
+    .ops-step-text { font-size: 11px; color: #9ABEBC; line-height: 1.5; }
+    .ops-step-text strong { color: #C8E8E4; }
+    /* Download button in AnalysisPanel */
+    .action-btn-dl { background: rgba(62,255,192,0.08); border-color: rgba(62,255,192,0.3); }
+
     /* ─── Step 10: World State + Event Injector + SimClock ───────────────── */
     .world-state-bar {
       display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
@@ -3343,12 +3397,13 @@ function computeRequiredHeadcount(config) {
 // ═════════════════════════════════════════════════════════════════════════════
 // MODULE 3 — DATA TAB (full — Build Pass 3)
 // ═════════════════════════════════════════════════════════════════════════════
-function DataTab({ config, generatedData, setGeneratedData, setEmployees, setSkills, setSchedules }) {
+function DataTab({ config, generatedData, setGeneratedData, setEmployees, setSkills, setSchedules, demoTrigger, onAfterGenerate }) {
   const [scenario,    setScenario]    = useState('Baseline');
   const [driverEvent, setDriverEvent] = useState('None');
   const [custom, setCustom] = useState({ volumeModifier:1.00, adherenceBase:0.92, calloutRate:0.04, vtoRate:0.02 });
   const [generating, setGenerating]   = useState(false);
   const [view,        setView]        = useState('picker'); // 'picker' | 'preview'
+  const lastDemoTrigger = useRef(null);
 
   const activeTRCCount = Object.values(config.trcs).filter(t=>t.active).length;
   const queueCount     = Object.values(config.queueTemplates).reduce((n,qt)=>n+qt.length,0)*activeTRCCount;
@@ -3377,24 +3432,29 @@ function DataTab({ config, generatedData, setGeneratedData, setEmployees, setSki
     return Object.values(projectedHeadcount).reduce((s,ws)=>s+Object.values(ws).reduce((a,b)=>a+b,0),0);
   },[projectedHeadcount]);
 
-  const handleGenerate = () => {
+  const handleGenerate = useCallback((overrides={}) => {
     if(!allReady||generating) return;
+    const effectiveScenario    = overrides.scenario    || scenario;
+    const effectiveDriverEvent = overrides.driverEvent || driverEvent;
+    if(overrides.scenario)    setScenario(overrides.scenario);
+    if(overrides.driverEvent) setDriverEvent(overrides.driverEvent);
     setGenerating(true);
     setTimeout(()=>{
       try {
-        const params = getParams();
-        // Nearest Monday — always a workday for day-0
+        const base   = effectiveScenario==='Custom' ? {...custom} : {...SCENARIOS[effectiveScenario]};
+        const driver = DRIVER_EVENTS.find(d=>d.type===effectiveDriverEvent)||DRIVER_EVENTS[0];
+        const params = {
+          ...base,
+          volumeModifier: Math.max(0.4, Math.min(1.6, base.volumeModifier+driver.volumeImpact)),
+          adherenceBase:  Math.max(0.72, Math.min(1.0, base.adherenceBase+driver.adherenceImpact)),
+          label: effectiveScenario+(driver.type!=='None'?` / ${driver.label}`:''),
+        };
         const startDate = (()=>{ const d=new Date(); const dow=d.getDay(); d.setDate(d.getDate()-(dow===0?6:dow-1)); d.setHours(0,0,0,0); return d; })();
         const ql = buildQueueList(config);
-
-        // ── DEMAND-FIRST: headcount always sized to baseline ──────────────
-        // Scenario params drive CO/VTO/volume pressure in intervals, not headcount size
-        const autoHC    = computeRequiredHeadcount(config);
-        const emps      = generateEmployees({...config, headcount: autoHC});
-        const skls      = generateSkills(emps, config);
-        const scheds    = generateSchedules(emps, skls);
-
-        // ── GENERATE OPERATIONAL DATA ──────────────────────────────────────
+        const autoHC = computeRequiredHeadcount(config);
+        const emps   = generateEmployees({...config, headcount: autoHC});
+        const skls   = generateSkills(emps, config);
+        const scheds = generateSchedules(emps, skls);
         const as = generateAgentSchedules(emps, scheds, params, startDate, 14);
         const iv = generateIntervals(as, ql, params, startDate, 14);
         const rw = generateRiskWindows(iv);
@@ -3403,29 +3463,35 @@ function DataTab({ config, generatedData, setGeneratedData, setEmployees, setSki
         const wf = generateWeeklyForecast(wh, params);
         const ta = generateTRCAggregates(iv, config);
         const ss = calculateScheduleScore(as, ql);
-
-        // Propagate to all dependent tabs
-        setEmployees(emps);
-        setSkills(skls);
-        setSchedules(scheds);
-        setGeneratedData({ scenario, driverEvent, scenarioParams:params,
+        setEmployees(emps); setSkills(skls); setSchedules(scheds);
+        const result = { scenario:effectiveScenario, driverEvent:effectiveDriverEvent, scenarioParams:params,
           queueList:ql, agentSchedules:as, intervals:iv,
           riskWindows:rw, dailyHistory:dh, weeklyHistory:wh,
           weeklyForecast:wf, trcAggregates:ta, scheduleScore:ss,
-          autoHeadcount:autoHC, totalAgents:emps.length });
+          autoHeadcount:autoHC, totalAgents:emps.length };
+        setGeneratedData(result);
         setView('preview');
+        if(onAfterGenerate) onAfterGenerate(result);
       } catch(e){ console.error('Generate error:', e); }
       setGenerating(false);
     },50);
-  };
+  },[allReady, generating, scenario, driverEvent, custom, config, setEmployees, setSkills, setSchedules, setGeneratedData, onAfterGenerate]);
+
+  // Demo auto-generate: fire when demoTrigger changes
+  useEffect(()=>{
+    if(demoTrigger && demoTrigger !== lastDemoTrigger.current && !generating) {
+      lastDemoTrigger.current = demoTrigger;
+      handleGenerate(demoTrigger);
+    }
+  },[demoTrigger, generating, handleGenerate]);
 
   const scenarioMeta = [
-    { id:'Baseline',     icon:'📊', color:'#035C67' },
-    { id:'HighVolume',   icon:'📈', color:'#EA5353' },
-    { id:'Understaffed', icon:'⚠️',  color:'#E88789' },
-    { id:'Surplus',      icon:'💚', color:'#1B5E20' },
-    { id:'MixedPressure',icon:'🔀', color:'#8B6914' },
-    { id:'Custom',       icon:'⚙',  color:'#008F83' },
+    { id:'Baseline',      icon:'📊', color:'#035C67', desc:'Normal weekday — balanced demand & staffing' },
+    { id:'HighVolume',    icon:'📈', color:'#EA5353', desc:'+25% volume, low VTO — push staffing limits' },
+    { id:'Understaffed',  icon:'⚠️',  color:'#E88789', desc:'10% callout rate — short-staff stress test' },
+    { id:'Surplus',       icon:'💚', color:'#1B5E20', desc:'-15% vol, +8% VTO — manage overstaffed day' },
+    { id:'MixedPressure', icon:'🔀', color:'#8B6914', desc:'+10% vol + 6% callouts — realistic pressure' },
+    { id:'Custom',        icon:'⚙',  color:'#008F83', desc:'Set your own vol / adherence / callout params' },
   ];
 
   const checks = [
@@ -3479,6 +3545,7 @@ function DataTab({ config, generatedData, setGeneratedData, setEmployees, setSki
                   onClick={()=>setScenario(sm.id)}>
                   <div className="scenario-card-name" style={{color:sm.color}}>{sm.icon} {sm.id}</div>
                   <div className="scenario-card-label">{s.label}</div>
+                  <div className="scenario-desc">{sm.desc}</div>
                   {sm.id!=='Custom' && (
                     <div className="scenario-card-stats">
                       <span className="scenario-pill">Vol ×{s.volumeModifier.toFixed(2)}</span>
@@ -3711,9 +3778,24 @@ function StaffingGrid({ data, trc }) {
   );
 }
 
+// Step 11: Toast notification
+function Toast({ msg, type='success' }) {
+  return <div className={`toast toast-${type}`}>{msg}</div>;
+}
+
 function AnalysisPanel({ output, isLoading, onCopy, onClear }) {
   const scrollRef = useRef(null);
   useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = 0; }, [output]);
+
+  const handleDownload = useCallback(() => {
+    const blob = new Blob([output], {type:'text/plain'});
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url;
+    a.download = `rmg-analysis-${new Date().toISOString().slice(0,10)}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [output]);
 
   return (
     <div className="analysis-panel">
@@ -3722,6 +3804,7 @@ function AnalysisPanel({ output, isLoading, onCopy, onClear }) {
         <div className="analysis-header-right">
           {output && !isLoading && (
             <>
+              <button className="action-btn action-btn-dl" onClick={handleDownload} title="Save analysis as .txt">💾</button>
               <button className="action-btn" onClick={onCopy}>Copy</button>
               <button className="action-btn" onClick={onClear}>New Run</button>
             </>
@@ -4730,6 +4813,41 @@ Note: This is a prototype running on Claude. Data is generated from your configu
     setLoading(false);
   },[activeBot, activeTRC, hasRealData, effectiveData, generatedData, legacyData, dateStr, timeStr, history, buildBotPacket, injectedEvents, simTimeSlot]);
 
+  // Step 11: onboarding empty state when no data generated yet
+  if(!hasRealData && !legacyData) return null;
+  if(!generatedData) {
+    return (
+      <div className="ops-shell" style={{justifyContent:'center'}}>
+        <div className="ops-onboard">
+          <div className="ops-onboard-icon">🤖</div>
+          <div className="ops-onboard-title">Operations Intelligence</div>
+          <p className="ops-onboard-sub">
+            Four AI bots — Intraday, Short Range, Long Range, and Intelligence — analyze your generated
+            workforce data in real time. Fire any trigger to get a full WFM analysis from Claude.
+          </p>
+          <div className="ops-steps">
+            <div className="ops-step">
+              <span className="ops-step-n">1</span>
+              <div className="ops-step-text"><strong>Configure</strong> — TRCs, workstreams, and queues are already set up with RMG defaults.</div>
+            </div>
+            <div className="ops-step">
+              <span className="ops-step-n">2</span>
+              <div className="ops-step-text"><strong>Generate</strong> — pick a scenario in the 📊 Data tab and click ⚡ Generate Data.</div>
+            </div>
+            <div className="ops-step">
+              <span className="ops-step-n">3</span>
+              <div className="ops-step-text"><strong>Analyze</strong> — come back here and fire a trigger. Claude runs the full WFM analysis in seconds.</div>
+            </div>
+          </div>
+          <p style={{fontSize:11,color:'#5A8A86',marginTop:20,lineHeight:1.6}}>
+            Or click <strong style={{color:'#3EFFC0'}}>🚀 Demo</strong> in the header — one click loads<br/>
+            HighVolume + System Outage, generates data, and lands here ready to analyze.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="ops-shell">
       {/* Bot sub-tabs + TRC dropdown */}
@@ -5284,6 +5402,26 @@ function App() {
   const [skills,        setSkills]        = useState([]);
   const [schedules,     setSchedules]     = useState([]);
   const [generatedData, setGeneratedData] = useState(null);
+  // Step 11: demo trigger + toast
+  const [demoTrigger,   setDemoTrigger]   = useState(null);
+  const [toast,         setToast]         = useState(null);
+
+  const showToast = useCallback((msg, type='success') => {
+    setToast({msg, type});
+    setTimeout(() => setToast(null), 3500);
+  }, []);
+
+  const handleAfterGenerate = useCallback((data) => {
+    const trcCount = Object.keys(config.trcs).filter(k=>config.trcs[k].active).length;
+    showToast(`✅ Generated ${data.totalAgents} agents · ${trcCount} TRCs · ${data.queueList?.length||0} queues`);
+    setTimeout(() => setActiveModule('operations'), 200);
+  }, [showToast, config.trcs]);
+
+  const triggerDemo = useCallback(() => {
+    // Load HighVolume + SystemOutage — most dramatic demo scenario
+    setDemoTrigger({scenario:'HighVolume', driverEvent:'SystemOutage', _ts:Date.now()});
+    setActiveModule('data');
+  }, []);
 
   const modules = [
     { id: 'config',     label: '⚙ Config'     },
@@ -5299,6 +5437,7 @@ function App() {
       <div className="header">
         <div className="header-logo">
           EVERNORTH · <span>RMG</span> · Intelligent Ops
+          <span className="header-version">v0.11 · PROTOTYPE</span>
         </div>
         <div className="module-tabs">
           {modules.map(m => (
@@ -5309,7 +5448,14 @@ function App() {
             </button>
           ))}
         </div>
+        <button className="demo-btn" onClick={triggerDemo}
+          title="One-click demo: HighVolume + System Outage scenario — auto-generates and navigates to Operations">
+          🚀 Demo
+        </button>
       </div>
+
+      {/* Toast notification */}
+      {toast && <Toast msg={toast.msg} type={toast.type}/>}
 
       {/* MODULE CONTENT */}
       {activeModule === 'config'     && <ConfigTab config={config} setConfig={setConfig} />}
@@ -5321,8 +5467,11 @@ function App() {
           schedules={schedules}   setSchedules={setSchedules}
         />
       )}
-      {activeModule === 'data'       && <DataTab config={config} generatedData={generatedData} setGeneratedData={setGeneratedData}
-                                          setEmployees={setEmployees} setSkills={setSkills} setSchedules={setSchedules} />}
+      {activeModule === 'data' && (
+        <DataTab config={config} generatedData={generatedData} setGeneratedData={setGeneratedData}
+          setEmployees={setEmployees} setSkills={setSkills} setSchedules={setSchedules}
+          demoTrigger={demoTrigger} onAfterGenerate={handleAfterGenerate}/>
+      )}
       {activeModule === 'schedule'   && <ScheduleTab employees={employees} generatedData={generatedData} />}
       {activeModule === 'operations' && <OperationsTab generatedData={generatedData} />}
     </div>
