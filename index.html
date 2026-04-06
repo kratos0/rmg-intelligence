@@ -675,6 +675,43 @@
     .bp4-hist-item { padding: 6px 10px; border-bottom: 1px solid #F0F0F0; }
     .bp4-hist-top { display: flex; justify-content: space-between; align-items: center; font-size: 11px; }
 
+    /* ─── Step 9: Dynamic charts per bot tab ─────────────────────────────── */
+    /* Mini horizontal bar chart (ShortRange coverage, Intelligence net) */
+    .mini-bar-chart {
+      padding: 6px 10px; background: #F8FDFB; border-bottom: 1px solid #D8E8E6; flex-shrink: 0;
+    }
+    .mini-bar-row {
+      display: flex; align-items: center; gap: 4px; margin: 2px 0;
+    }
+    .mini-bar-label {
+      width: 52px; font-size: 9px; color: #5A8A86; font-family: 'Courier New'; flex-shrink: 0; text-align: right;
+    }
+    .mini-bar-track {
+      flex: 1; height: 10px; background: #EBF6F4; border-radius: 2px; overflow: hidden; position: relative;
+    }
+    .mini-bar-fill { height: 100%; border-radius: 2px; }
+    .mini-bar-value { font-size: 9px; color: #035C67; font-weight: 700; min-width: 22px; text-align: right; flex-shrink: 0; }
+    /* Net delta bars (centered) */
+    .mini-net-track {
+      flex: 1; height: 10px; background: #EBF6F4; border-radius: 2px; position: relative; overflow: hidden;
+    }
+    .mini-net-fill-pos { position: absolute; left: 50%; height: 100%; border-radius: 0 2px 2px 0; }
+    .mini-net-fill-neg { position: absolute; right: 50%; height: 100%; border-radius: 2px 0 0 2px; }
+    /* Volume trend bar chart (LongRange) */
+    .vol-trend-wrap {
+      padding: 4px 10px 10px; background: #F8FDFB; border-bottom: 1px solid #D8E8E6; flex-shrink: 0;
+    }
+    /* Queue health pills (IntradayView) */
+    .queue-health-strip {
+      display: flex; flex-wrap: wrap; gap: 3px; padding: 5px 10px;
+      background: #F0FAF8; border-bottom: 1px solid #C8E0DC; flex-shrink: 0;
+    }
+    .q-health-pill {
+      font-size: 8px; font-weight: 700; padding: 1px 6px; border-radius: 8px;
+      font-family: 'Courier New'; cursor: default; white-space: nowrap;
+      border: 1px solid rgba(0,0,0,0.1); line-height: 1.5;
+    }
+
     /* Net staffing sparkline chart */
     .net-sparkline {
       display: flex; align-items: flex-end; gap: 1px;
@@ -3815,6 +3852,29 @@ function IntradayView({ activeTRC, generatedData }) {
         </div>
       )}
 
+      {/* Queue health strip — one pill per queue, colored by worst net status for viewDay */}
+      {queueSummary.length>0&&(
+        <div className="queue-health-strip" title="Click a queue to drill in">
+          {queueSummary.map((q,i)=>{
+            const color=q.critSlots>0?'#EA5353':q.riskSlots>0?'#E88789':q.netAvg>2?'#3EFFC0':'#7CCCBE';
+            const bg=q.critSlots>0?'rgba(234,83,83,0.1)':q.riskSlots>0?'rgba(232,135,137,0.1)':'rgba(62,255,192,0.1)';
+            const isSelected=selectedQ===q.queueId;
+            return (
+              <span key={i} className="q-health-pill"
+                style={{background:isSelected?color:bg,color:isSelected?'#002F32':color,
+                  borderColor:color,cursor:'pointer',
+                  boxShadow:isSelected?`0 0 0 2px ${color}40`:undefined}}
+                onClick={()=>{ setSelectedWS(q.workstream); setSelectedQ(isSelected?'ALL':q.queueId); }}
+                title={`${q.queueId} · Net avg: ${q.netAvg>=0?'+':''}${q.netAvg} · ⚠ ${q.riskSlots} slots · ❗ ${q.critSlots} critical`}>
+                {q.queueId.split('-').slice(-1)[0]}
+                {q.critSlots>0&&' ❗'}
+                {q.critSlots===0&&q.riskSlots>0&&' ⚠'}
+              </span>
+            );
+          })}
+        </div>
+      )}
+
       {/* Workstream selector */}
       <div className="bp4-ws-selector">
         <span className="bp4-ws-label">WS</span>
@@ -3981,6 +4041,41 @@ function ShortRangeView({ activeTRC, generatedData }) {
           </div>
         </div>
       )}
+      {/* 7-day coverage bar chart — active agents per day */}
+      {dailyStats.length>0&&(()=>{
+        const maxActive=Math.max(...dailyStats.map(d=>d.active),1);
+        return (
+          <div className="mini-bar-chart">
+            <div style={{fontSize:9,fontWeight:700,color:'#5A8A86',textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:3}}>AGENT COVERAGE — 7 DAYS</div>
+            {dailyStats.map((d,i)=>{
+              const isToday=d.date===todayStr;
+              const activePct=d.active/maxActive*100;
+              const coPct=d.callout>0?d.callout/maxActive*100:0;
+              const vtoPct=d.vto>0?d.vto/maxActive*100:0;
+              return (
+                <div key={i} className="mini-bar-row">
+                  <span className="mini-bar-label" style={{color:isToday?'#035C67':'#5A8A86',fontWeight:isToday?700:400}}>
+                    {d.date.slice(5)}{isToday?' ★':''}
+                  </span>
+                  <div className="mini-bar-track" title={`${d.date}: ${d.active} active · ${d.callout} CO · ${d.vto} VTO`}>
+                    <div className="mini-bar-fill" style={{width:`${activePct}%`,background:isToday?'#3EFFC0':'#7CCCBE',borderRadius:2}}/>
+                    {coPct>0&&<div style={{position:'absolute',left:`${activePct-coPct}%`,top:0,bottom:0,width:`${coPct}%`,background:'rgba(234,83,83,0.5)'}}/>}
+                    {vtoPct>0&&<div style={{position:'absolute',left:`${activePct-coPct-vtoPct}%`,top:0,bottom:0,width:`${vtoPct}%`,background:'rgba(144,185,255,0.5)'}}/>}
+                  </div>
+                  <span className="mini-bar-value">{d.active}</span>
+                  {d.callout>0&&<span style={{fontSize:8,color:'#EA5353',fontWeight:700,flexShrink:0}}>-{d.callout}CO</span>}
+                  {d.vto>0&&<span style={{fontSize:8,color:'#90B9FF',fontWeight:700,flexShrink:0}}>-{d.vto}VTO</span>}
+                </div>
+              );
+            })}
+            <div style={{display:'flex',gap:10,marginTop:4,paddingTop:3,borderTop:'1px solid #E8F5F4'}}>
+              <span style={{fontSize:8,color:'#5A8A86'}}><span style={{display:'inline-block',width:8,height:8,background:'#3EFFC0',borderRadius:1,marginRight:3,verticalAlign:'middle'}}/>Active</span>
+              <span style={{fontSize:8,color:'#5A8A86'}}><span style={{display:'inline-block',width:8,height:8,background:'rgba(234,83,83,0.5)',borderRadius:1,marginRight:3,verticalAlign:'middle'}}/>CO</span>
+              <span style={{fontSize:8,color:'#5A8A86'}}><span style={{display:'inline-block',width:8,height:8,background:'rgba(144,185,255,0.5)',borderRadius:1,marginRight:3,verticalAlign:'middle'}}/>VTO</span>
+            </div>
+          </div>
+        );
+      })()}
       <div className="bp4-section-label">7-DAY AGENT COVERAGE</div>
       <div className="bp4-table-wrap">
         <table className="bp4-table">
@@ -4057,6 +4152,48 @@ function LongRangeView({ activeTRC, generatedData }) {
   };
   return (
     <div className="bp4-view">
+      {/* Volume trend bar chart — history (green) + forecast (blue dashed) */}
+      {(weeklyHistory.length>0||weeklyForecast.length>0)&&(()=>{
+        const allVols=[...weeklyHistory.map(w=>w.vol),...weeklyForecast.map(w=>w.vol)];
+        const maxVol=Math.max(...allVols,1);
+        const chartH=52;
+        return (
+          <div className="vol-trend-wrap">
+            <div style={{fontSize:9,fontWeight:700,color:'#5A8A86',textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:4}}>VOLUME TREND — HISTORY + FORECAST</div>
+            <div style={{display:'flex',alignItems:'flex-end',gap:1,height:chartH,overflow:'hidden'}}>
+              {weeklyHistory.map((w,i)=>{
+                const barH=Math.max(2,Math.round(w.vol/maxVol*chartH));
+                const isLast=i===weeklyHistory.length-1;
+                return (
+                  <div key={i} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-end',height:chartH}}>
+                    <div style={{width:'85%',height:barH,background:'#3EFFC0',borderRadius:'2px 2px 0 0',opacity:0.85}}
+                      title={`${w.week.slice(5)}: ${Math.round(w.vol)} vol · SL ${w.cnt>0?Math.round(w.sl/w.cnt):'—'}%`}/>
+                  </div>
+                );
+              })}
+              {weeklyForecast.length>0&&<div style={{width:1,background:'rgba(144,185,255,0.4)',alignSelf:'stretch',flexShrink:0}}/>}
+              {weeklyForecast.map((w,i)=>{
+                const barH=Math.max(2,Math.round(w.vol/maxVol*chartH));
+                return (
+                  <div key={'f'+i} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-end',height:chartH}}>
+                    <div style={{width:'85%',height:barH,background:'rgba(144,185,255,0.55)',borderRadius:'2px 2px 0 0',borderTop:'2px dashed #90B9FF'}}
+                      title={`${w.week.slice(5)} (fcst): ${Math.round(w.vol)} vol`}/>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{display:'flex',justifyContent:'space-between',marginTop:2,fontSize:8,color:'#8AB0AC'}}>
+              <span>{weeklyHistory[0]?.week.slice(5)||''}</span>
+              <span style={{color:'#5A8A86',fontWeight:700}}>today ↑</span>
+              <span style={{color:'#90B9FF'}}>{weeklyForecast[weeklyForecast.length-1]?.week.slice(5)||''} fcst</span>
+            </div>
+            <div style={{display:'flex',gap:10,marginTop:4,paddingTop:3,borderTop:'1px solid #E8F5F4'}}>
+              <span style={{fontSize:8,color:'#5A8A86'}}><span style={{display:'inline-block',width:8,height:8,background:'#3EFFC0',borderRadius:1,marginRight:3,verticalAlign:'middle'}}/>Actual</span>
+              <span style={{fontSize:8,color:'#5A8A86'}}><span style={{display:'inline-block',width:8,height:8,background:'rgba(144,185,255,0.55)',borderRadius:1,marginRight:3,verticalAlign:'middle'}}/>Forecast</span>
+            </div>
+          </div>
+        );
+      })()}
       <div className="bp4-section-label">13-WEEK HISTORY</div>
       <div className="bp4-table-wrap" style={{maxHeight:210}}>
         <table className="bp4-table">
@@ -4135,6 +4272,50 @@ function IntelligenceView({ activeTRC, generatedData, history }) {
   const score=generatedData?.scheduleScore;
   return (
     <div className="bp4-view">
+      {/* Cross-TRC net staffing comparison bar chart */}
+      {Object.keys(trcStats).length>0&&(()=>{
+        const MAX_NET=5;
+        return (
+          <div className="mini-bar-chart">
+            <div style={{fontSize:9,fontWeight:700,color:'#5A8A86',textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:4}}>NET STAFFING BY TRC — TODAY</div>
+            {trcs.map(trc=>{
+              const s=trcStats[trc]||{};
+              const net=s.netAvg||0;
+              const pct=Math.min(100,Math.abs(net)/MAX_NET*50); // 50% = half-track from center
+              const isActive=activeTRC===trc||activeTRC==='ALL';
+              const barColor=net<-3?'#EA5353':net<0?'#E88789':net<1?'#C8E0DC':net<3?'#3EFFC0':'#00CFAB';
+              return (
+                <div key={trc} className="mini-bar-row"
+                  style={isActive?{background:'rgba(62,255,192,0.06)',borderRadius:3,margin:'1px -3px',padding:'1px 3px'}:{}}>
+                  <span className="mini-bar-label" style={{color:isActive?'#035C67':'#8AB0AC',fontWeight:isActive?700:400,width:38}}>
+                    {trc}
+                  </span>
+                  <div className="mini-net-track" title={`${trc}: Net ${net>=0?'+':''}${net} avg | ${s.risks||0} risk windows | ${s.callout||0} CO`}>
+                    {net>=0
+                      ? <div className="mini-net-fill-pos" style={{width:`${pct}%`,background:barColor}}/>
+                      : <div className="mini-net-fill-neg" style={{width:`${pct}%`,background:barColor}}/>
+                    }
+                    {/* zero line marker */}
+                    <div style={{position:'absolute',left:'50%',top:0,bottom:0,width:1,background:'rgba(3,92,103,0.2)',pointerEvents:'none'}}/>
+                  </div>
+                  <span className="mini-bar-value" style={{color:net<0?'#EA5353':net>0?'#008F83':'#5A8A86',minWidth:30}}>
+                    {net>=0?'+':''}{net}
+                  </span>
+                  <span style={{fontSize:8,color:(s.risks||0)>3?'#EA5353':'#8AB0AC',minWidth:22,flexShrink:0}}>
+                    {s.risks||0}⚠
+                  </span>
+                  {(s.callout||0)>0&&<span style={{fontSize:8,color:'#EA5353',flexShrink:0}}>{s.callout}CO</span>}
+                </div>
+              );
+            })}
+            <div style={{display:'flex',justifyContent:'center',marginTop:4,paddingTop:3,borderTop:'1px solid #E8F5F4',gap:16}}>
+              <span style={{fontSize:8,color:'#EA5353'}}>◀ understaffed</span>
+              <span style={{fontSize:8,color:'#5A8A86'}}>|</span>
+              <span style={{fontSize:8,color:'#008F83'}}>surplus ▶</span>
+            </div>
+          </div>
+        );
+      })()}
       <div className="bp4-section-label">CROSS-TRC SNAPSHOT — TODAY</div>
       <div className="bp4-table-wrap">
         <table className="bp4-table">
