@@ -1737,16 +1737,14 @@ function generateIntervals(agentSchedules, queueList, scenarioParams, startDate,
         const adh = Math.max(0.74, Math.min(1.0, scenarioParams.adherenceBase+(slotRng()-0.5)*0.06));
         const actualFTE = Math.round(scheduledFTE*adh*10)/10;
 
-        // Volume for display (per-queue share of workstream volume)
-        const vol = Math.max(1, Math.round(wsBase.baseVol * curve * scenarioParams.volumeModifier * (0.82+slotRng()*0.36) / qCountInWS));
+        // Per-queue volume: each queue handles full workstream demand independently.
+        // Scenario volumeModifier scales demand — this is the pressure lever.
+        const vol = Math.max(1, Math.round(wsBase.baseVol * curve * scenarioParams.volumeModifier * (0.88+slotRng()*0.24)));
         const aht = Math.round(wsBase.baseAHT*(0.88+slotRng()*0.24));
 
-        // Required FTE: calibrated against actual scheduled FTE so coverage is realistic.
-        // Peak hours (curve ~1.4) create ~10-30% deficit; off-peak creates surplus.
-        // demandRatio: 0.55 at curve=0, 1.46 at curve=1.4 — with ±15% noise
-        const demandRatio = 0.55 + curve * 0.65 + (slotRng()-0.5)*0.15;
-        const baseReq = Math.max(1, scheduledFTE);
-        const requiredFTE = parseFloat(Math.max(0.5, baseReq * demandRatio * scenarioParams.volumeModifier).toFixed(1));
+        // Required FTE: pure Erlang-C — demand only, fully independent of supply.
+        // Headcount sized to baseline meets this at peak; scenarios push it into deficit.
+        const requiredFTE = parseFloat(Math.max(0.5, vol * aht / 1800).toFixed(1));
 
         const net = parseFloat((actualFTE-requiredFTE).toFixed(1));
         const thr = q.thresholds;
@@ -2858,25 +2856,27 @@ function EmployeesTab({ config, employees, setEmployees, skills, setSkills, sche
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DEMAND-FIRST STAFFING PLANNER
-// Computes required headcount per TRC/WS from volume + AHT + scenario params.
+// Sizes headcount to BASELINE so scheduled ≈ required at peak.
+// Scenarios (CO / VTO / volume) then apply pressure on top.
 // Returns { [trc]: { [ws]: agentCount } }
 // ─────────────────────────────────────────────────────────────────────────────
-function computeRequiredHeadcount(config, scenarioParams) {
-  const peakCurve = Math.max(...TIME_CURVE); // 1.40
+function computeRequiredHeadcount(config) {
+  const base      = SCENARIOS.Baseline;              // always size to baseline
+  const peakCurve = Math.max(...TIME_CURVE);         // 1.40
   const headcount = {};
   Object.entries(config.trcs).filter(([,t])=>t.active).forEach(([trc])=>{
     headcount[trc] = {};
     Object.entries(config.workstreams).filter(([,w])=>w.active).forEach(([ws])=>{
-      const queues  = config.queueTemplates[ws]||[];
-      const qCount  = queues.length||1;
-      const wsBase  = WS_BASE[ws]||{baseVol:8,baseAHT:360};
-      // Peak FTE needed per queue (vol is per-queue per-slot)
-      const peakVol   = wsBase.baseVol * peakCurve * scenarioParams.volumeModifier;
-      const peakReq   = peakVol * wsBase.baseAHT / 1800;
-      // Effective utilization: adherence × (1 − callout − VTO) × 0.88 shrinkage/breaks
-      const effUtil   = Math.max(0.3,
-        scenarioParams.adherenceBase * (1 - scenarioParams.calloutRate - scenarioParams.vtoRate) * 0.88);
-      const perQueue  = Math.max(1, Math.ceil(peakReq / effUtil));
+      const queues = config.queueTemplates[ws]||[];
+      const qCount = queues.length||1;
+      const wsBase = WS_BASE[ws]||{baseVol:8,baseAHT:360};
+      // Each queue handles the full workstream volume independently (not shared).
+      // Peak FTE per queue = peakVol × AHT / 1800  (Erlang-C, no occupancy divisor)
+      const peakReqPerQueue = wsBase.baseVol * peakCurve * wsBase.baseAHT / 1800;
+      // Baseline utilization: agents actually answering = (1 − CO − VTO) × adherence
+      const baselineUtil = Math.max(0.4, (1 - base.calloutRate - base.vtoRate) * base.adherenceBase);
+      // ×1.05 thin buffer → baseline is slight surplus so scenarios can push into deficit
+      const perQueue = Math.max(1, Math.ceil(peakReqPerQueue * 1.05 / baselineUtil));
       headcount[trc][ws] = perQueue * qCount;
     });
   });
@@ -2909,11 +2909,11 @@ function DataTab({ config, generatedData, setGeneratedData, setEmployees, setSki
     };
   };
 
-  // Live projected headcount so the user can see what will be generated
+  // Projected headcount — always baseline-sized; scenarios drive pressure not headcount
   const projectedHeadcount = useMemo(()=>{
     if(!allReady) return null;
-    return computeRequiredHeadcount(config, getParams());
-  },[config, scenario, driverEvent, custom]);
+    return computeRequiredHeadcount(config);
+  },[config]);
 
   const projectedTotal = useMemo(()=>{
     if(!projectedHeadcount) return 0;
@@ -2930,8 +2930,9 @@ function DataTab({ config, generatedData, setGeneratedData, setEmployees, setSki
         const startDate = (()=>{ const d=new Date(); const dow=d.getDay(); d.setDate(d.getDate()-(dow===0?6:dow-1)); d.setHours(0,0,0,0); return d; })();
         const ql = buildQueueList(config);
 
-        // ── DEMAND-FIRST: compute headcount from requirements ──────────────
-        const autoHC    = computeRequiredHeadcount(config, params);
+        // ── DEMAND-FIRST: headcount always sized to baseline ──────────────
+        // Scenario params drive CO/VTO/volume pressure in intervals, not headcount size
+        const autoHC    = computeRequiredHeadcount(config);
         const emps      = generateEmployees({...config, headcount: autoHC});
         const skls      = generateSkills(emps, config);
         const scheds    = generateSchedules(emps, skls);
@@ -3075,7 +3076,7 @@ function DataTab({ config, generatedData, setGeneratedData, setEmployees, setSki
                 ))
               )}
               <span style={{marginLeft:'auto', fontSize:10, color:'#8AB0AC', fontStyle:'italic'}}>
-                Auto-sized to peak demand
+                Baseline-sized · scenarios apply CO / VTO / volume pressure
               </span>
             </div>
           )}
