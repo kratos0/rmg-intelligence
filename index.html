@@ -729,6 +729,74 @@
     /* Download button in AnalysisPanel */
     .action-btn-dl { background: rgba(62,255,192,0.08); border-color: rgba(62,255,192,0.3); }
 
+    /* ─── Step 12: TRC Compare + Flow Map ───────────────────────────────── */
+    /* Bot tab separator + analytics tabs */
+    .ops-tab-sep { width: 1px; background: rgba(62,255,192,0.2); margin: 8px 4px; align-self: stretch; flex-shrink: 0; }
+    .ops-analytics-tab {
+      padding: 0 14px; height: 40px; border: none;
+      background: transparent; color: #5A8A86;
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      border-bottom: 2px solid transparent; margin-bottom: -2px;
+      transition: all 0.15s; display: flex; align-items: center; gap: 5px; white-space: nowrap;
+    }
+    .ops-analytics-tab:hover { color: #008F83; background: rgba(0,143,131,0.06); }
+    .ops-analytics-tab.active { color: #008F83; border-bottom-color: #008F83; }
+
+    /* TRC Compare */
+    .trc-compare-shell { flex: 1; overflow: auto; padding: 16px; background: #EDEBE7; }
+    .trc-compare-grid { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,47,50,0.08); }
+    .trc-compare-grid th { background: #013A42; color: #3EFFC0; font-size: 11px; font-weight: 700; padding: 9px 14px; text-align: center; border: 1px solid rgba(62,255,192,0.12); white-space: nowrap; }
+    .trc-compare-grid th:first-child { text-align: left; min-width: 180px; }
+    .trc-compare-grid td { font-size: 12px; padding: 7px 14px; border: 1px solid rgba(0,47,50,0.07); text-align: center; background: #fff; }
+    .trc-compare-grid tr:hover td { background: rgba(62,255,192,0.04); }
+    .trc-ws-row td { background: #F0F8F6 !important; padding: 6px 14px !important; }
+    .trc-ws-label { font-size: 10px; font-weight: 800; color: #5A8A86; text-transform: uppercase; letter-spacing: 0.7px; text-align: left !important; }
+    .trc-queue-label { font-size: 12px; color: #002F32; text-align: left !important; padding-left: 22px !important; }
+    .loan-card { background: #fff; border: 1px solid rgba(62,255,192,0.3); border-left: 3px solid #3EFFC0; border-radius: 6px; padding: 10px 14px; margin-top: 4px; }
+    .loan-card-title { font-size: 10px; font-weight: 800; color: #3EFFC0; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
+    .loan-row { font-size: 12px; color: #002F32; padding: 3px 0; border-bottom: 1px solid rgba(62,255,192,0.08); line-height: 1.5; }
+    .loan-row:last-child { border-bottom: none; }
+
+    /* Flow Map */
+    .flow-map-shell { flex: 1; display: flex; overflow: hidden; background: #EDEBE7; }
+    .flow-chain-panel { width: 320px; min-width: 320px; border-right: 2px solid #D8E8E6; overflow-y: auto; padding: 14px; background: #fff; }
+    .flow-sim-panel { flex: 1; overflow-y: auto; padding: 14px; }
+    .flow-chain-header { font-size: 11px; font-weight: 800; color: #5A8A86; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .flow-node { border: 1.5px solid #D8E8E6; border-radius: 8px; padding: 10px 12px; background: #FAFFFE; position: relative; }
+    .flow-node.status-bottleneck { border-color: #EA5353; background: rgba(234,83,83,0.04); }
+    .flow-node.status-near-cap   { border-color: #FFD166; background: rgba(255,209,102,0.04); }
+    .flow-node.status-ok         { border-color: #3EFFC0; background: rgba(62,255,192,0.04); }
+    .flow-node.status-none       { border-color: #D8E8E6; background: #FAFFFE; }
+    .flow-node-label { font-size: 13px; font-weight: 700; color: #002F32; }
+    .flow-node-meta  { font-size: 10px; color: #5A8A86; margin-top: 2px; }
+    .flow-source-badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; display: inline-block; margin-top: 6px; }
+    .flow-source-ext  { background: rgba(62,255,192,0.12); color: #008F83; }
+    .flow-source-int  { background: rgba(144,185,255,0.18); color: #5A7ABF; }
+    .flow-pct-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+    .flow-pct-label { font-size: 10px; color: #5A8A86; white-space: nowrap; min-width: 62px; }
+    .flow-pct-val   { font-size: 11px; font-weight: 800; color: #008F83; min-width: 34px; text-align: right; }
+    .flow-connector { display: flex; flex-direction: column; align-items: center; margin: 3px 0; }
+    .flow-connector-line { width: 2px; height: 14px; background: #C8DAD8; }
+    .flow-connector-arrow { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 7px solid #C8DAD8; }
+    .flow-sim-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,47,50,0.08); }
+    .flow-sim-table th { background: #013A42; color: #3EFFC0; font-size: 11px; font-weight: 700; padding: 8px 10px; text-align: left; border: 1px solid rgba(62,255,192,0.15); }
+    .flow-sim-table td { font-size: 12px; padding: 7px 10px; border: 1px solid rgba(0,47,50,0.07); background: #fff; }
+    .flow-sim-table tr:hover td { background: rgba(62,255,192,0.03); }
+    .flow-stat-ok     { color: #3EFFC0; font-weight: 700; }
+    .flow-stat-near   { color: #FFD166; font-weight: 700; }
+    .flow-stat-bottle { color: #EA5353; font-weight: 800; }
+    .vol-ctrl-row { display: flex; align-items: center; gap: 10px; padding: 10px 0 14px; flex-wrap: wrap; }
+    .vol-ctrl-label { font-size: 11px; font-weight: 700; color: #5A8A86; text-transform: uppercase; white-space: nowrap; }
+    .bottleneck-alert { background: rgba(234,83,83,0.08); border: 1px solid rgba(234,83,83,0.35); border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; }
+    .insight-card { background: #fff; border: 1px solid rgba(62,255,192,0.25); border-left: 3px solid #3EFFC0; border-radius: 6px; padding: 10px 14px; margin-top: 12px; }
+    .insight-title { font-size: 10px; font-weight: 800; color: #3EFFC0; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
+    .insight-row { font-size: 12px; color: #002F32; padding: 3px 0; border-bottom: 1px solid rgba(62,255,192,0.08); line-height: 1.5; }
+    .insight-row:last-child { border-bottom: none; }
+    .flow-tabs-row { display: flex; gap: 6px; margin-bottom: 12px; }
+    .flow-tab-btn { padding: 5px 12px; border-radius: 4px; border: 1px solid #D8E8E6; background: #fff; color: #5A8A86; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.15s; }
+    .flow-tab-btn.active { background: #008F83; border-color: #008F83; color: #fff; }
+    .flow-tab-btn:hover:not(.active) { background: rgba(0,143,131,0.08); color: #008F83; }
+
     /* ─── Step 10: World State + Event Injector + SimClock ───────────────── */
     .world-state-bar {
       display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
@@ -1342,6 +1410,35 @@ const DEFAULT_CONFIG = {
   thresholds: {
     Phone:   { under: -1, escalate: -2, surplus: 2,  slTarget: 80,  tatTarget: null },
     Offline: { under: -2, escalate: -3, surplus: 3,  slTarget: null, tatTarget: 4   },
+  },
+  // ── Queue Flow Definitions ───────────────────────────────────────────────
+  // volumeSource: 'external' = new work entering the system
+  //               'internal' = fed by processed output of another queue
+  // passThrough:  % of THIS step's processed volume that flows to the NEXT step
+  // fromQueueId:  which queue feeds this one (only when volumeSource='internal')
+  queueFlows: {
+    'rx-fulfillment': {
+      name: 'Rx Fulfillment',
+      color: '#3EFFC0',
+      steps: [
+        { queueId: 'PA_Enrollment',     label: 'PAC · Clearance',       volumeSource: 'external',  fromQueueId: null,               passThrough: 0.65 },
+        { queueId: 'Tech_DataEntry',    label: 'Tech · Profiling',      volumeSource: 'internal',  fromQueueId: 'PA_Enrollment',     passThrough: 0.80 },
+        { queueId: 'Ph_NewRx',          label: 'RPh · Profile Lock',    volumeSource: 'internal',  fromQueueId: 'Tech_DataEntry',    passThrough: 0.90 },
+        { queueId: 'CC_Callbacks',      label: 'CC · Scheduling',       volumeSource: 'internal',  fromQueueId: 'Ph_NewRx',          passThrough: 0.70 },
+        { queueId: 'Ph_ClinicalReview', label: 'RPh · Right Lock',      volumeSource: 'internal',  fromQueueId: 'CC_Callbacks',      passThrough: 1.00 },
+        { queueId: 'PA_FollowUp',       label: 'PAC · Ship Clearance',  volumeSource: 'internal',  fromQueueId: 'Ph_ClinicalReview', passThrough: 1.00 },
+      ],
+    },
+    'prior-auth': {
+      name: 'Prior Auth',
+      color: '#90B9FF',
+      steps: [
+        { queueId: 'CC_Phone_Inbound',  label: 'CC · Inbound',          volumeSource: 'external',  fromQueueId: null,               passThrough: 0.45 },
+        { queueId: 'PA_Benefits',       label: 'PAC · Benefits Invest', volumeSource: 'internal',  fromQueueId: 'CC_Phone_Inbound', passThrough: 0.70 },
+        { queueId: 'Ph_PriorAuth',      label: 'RPh · Prior Auth',      volumeSource: 'internal',  fromQueueId: 'PA_Benefits',      passThrough: 0.85 },
+        { queueId: 'PA_Appeals',        label: 'PAC · Appeals',         volumeSource: 'internal',  fromQueueId: 'Ph_PriorAuth',     passThrough: 1.00 },
+      ],
+    },
   },
 };
 
@@ -4717,10 +4814,422 @@ function BotDataView({ activeBot, activeTRC, generatedData, legacyData, history 
   }
 }
 
+// ═════════════════════════════════════════════════════════════════════════════
+// STEP 12 — FLOW GRAPH ENGINE
+// ═════════════════════════════════════════════════════════════════════════════
+const WS_AHT = { Pharmacist:600, Technician:480, PatientAccess:420, ContactCenter:300 };
+
+function getQueueSimData(queueId, activeTRC, effectiveData) {
+  const data = effectiveData || {};
+  const intervals = (data.intervals||[]).filter(iv =>
+    iv.queueId === queueId && (activeTRC==='ALL' || iv.trc===activeTRC)
+  );
+  if (!intervals.length) return { avgFTE:0, throughput:0, netAvg:0, workstream:'Technician' };
+  const workstream = intervals[0].workstream || 'Technician';
+  const aht = WS_AHT[workstream] || 480;
+  const contactsPerFTEHr = 3600 / aht;
+  let totalFTE=0, totalNet=0, count=0;
+  intervals.forEach(iv => {
+    // Peak slots: slotIdx 6–14 = 10 am–2 pm (30 min slots from 7 am)
+    const slots = (iv.slots||[]).filter(s=>s.slotIdx>=6 && s.slotIdx<=14);
+    slots.forEach(s => { totalFTE+=(s.actualFTE||0); totalNet+=(s.netStaffing||0); count++; });
+  });
+  const avgFTE = count ? totalFTE/count : 0;
+  const netAvg = count ? totalNet/count : 0;
+  return {
+    avgFTE: Math.round(avgFTE*10)/10,
+    throughput: Math.round(avgFTE*contactsPerFTEHr),
+    netAvg: Math.round(netAvg*10)/10,
+    workstream,
+  };
+}
+
+function simulateFlowGraph(flowDef, incomingVol, activeTRC, effectiveData) {
+  if (!flowDef?.steps?.length) return [];
+  let vol = incomingVol;
+  return flowDef.steps.map((step, i) => {
+    const sim = getQueueSimData(step.queueId, activeTRC, effectiveData);
+    const volIn      = Math.round(vol);
+    const throughput = sim.throughput || 0;
+    const processed  = Math.min(volIn, throughput);
+    const backlog    = Math.max(0, volIn - throughput);
+    const utilPct    = throughput>0 ? Math.round((volIn/throughput)*100) : 0;
+    const status     = backlog>0 ? 'bottleneck' : utilPct>90 ? 'near-cap' : 'ok';
+    const isLast     = i===flowDef.steps.length-1;
+    const volOut     = isLast ? 0 : Math.round(processed * step.passThrough);
+    vol = volOut;
+    return { ...step, ...sim, volIn, throughput, processed, backlog, utilPct, volOut, status };
+  });
+}
+
+function buildTRCCompareData(effectiveData) {
+  const data = effectiveData || {};
+  const intervals = data.intervals || [];
+  const trcs = [...new Set(intervals.map(iv=>iv.trc))].sort();
+  // use first date present
+  const dates = [...new Set(intervals.map(iv=>iv.date))].sort();
+  const refDate = dates[0] || '';
+  const grid = {};
+  intervals.filter(iv=>!refDate||iv.date===refDate).forEach(iv=>{
+    const ws  = iv.workstream || 'Unknown';
+    const qid = iv.queueId;
+    if (!grid[ws]) grid[ws]={};
+    if (!grid[ws][qid]) grid[ws][qid]={ label: iv.queueLabel||qid, trcs:{} };
+    const peakSlots = (iv.slots||[]).filter(s=>s.slotIdx>=6&&s.slotIdx<=14);
+    const avgNet = peakSlots.length
+      ? peakSlots.reduce((s,sl)=>s+(sl.netStaffing||0),0)/peakSlots.length : 0;
+    grid[ws][qid].trcs[iv.trc] = Math.round(avgNet*10)/10;
+  });
+  // loan recommendations
+  const loans=[];
+  Object.entries(grid).forEach(([ws,queues])=>{
+    Object.entries(queues).forEach(([qid,qData])=>{
+      const surplus = Object.entries(qData.trcs).filter(([,v])=>v>=2).map(([t,v])=>({trc:t,net:v}));
+      const deficit = Object.entries(qData.trcs).filter(([,v])=>v<=-1).map(([t,v])=>({trc:t,net:v}));
+      if (surplus.length&&deficit.length) {
+        const best = surplus.sort((a,b)=>b.net-a.net)[0];
+        deficit.forEach(d=>{
+          loans.push({ from:best.trc, to:d.trc, queue:qData.label, workstream:ws,
+            loanAmt:Math.round(Math.min(Math.abs(d.net),best.net)),
+            defNet:d.net, surNet:best.net });
+        });
+      }
+    });
+  });
+  return { grid, trcs, loans:loans.slice(0,8) };
+}
+
+// ─── TRC COMPARE VIEW ─────────────────────────────────────────────────────────
+function TRCCompareView({ activeTRC, effectiveData }) {
+  const { grid, trcs, loans } = React.useMemo(
+    ()=>buildTRCCompareData(effectiveData), [effectiveData]
+  );
+  const netColor = v => {
+    if (v==null) return '#999';
+    if (v>=3)  return '#3EFFC0';
+    if (v>=1)  return '#DAFA87';
+    if (v>=0)  return '#FFD166';
+    if (v>=-2) return '#E88789';
+    return '#EA5353';
+  };
+  const netLabel = v => v==null ? '—' : (v>=0?`+${v.toFixed(1)}`:v.toFixed(1));
+  const wsOrder = ['Pharmacist','Technician','PatientAccess','ContactCenter'];
+  const sortedWS = [...Object.keys(grid)].sort((a,b)=>wsOrder.indexOf(a)-wsOrder.indexOf(b));
+
+  if (!trcs.length) return (
+    <div className="trc-compare-shell" style={{display:'flex',alignItems:'center',justifyContent:'center',color:'#5A8A86',fontSize:13}}>
+      Generate data first to see cross-TRC staffing comparison.
+    </div>
+  );
+
+  return (
+    <div className="trc-compare-shell">
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+        <div>
+          <div style={{fontSize:14,fontWeight:800,color:'#002F32'}}>Cross-TRC Staffing Comparison</div>
+          <div style={{fontSize:11,color:'#5A8A86',marginTop:2}}>Peak-hour net staffing (10 am – 2 pm) · color = health</div>
+        </div>
+        <div style={{display:'flex',gap:8,fontSize:11,alignItems:'center'}}>
+          {[['#3EFFC0','+3+ surplus'],['#DAFA87','+1–2 ok'],['#FFD166','±0 borderline'],['#E88789','−1–2 under'],['#EA5353','−3+ critical']].map(([c,l])=>(
+            <span key={l} style={{display:'flex',alignItems:'center',gap:4}}>
+              <span style={{width:10,height:10,borderRadius:2,background:c,display:'inline-block'}}/>
+              <span style={{color:'#5A8A86'}}>{l}</span>
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <table className="trc-compare-grid">
+        <thead>
+          <tr>
+            <th>Queue</th>
+            {trcs.map(t=><th key={t}>{t}</th>)}
+            <th>Avg</th>
+          </tr>
+        </thead>
+        <tbody>
+          {sortedWS.map(ws=>{
+            const queues = grid[ws]||{};
+            return (
+              <React.Fragment key={ws}>
+                <tr className="trc-ws-row">
+                  <td colSpan={trcs.length+2} className="trc-ws-label">{ws}</td>
+                </tr>
+                {Object.entries(queues).map(([qid,qData])=>{
+                  const vals = trcs.map(t=>qData.trcs[t]).filter(v=>v!=null);
+                  const avg  = vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
+                  return (
+                    <tr key={qid}>
+                      <td className="trc-queue-label">{qData.label}</td>
+                      {trcs.map(t=>(
+                        <td key={t} style={{color:netColor(qData.trcs[t]),fontWeight:700,fontSize:13}}>
+                          {netLabel(qData.trcs[t])}
+                        </td>
+                      ))}
+                      <td style={{color:netColor(avg),fontWeight:600,fontSize:11}}>
+                        {netLabel(avg)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </React.Fragment>
+            );
+          })}
+        </tbody>
+      </table>
+
+      {loans.length>0&&(
+        <div className="loan-card" style={{marginTop:16}}>
+          <div className="loan-card-title">💡 Loan / Cross-Train Recommendations</div>
+          {loans.map((l,i)=>(
+            <div key={i} className="loan-row">
+              <strong style={{color:'#EA5353'}}>{l.to}</strong> deficit {l.defNet.toFixed(1)} FTE ·&nbsp;
+              <em>{l.queue}</em> →&nbsp;
+              <strong style={{color:'#3EFFC0'}}>{l.from}</strong> has +{l.surNet.toFixed(1)} surplus →&nbsp;
+              <span style={{fontWeight:800,color:'#008F83'}}>Loan {l.loanAmt} agent{l.loanAmt!==1?'s':''}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      {loans.length===0&&trcs.length>0&&(
+        <div className="loan-card" style={{marginTop:16}}>
+          <div className="loan-card-title">✅ Staffing Balance</div>
+          <div className="loan-row" style={{color:'#3EFFC0'}}>No cross-TRC loan opportunities detected — all queues within acceptable range across active TRCs.</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── FLOW MAP VIEW ────────────────────────────────────────────────────────────
+function FlowMapView({ activeTRC, effectiveData, queueFlowConfig, setQueueFlowConfig }) {
+  const flowIds = Object.keys(queueFlowConfig||{});
+  const [activeFlowId, setActiveFlowId] = React.useState(flowIds[0]||'');
+  const [incomingVol,  setIncomingVol]  = React.useState(150);
+
+  const flowDef = (queueFlowConfig||{})[activeFlowId];
+  const simResults = React.useMemo(()=>
+    simulateFlowGraph(flowDef, incomingVol, activeTRC, effectiveData),
+    [flowDef, incomingVol, activeTRC, effectiveData]
+  );
+
+  const updatePassThrough = (stepIdx, val) => {
+    setQueueFlowConfig(prev=>({
+      ...prev,
+      [activeFlowId]: {
+        ...prev[activeFlowId],
+        steps: prev[activeFlowId].steps.map((s,i)=>i===stepIdx?{...s,passThrough:val}:s),
+      },
+    }));
+  };
+
+  const updateVolumeSource = (stepIdx, type) => {
+    setQueueFlowConfig(prev=>({
+      ...prev,
+      [activeFlowId]: {
+        ...prev[activeFlowId],
+        steps: prev[activeFlowId].steps.map((s,i)=>i===stepIdx?{...s,volumeSource:type,fromQueueId:type==='internal'?prev[activeFlowId].steps[i-1]?.queueId:null}:s),
+      },
+    }));
+  };
+
+  const bottleneckIdx = simResults.findIndex(r=>r.status==='bottleneck');
+  const statusIcon  = s=>s==='bottleneck'?'🔴':s==='near-cap'?'🟡':'🟢';
+  const statusLabel = s=>s==='bottleneck'?'BOTTLENECK':s==='near-cap'?'NEAR CAP':'OK';
+  const statusClass = s=>`flow-stat-${s==='bottleneck'?'bottle':s==='near-cap'?'near':'ok'}`;
+
+  if (!flowDef) return (
+    <div className="flow-map-shell" style={{alignItems:'center',justifyContent:'center',color:'#5A8A86',fontSize:13}}>
+      No flows configured.
+    </div>
+  );
+
+  return (
+    <div className="flow-map-shell">
+      {/* ── Left: Flow Chain ── */}
+      <div className="flow-chain-panel">
+        <div className="flow-chain-header">
+          <span>⛓ Flow Chain</span>
+          <div className="flow-tabs-row" style={{marginBottom:0}}>
+            {flowIds.map(id=>(
+              <button key={id} className={`flow-tab-btn ${activeFlowId===id?'active':''}`}
+                onClick={()=>setActiveFlowId(id)}
+                style={{borderLeftColor:(queueFlowConfig[id]||{}).color||'#3EFFC0'}}>
+                {(queueFlowConfig[id]||{}).name||id}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {flowDef.steps.map((step, i)=>{
+          const res = simResults[i];
+          const nodeStatus = res ? res.status : 'none';
+          return (
+            <React.Fragment key={step.queueId}>
+              {i>0&&(
+                <div className="flow-connector">
+                  <div className="flow-connector-line"/>
+                  <div style={{fontSize:10,color:'#5A8A86',fontWeight:700,margin:'2px 0'}}>
+                    {Math.round(step.passThrough*100)}% →
+                  </div>
+                  <div className="flow-connector-arrow"/>
+                </div>
+              )}
+              <div className={`flow-node status-${nodeStatus}`}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+                  <div>
+                    <div className="flow-node-label">{step.label}</div>
+                    <div className="flow-node-meta">{step.queueId}</div>
+                  </div>
+                  {res&&<span title={statusLabel(res.status)} style={{fontSize:14}}>{statusIcon(res.status)}</span>}
+                </div>
+
+                {/* Volume source badge + selector */}
+                <div style={{marginTop:6,display:'flex',alignItems:'center',gap:6}}>
+                  <span className={`flow-source-badge flow-source-${step.volumeSource==='external'?'ext':'int'}`}>
+                    {step.volumeSource==='external'?'🌐 External':'🔗 Internal'}
+                  </span>
+                  {step.volumeSource==='internal'&&step.fromQueueId&&(
+                    <span style={{fontSize:10,color:'#5A8A86'}}>from {step.fromQueueId}</span>
+                  )}
+                  {/* Toggle source type */}
+                  <button onClick={()=>updateVolumeSource(i, step.volumeSource==='external'?'internal':'external')}
+                    style={{fontSize:9,padding:'1px 5px',borderRadius:3,border:'1px solid #D8E8E6',background:'transparent',cursor:'pointer',color:'#5A8A86',marginLeft:'auto'}}>
+                    toggle
+                  </button>
+                </div>
+
+                {/* Pass-through slider (not on last step) */}
+                {i<flowDef.steps.length-1&&(
+                  <div className="flow-pct-row">
+                    <span className="flow-pct-label">Pass-thru</span>
+                    <input type="range" min={0} max={100} step={5}
+                      value={Math.round(step.passThrough*100)}
+                      onChange={e=>updatePassThrough(i, parseInt(e.target.value)/100)}
+                      style={{flex:1,accentColor:'#008F83',cursor:'pointer'}}
+                    />
+                    <span className="flow-pct-val">{Math.round(step.passThrough*100)}%</span>
+                  </div>
+                )}
+
+                {/* Live sim numbers on this node */}
+                {res&&(
+                  <div style={{display:'flex',gap:10,marginTop:6,fontSize:10,color:'#5A8A86'}}>
+                    <span>In: <strong style={{color:'#002F32'}}>{res.volIn}</strong></span>
+                    <span>Cap: <strong style={{color:'#002F32'}}>{res.throughput}</strong></span>
+                    {res.backlog>0&&<span style={{color:'#EA5353',fontWeight:700}}>Backlog: {res.backlog}</span>}
+                  </div>
+                )}
+              </div>
+            </React.Fragment>
+          );
+        })}
+      </div>
+
+      {/* ── Right: Sim Panel ── */}
+      <div className="flow-sim-panel">
+        {/* Volume control */}
+        <div className="vol-ctrl-row">
+          <span className="vol-ctrl-label">Incoming Volume</span>
+          <input type="range" min={10} max={500} step={10} value={incomingVol}
+            onChange={e=>setIncomingVol(parseInt(e.target.value))}
+            style={{width:180,accentColor:'#008F83',cursor:'pointer'}}
+          />
+          <span style={{fontWeight:800,color:'#002F32',fontSize:14,minWidth:50}}>{incomingVol}<span style={{fontSize:10,color:'#5A8A86',fontWeight:400}}> /hr</span></span>
+          <span style={{fontSize:10,color:'#5A8A86',marginLeft:4}}>TRC: <strong>{activeTRC}</strong></span>
+        </div>
+
+        {/* Bottleneck alert */}
+        {bottleneckIdx>=0&&(
+          <div className="bottleneck-alert">
+            <div style={{fontWeight:800,color:'#EA5353',fontSize:13}}>
+              🚨 BOTTLENECK — {simResults[bottleneckIdx].label}
+            </div>
+            <div style={{fontSize:12,color:'#E88789',marginTop:4}}>
+              {simResults[bottleneckIdx].volIn} contacts/hr in → {simResults[bottleneckIdx].throughput} capacity
+              → <strong style={{color:'#EA5353'}}>{simResults[bottleneckIdx].backlog} backed up</strong>
+            </div>
+            {bottleneckIdx<simResults.length-1&&(
+              <div style={{fontSize:11,color:'#E88789',marginTop:3}}>
+                Downstream: {simResults[bottleneckIdx+1]?.label} receives {simResults[bottleneckIdx].volOut} instead of {Math.round(simResults[bottleneckIdx].volIn*simResults[bottleneckIdx].passThrough)} expected
+                — ripple impact to {simResults.length-bottleneckIdx-1} downstream step{simResults.length-bottleneckIdx-1!==1?'s':''}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Simulation table */}
+        <table className="flow-sim-table">
+          <thead>
+            <tr>
+              <th>Step</th>
+              <th>Source</th>
+              <th>Vol In</th>
+              <th>Capacity</th>
+              <th>Processed</th>
+              <th>Backlog</th>
+              <th>Util %</th>
+              <th>Vol Out</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {simResults.map((r,i)=>(
+              <tr key={r.queueId}>
+                <td style={{fontWeight:700}}>{r.label}</td>
+                <td>
+                  <span className={`flow-source-badge flow-source-${r.volumeSource==='external'?'ext':'int'}`} style={{fontSize:9}}>
+                    {r.volumeSource==='external'?'🌐':'🔗'}
+                  </span>
+                </td>
+                <td style={{fontWeight:600}}>{r.volIn}</td>
+                <td>{r.throughput}</td>
+                <td>{r.processed}</td>
+                <td style={{color:r.backlog>0?'#EA5353':'#5A8A86',fontWeight:r.backlog>0?800:400}}>
+                  {r.backlog||'—'}
+                </td>
+                <td style={{color:r.utilPct>100?'#EA5353':r.utilPct>90?'#FFD166':'#3EFFC0',fontWeight:700}}>
+                  {r.utilPct}%
+                </td>
+                <td style={{color:'#5A8A86'}}>{i<simResults.length-1?r.volOut:'—'}</td>
+                <td><span className={statusClass(r.status)}>{statusIcon(r.status)} {statusLabel(r.status)}</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {/* Insights */}
+        <div className="insight-card">
+          <div className="insight-title">💡 Staffing Insights</div>
+          {simResults.filter(r=>r.status!=='ok').length===0 ? (
+            <div className="insight-row" style={{color:'#3EFFC0'}}>
+              ✅ All steps within capacity at {incomingVol} contacts/hr incoming
+            </div>
+          ) : simResults.filter(r=>r.status!=='ok').map((r,i)=>{
+            const addFTE = r.backlog>0
+              ? Math.ceil(r.backlog/(3600/(WS_AHT[r.workstream]||480)))
+              : null;
+            return (
+              <div key={i} className="insight-row">
+                <strong>{r.label}</strong> — {r.utilPct}% utilized
+                {r.status==='bottleneck'
+                  ? ` · Add ~${addFTE} FTE (${r.workstream}) to clear backlog`
+                  : ` · Near capacity — monitor closely`
+                }
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── OPERATIONS TAB (wrapper) ─────────────────────────────────────────────────
-function OperationsTab({ generatedData }) {
+function OperationsTab({ generatedData, queueFlowConfig, setQueueFlowConfig }) {
   const [activeTRC,       setActiveTRC]       = useState('ONC');
   const [activeBot,       setActiveBot]       = useState('intraday');
+  const [activeAnalytic,  setActiveAnalytic]  = useState(null); // null | 'trccompare' | 'flowmap'
   const [output,          setOutput]          = useState('');
   const [loading,         setLoading]         = useState(false);
   const [history,         setHistory]         = useState([]);
@@ -4862,17 +5371,41 @@ Note: This is a prototype running on Claude. Data is generated from your configu
             )]).map(t=><option key={t} value={t}>{t}</option>)}
           </select>
         </div>
-        <div style={{display:'flex',gap:4,padding:'0 8px'}}>
+        <div style={{display:'flex',gap:4,padding:'0 8px',flex:1,alignItems:'center'}}>
           {Object.values(BOT_CONFIGS).map(b=>(
-            <button key={b.id} className={`ops-bot-tab ${activeBot===b.id?'active':''}`}
-              onClick={()=>{ setActiveBot(b.id); setOutput(''); }}>
+            <button key={b.id} className={`ops-bot-tab ${!activeAnalytic&&activeBot===b.id?'active':''}`}
+              onClick={()=>{ setActiveBot(b.id); setActiveAnalytic(null); setOutput(''); }}>
               {b.icon} {b.name} <span className="ver">{b.version}</span>
             </button>
           ))}
+          {/* Analytics tabs separator */}
+          <div className="ops-tab-sep"/>
+          <button className={`ops-analytics-tab ${activeAnalytic==='trccompare'?'active':''}`}
+            onClick={()=>{ setActiveAnalytic('trccompare'); setOutput(''); }}>
+            📊 TRC Compare
+          </button>
+          <button className={`ops-analytics-tab ${activeAnalytic==='flowmap'?'active':''}`}
+            onClick={()=>{ setActiveAnalytic('flowmap'); setOutput(''); }}>
+            🔗 Flow Map
+          </button>
         </div>
       </div>
 
-      <div className="main-content">
+      {/* ── Analytics views (full-panel, no TriggerBar) ── */}
+      {activeAnalytic==='trccompare'&&(
+        <TRCCompareView activeTRC={activeTRC} effectiveData={effectiveData||generatedData}/>
+      )}
+      {activeAnalytic==='flowmap'&&(
+        <FlowMapView
+          activeTRC={activeTRC}
+          effectiveData={effectiveData||generatedData}
+          queueFlowConfig={queueFlowConfig||{}}
+          setQueueFlowConfig={setQueueFlowConfig||(() => {})}
+        />
+      )}
+
+      {/* ── Bot views ── */}
+      {!activeAnalytic&&<div className="main-content">
         <div className="data-panel">
           {/* Panel header with advanceable SimClock */}
           <div className="panel-header" style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:4}}>
@@ -4934,6 +5467,7 @@ Note: This is a prototype running on Claude. Data is generated from your configu
 
       <TriggerBar activeBot={activeBot} onTrigger={handleTrigger} isLoading={loading}/>
       <RunHistory history={history}/>
+      </div>}{/* end !activeAnalytic bot view */}
     </div>
   );
 }
@@ -5401,7 +5935,9 @@ function App() {
   const [employees,     setEmployees]     = useState([]);
   const [skills,        setSkills]        = useState([]);
   const [schedules,     setSchedules]     = useState([]);
-  const [generatedData, setGeneratedData] = useState(null);
+  const [generatedData,    setGeneratedData]   = useState(null);
+  // Step 12: queue flow config — lives in App so it persists across tab switches
+  const [queueFlowConfig,  setQueueFlowConfig] = useState(()=>JSON.parse(JSON.stringify(DEFAULT_CONFIG.queueFlows)));
   // Step 11: demo trigger + toast
   const [demoTrigger,   setDemoTrigger]   = useState(null);
   const [toast,         setToast]         = useState(null);
@@ -5473,7 +6009,7 @@ function App() {
           demoTrigger={demoTrigger} onAfterGenerate={handleAfterGenerate}/>
       )}
       {activeModule === 'schedule'   && <ScheduleTab employees={employees} generatedData={generatedData} />}
-      {activeModule === 'operations' && <OperationsTab generatedData={generatedData} />}
+      {activeModule === 'operations' && <OperationsTab generatedData={generatedData} queueFlowConfig={queueFlowConfig} setQueueFlowConfig={setQueueFlowConfig}/>}
     </div>
   );
 }
