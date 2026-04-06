@@ -675,6 +675,34 @@
     .bp4-hist-item { padding: 6px 10px; border-bottom: 1px solid #F0F0F0; }
     .bp4-hist-top { display: flex; justify-content: space-between; align-items: center; font-size: 11px; }
 
+    /* Net staffing sparkline chart */
+    .net-sparkline {
+      display: flex; align-items: flex-end; gap: 1px;
+      padding: 4px 10px 0; height: 64px; background: #F8FDFB;
+      border-bottom: 1px solid #C8E0DC; overflow-x: auto; flex-shrink: 0;
+      position: relative;
+    }
+    .net-sparkline-inner {
+      display: flex; align-items: flex-end; gap: 1px; min-width: 100%;
+      height: 54px; position: relative;
+    }
+    .net-sparkline-zero {
+      position: absolute; left: 0; right: 0; bottom: 50%;
+      border-top: 1px solid rgba(3,92,103,0.25); pointer-events: none;
+    }
+    .net-spark-col {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: flex-end; flex: 1; min-width: 6px; max-width: 14px;
+      height: 54px; position: relative; cursor: default;
+    }
+    .net-spark-bar-pos { border-radius: 1px 1px 0 0; width: 80%; min-height: 2px; }
+    .net-spark-bar-neg { border-radius: 0 0 1px 1px; width: 80%; min-height: 2px; }
+    .net-spark-label {
+      position: absolute; bottom: -12px; font-size: 7px; color: #8AB0AC;
+      white-space: nowrap; transform: rotate(-45deg); transform-origin: top left;
+      left: 50%;
+    }
+
     /* Workstream selector (TRC → WS tier) */
     .bp4-ws-selector {
       display: flex; gap: 3px; padding: 4px 8px; align-items: center; flex-wrap: wrap;
@@ -1950,6 +1978,237 @@ function assembleDataPacket(generatedData, trc, simDate, simTime, botRunHistory=
       trendDirection:recentWeekly.length>0?(recentWeekly[recentWeekly.length-1].variancePct>5?'Rising':recentWeekly[recentWeekly.length-1].variancePct<-5?'Falling':'Flat'):'Flat',
     },
   };
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// PER-BOT PACKET ASSEMBLY FUNCTIONS (Step 6-8)
+// Each bot gets a purpose-built text packet — easier for Claude to parse than raw JSON
+// ═════════════════════════════════════════════════════════════════════════════
+
+function assembleIntradayPacket(generatedData, trc, simDate, simTime, botRunHistory=[]) {
+  const { agentSchedules=[], intervals=[], riskWindows=[], scheduleScore={}, queueList=[] } = generatedData||{};
+  const tF = arr => trc==='ALL' ? arr : arr.filter(x=>x.trc===trc);
+
+  // Today's intervals for this TRC
+  const todayIVs = tF(intervals.filter(iv=>iv.date===simDate));
+
+  // Build slot aggregate table across all queues
+  const slotMap = {};
+  todayIVs.forEach(iv=>(iv.slots||[]).forEach(s=>{
+    if(!slotMap[s.time]) slotMap[s.time]={sch:0,act:0,req:0,net:0,vol:0,cnt:0};
+    slotMap[s.time].sch += s.scheduledFTE||0;
+    slotMap[s.time].act += s.actualFTE||0;
+    slotMap[s.time].req += s.requiredFTE||0;
+    slotMap[s.time].net += s.netStaffing||0;
+    slotMap[s.time].vol += s.volume||0;
+    slotMap[s.time].cnt++;
+  }));
+  const sortedSlots = Object.entries(slotMap).sort(([a],[b])=>a.localeCompare(b));
+
+  const rpad = (v,n) => String(v).padEnd(n);
+  const lpad = (v,n) => String(v).padStart(n);
+  const fNet = n => (n>=0?'+':'')+Math.round(n*10)/10;
+  const fFTE = n => (Math.round(n*10)/10).toFixed(1);
+
+  // Format staffing table
+  let staffTable = `${'Time '.padEnd(6)}| ${'Sched'.padEnd(6)}| ${'Act'.padEnd(6)}| ${'Req'.padEnd(6)}| ${'Net'.padEnd(6)}| ${'Vol'.padEnd(5)}| Status\n`;
+  staffTable += '-'.repeat(55)+'\n';
+  sortedSlots.forEach(([time,v])=>{
+    const status = v.net<-3?'CRITICAL':v.net<0?'at_risk':v.net>3?'surplus':'adequate';
+    staffTable += `${time.padEnd(6)}| ${fFTE(v.sch).padEnd(6)}| ${fFTE(v.act).padEnd(6)}| ${fFTE(v.req).padEnd(6)}| ${fNet(v.net).padEnd(6)}| ${String(Math.round(v.vol)).padEnd(5)}| ${status}\n`;
+  });
+
+  // Risk windows (today, TRC-filtered)
+  const todayRisks = tF(riskWindows.filter(w=>w.date===simDate)).sort((a,b)=>
+    (b.hasCritical?1:0)-(a.hasCritical?1:0)||(a.netAvg-b.netAvg)).slice(0,10);
+  let riskBlock = todayRisks.length===0 ? 'None identified.\n' :
+    todayRisks.map((w,i)=>`${i+1}. ${w.queueId.padEnd(28)} | ${w.start}–${w.end} | Avg Net: ${fNet(w.netAvg)} | ${w.durationMins}m | ${w.hasCritical?'❗ CRITICAL':w.timeBucket==='PEAK'?'⚠ PEAK':'ℹ INFO'}`).join('\n')+'\n';
+
+  // Cross-skill opportunities
+  const { trcAggregates={} } = generatedData;
+  const surplusWS = Object.values(trcAggregates).filter(a=>(trc==='ALL'||a.trc===trc)&&a.netAvg>1.5).map(a=>a.workstream);
+  const deficitWS = Object.values(trcAggregates).filter(a=>(trc==='ALL'||a.trc===trc)&&a.netAvg<-0.5).map(a=>a.workstream);
+  const crossSkill = [];
+  surplusWS.forEach(sWS=>deficitWS.forEach(dWS=>{
+    const c=getComplianceStatus(sWS,dWS);
+    const candidates=tF(agentSchedules).filter(a=>a.workstream===sWS&&a.status==='Active').length;
+    crossSkill.push(`${c.status==='allowed'?'✓':'✗'} ${sWS} → ${dWS} | ${candidates} candidates | ${c.label}`);
+  }));
+  const crossBlock = crossSkill.length ? crossSkill.join('\n')+'\n' : 'No cross-skill moves identified.\n';
+
+  // Agent summary
+  const todayAgents = tF(agentSchedules.filter(a=>a.date===simDate));
+  const active  = todayAgents.filter(a=>a.status==='Active').length;
+  const callout = todayAgents.filter(a=>a.status==='CallOut').length;
+  const vto     = todayAgents.filter(a=>a.status==='VTO').length;
+  const score   = scheduleScore;
+
+  // Bot history summary
+  const histBlock = botRunHistory.filter(r=>r&&r.bot==='intraday').slice(-3)
+    .map(r=>`[${r.trc||'?'}] ${r.trigger||'?'} — ${r.summary?.riskCount||0} risks, top: ${r.summary?.topQueue||'—'}`)
+    .join('\n') || 'No prior runs this session.';
+
+  return `=== INTRADAY DATA PACKET v2.2 ===
+Date: ${simDate} | Time: ${simTime} | TRC: ${trc} | Scenario: ${generatedData.scenario||'Baseline'}${generatedData.driverEvent&&generatedData.driverEvent!=='None'?' / '+generatedData.driverEvent:''}
+
+STAFFING POSITION — TODAY (30-min intervals, all queues aggregated):
+${staffTable}
+RISK WINDOWS (pre-ranked by severity):
+${riskBlock}
+CROSS-SKILL OPPORTUNITIES:
+${crossBlock}
+AGENT SUMMARY:
+Active: ${active} | Call-Out: ${callout} | VTO: ${vto} | Queues: ${tF(queueList).length}
+Score: ${score.score||'—'}/${score.grade||'—'} | Worst Queue: ${todayRisks[0]?.queueId||'None'}
+
+BOT RUN HISTORY (last 3):
+${histBlock}`;
+}
+
+function assembleShortRangePacket(generatedData, trc, simDate, simTime, botRunHistory=[]) {
+  const { agentSchedules=[], weeklyHistory=[], weeklyForecast=[], scheduleScore={}, intervals=[] } = generatedData||{};
+  const tF = arr => trc==='ALL' ? arr : arr.filter(x=>x.trc===trc);
+
+  // 7-day window centered on simDate
+  const pivot = new Date(simDate);
+  const days = Array.from({length:7},(_,i)=>{
+    const d=new Date(pivot); d.setDate(pivot.getDate()+i-3);
+    return d.toISOString().split('T')[0];
+  });
+
+  let coverTable = `${'Date'.padEnd(12)}| Active | CO | VTO | Total | Net Avg\n${'-'.repeat(52)}\n`;
+  days.forEach(date=>{
+    const ds = tF(agentSchedules.filter(a=>a.date===date));
+    const ivs= tF(intervals.filter(iv=>iv.date===date));
+    let netS=0,netC=0;
+    ivs.forEach(iv=>(iv.slots||[]).forEach(s=>{netS+=s.netStaffing||0;netC++;}));
+    const netAvg = netC>0?((netS/netC)>=0?'+':'')+Math.round(netS/netC*10)/10:'—';
+    const isToday = date===simDate;
+    coverTable += `${(date.slice(5)+(isToday?' ★':'')).padEnd(12)}| ${String(ds.filter(a=>a.status==='Active').length).padEnd(7)}| ${String(ds.filter(a=>a.status==='CallOut').length).padEnd(3)}| ${String(ds.filter(a=>a.status==='VTO').length).padEnd(4)}| ${String(ds.length).padEnd(6)}| ${netAvg}\n`;
+  });
+
+  // 6-week history
+  const byWk={};
+  tF(weeklyHistory).forEach(w=>{
+    if(!byWk[w.week]) byWk[w.week]={week:w.week,vol:0,sl:0,adh:0,cnt:0};
+    byWk[w.week].vol+=w.actualVolume||0; byWk[w.week].sl+=w.sl||0;
+    byWk[w.week].adh+=w.adherence||0; byWk[w.week].cnt++;
+  });
+  const recentWks = Object.values(byWk).sort((a,b)=>a.week.localeCompare(b.week)).slice(-6);
+  let histTable = `${'Week'.padEnd(12)}| Act Vol | SL%  | Adh%\n${'-'.repeat(38)}\n`;
+  recentWks.forEach(w=>{ histTable += `${w.week.slice(5).padEnd(12)}| ${String(Math.round(w.vol)).padEnd(8)}| ${w.cnt>0?Math.round(w.sl/w.cnt):'-'}%   | ${w.cnt>0?Math.round(w.adh/w.cnt):'-'}%\n`; });
+
+  // 4-week forecast
+  const byWkF={};
+  tF(weeklyForecast).forEach(w=>{
+    if(!byWkF[w.week]) byWkF[w.week]={week:w.week,vol:0,conf:0,trend:w.trendDirection,cnt:0};
+    byWkF[w.week].vol+=w.forecastedVolume||0; byWkF[w.week].conf+=w.confidence||0; byWkF[w.week].cnt++;
+  });
+  const fcastWks = Object.values(byWkF).sort((a,b)=>a.week.localeCompare(b.week)).slice(0,4);
+  let fcastTable = `${'Week'.padEnd(12)}| Fcst Vol | Conf% | Trend\n${'-'.repeat(42)}\n`;
+  fcastWks.forEach(w=>{ fcastTable += `${w.week.slice(5).padEnd(12)}| ${String(Math.round(w.vol)).padEnd(9)}| ${w.cnt>0?Math.round(w.conf/w.cnt*100):'-'}%   | ${w.trend||'Flat'}\n`; });
+
+  const score=scheduleScore;
+  return `=== SHORT RANGE DATA PACKET v1.2 ===
+Date: ${simDate} | Time: ${simTime} | TRC: ${trc} | Scenario: ${generatedData.scenario||'Baseline'}
+
+SCHEDULE SCORE: ${score.score||'—'}/100 · Grade ${score.grade||'—'}
+${(score.penalties||[]).slice(0,3).map(p=>`⚠ ${typeof p==='object'?p.type+': '+p.detail:p}`).join('\n')||'No penalties.'}
+
+7-DAY AGENT COVERAGE (★ = today):
+${coverTable}
+6-WEEK ACTUAL HISTORY:
+${histTable}
+4-WEEK FORECAST:
+${fcastTable}`;
+}
+
+function assembleLongRangePacket(generatedData, trc, simDate, simTime) {
+  const { weeklyHistory=[], weeklyForecast=[], scheduleScore={} } = generatedData||{};
+  const tF = arr => trc==='ALL' ? arr : arr.filter(x=>x.trc===trc);
+
+  const byWk={};
+  tF(weeklyHistory).forEach(w=>{
+    if(!byWk[w.week]) byWk[w.week]={week:w.week,vol:0,sl:0,adh:0,var:0,cnt:0};
+    byWk[w.week].vol+=w.actualVolume||0; byWk[w.week].sl+=w.sl||0;
+    byWk[w.week].adh+=w.adherence||0; byWk[w.week].var+=w.variancePct||0; byWk[w.week].cnt++;
+  });
+  const histWks = Object.values(byWk).sort((a,b)=>a.week.localeCompare(b.week));
+
+  let histTable = `${'Week'.padEnd(12)}| Act Vol | SL%  | Adh% | Vol Var%\n${'-'.repeat(48)}\n`;
+  histWks.forEach((w,i)=>{
+    const prev = histWks[i-1];
+    const trend = prev ? (w.vol>prev.vol*1.05?'↑':w.vol<prev.vol*0.95?'↓':'→') : '→';
+    histTable += `${w.week.slice(5).padEnd(12)}| ${String(Math.round(w.vol)).padEnd(8)}| ${w.cnt>0?Math.round(w.sl/w.cnt):'-'}%   | ${w.cnt>0?Math.round(w.adh/w.cnt):'-'}%   | ${w.cnt>0?(Math.round(w.var/w.cnt*10)/10):'-'}% ${trend}\n`;
+  });
+
+  const byWkF={};
+  tF(weeklyForecast).forEach(w=>{
+    if(!byWkF[w.week]) byWkF[w.week]={week:w.week,vol:0,conf:0,trend:w.trendDirection,cnt:0};
+    byWkF[w.week].vol+=w.forecastedVolume||0; byWkF[w.week].conf+=w.confidence||0; byWkF[w.week].cnt++;
+  });
+  const fcastWks = Object.values(byWkF).sort((a,b)=>a.week.localeCompare(b.week));
+  let fcastTable = `${'Week'.padEnd(12)}| Fcst Vol | Conf% | Trend\n${'-'.repeat(42)}\n`;
+  fcastWks.forEach(w=>{ fcastTable += `${w.week.slice(5).padEnd(12)}| ${String(Math.round(w.vol)).padEnd(9)}| ${w.cnt>0?Math.round(w.conf/w.cnt*100):'-'}%   | ${w.trend||'Flat'}\n`; });
+
+  const score=scheduleScore;
+  return `=== LONG RANGE DATA PACKET v1.2 ===
+Date: ${simDate} | Time: ${simTime} | TRC: ${trc} | Scenario: ${generatedData.scenario||'Baseline'}
+
+SCHEDULE SCORE: ${score.score||'—'}/100 · Grade ${score.grade||'—'}
+
+13-WEEK ACTUAL HISTORY:
+${histTable}
+4-WEEK FORECAST:
+${fcastTable}`;
+}
+
+function assembleIntelligencePacket(generatedData, trc, simDate, simTime, botRunHistory=[]) {
+  const { agentSchedules=[], intervals=[], riskWindows=[], trcAggregates={}, scheduleScore={} } = generatedData||{};
+
+  // Cross-TRC snapshot
+  const allTRCs = [...new Set(agentSchedules.map(a=>a.trc))].sort();
+  let trcTable = `${'TRC'.padEnd(6)}| Active | CO | Risks | Net Avg | Trend\n${'-'.repeat(50)}\n`;
+  allTRCs.forEach(t=>{
+    const ds = agentSchedules.filter(a=>a.trc===t&&a.date===simDate);
+    const rs = riskWindows.filter(w=>w.trc===t&&w.date===simDate);
+    const ivs= intervals.filter(iv=>iv.trc===t&&iv.date===simDate);
+    let netS=0,netC=0;
+    ivs.forEach(iv=>(iv.slots||[]).forEach(s=>{netS+=s.netStaffing||0;netC++;}));
+    const netAvg=netC>0?Math.round(netS/netC*10)/10:0;
+    const agg = Object.values(trcAggregates).find(a=>a.trc===t);
+    trcTable += `${t.padEnd(6)}| ${String(ds.filter(a=>a.status==='Active').length).padEnd(7)}| ${String(ds.filter(a=>a.status==='CallOut').length).padEnd(3)}| ${String(rs.length).padEnd(6)}| ${(netAvg>=0?'+':'')+netAvg.toFixed(1).padEnd(8)}| ${agg?.trend||'Flat'}\n`;
+  });
+
+  // Cross-skill pool
+  const surplusWS = Object.values(trcAggregates).filter(a=>(trc==='ALL'||a.trc===trc)&&a.netAvg>1.5).map(a=>a.workstream);
+  const deficitWS = Object.values(trcAggregates).filter(a=>(trc==='ALL'||a.trc===trc)&&a.netAvg<-0.5).map(a=>a.workstream);
+  const crossSkill=[];
+  surplusWS.forEach(sWS=>deficitWS.forEach(dWS=>{
+    const c=getComplianceStatus(sWS,dWS);
+    const pool = agentSchedules.filter(a=>a.workstream===sWS&&a.status==='Active'&&(trc==='ALL'||a.trc===trc)).length;
+    crossSkill.push(`${c.status==='allowed'?'✓':'✗'} ${sWS.padEnd(16)} → ${dWS.padEnd(16)} | Pool: ${pool} | ${c.label}`);
+  }));
+  const crossBlock=crossSkill.join('\n')||'No cross-skill opportunities identified.';
+
+  // Bot run history
+  const histLines=botRunHistory.filter(r=>r).slice(-5)
+    .map(r=>`[${r.bot||'?'}] ${r.trc||'?'} · "${r.trigger||'?'}" — ${r.summary?.riskCount||0} risks`)
+    .join('\n')||'No prior runs.';
+
+  const score=scheduleScore;
+  return `=== INTELLIGENCE DATA PACKET v1.0 ===
+Date: ${simDate} | Time: ${simTime} | TRC: ${trc} | Scenario: ${generatedData.scenario||'Baseline'}
+
+CROSS-TRC SNAPSHOT — TODAY:
+${trcTable}
+CROSS-SKILL OPPORTUNITIES:
+${crossBlock}
+
+BOT RUN HISTORY (last 5):
+${histLines}
+
+SCHEDULE SCORE: ${score.score||'—'}/100 · Grade ${score.grade||'—'}`;
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -3527,6 +3786,35 @@ function IntradayView({ activeTRC, generatedData }) {
         <KpiCard label="Avg Net" value={avgNet>=0?`+${avgNet}`:avgNet} color={netColor} />
       </div>
 
+      {/* Net staffing sparkline chart — shows staffing health across the day */}
+      {slotMap.length>0&&(
+        <div className="net-sparkline" title="Net staffing by 30-min slot — green=surplus, red=understaffed">
+          <div className="net-sparkline-inner">
+            <div className="net-sparkline-zero"/>
+            {slotMap.map(([time,v],i)=>{
+              const MAX_NET=5;
+              const net=Math.max(-MAX_NET,Math.min(MAX_NET,v.net));
+              const halfH=27; // px — half the 54px inner height
+              const barH=Math.max(2,Math.abs(net)/MAX_NET*halfH);
+              const isPos=net>=0;
+              const color=net<-3?'#EA5353':net<0?'#E88789':net<1?'#C8E0DC':net<3?'#3EFFC0':'#00CFAB';
+              const showLabel = i===0||i===slotMap.length-1||(i%4===0);
+              return (
+                <div key={time} className="net-spark-col"
+                  style={{justifyContent:isPos?'flex-end':'flex-start',paddingTop:isPos?0:halfH,paddingBottom:isPos?halfH:0}}
+                  title={`${time}: Net ${v.net>=0?'+':''}${Math.round(v.net*10)/10}`}>
+                  {isPos
+                    ? <div className="net-spark-bar-pos" style={{height:barH,background:color}}/>
+                    : <div className="net-spark-bar-neg" style={{height:barH,background:color}}/>
+                  }
+                  {showLabel&&<span className="net-spark-label">{time.slice(0,5)}</span>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Workstream selector */}
       <div className="bp4-ws-selector">
         <span className="bp4-ws-label">WS</span>
@@ -3824,7 +4112,10 @@ function IntelligenceView({ activeTRC, generatedData, history }) {
     else if(dow===6) d.setDate(d.getDate()-1);
     return d.toISOString().split('T')[0];
   },[]);
-  const trcs = ['ONC','RARE','PACE'];
+  const trcs = useMemo(()=>{
+    if(!generatedData?.agentSchedules) return ['ONC','RARE','PACE'];
+    return [...new Set(generatedData.agentSchedules.map(a=>a.trc))].sort();
+  },[generatedData]);
   const trcStats = useMemo(()=>{
     if(!generatedData) return {};
     return Object.fromEntries(trcs.map(trc=>{
@@ -3949,22 +4240,32 @@ function OperationsTab({ generatedData }) {
     };
   }, [generatedData, activeTRC, dateStr]);
 
+  // Route to per-bot packet assembly (Step 6-8: each bot gets its own tailored packet)
+  const buildBotPacket = useCallback((bot, hist) => {
+    const rawHist = hist.map(h=>h.raw).filter(Boolean);
+    switch(bot){
+      case 'intraday':    return assembleIntradayPacket(generatedData, activeTRC, dateStr, timeStr, rawHist);
+      case 'shortrange':  return assembleShortRangePacket(generatedData, activeTRC, dateStr, timeStr, rawHist);
+      case 'longrange':   return assembleLongRangePacket(generatedData, activeTRC, dateStr, timeStr);
+      case 'intelligence':return assembleIntelligencePacket(generatedData, activeTRC, dateStr, timeStr, rawHist);
+      default:            return assembleIntradayPacket(generatedData, activeTRC, dateStr, timeStr, rawHist);
+    }
+  }, [generatedData, activeTRC, dateStr, timeStr]);
+
   const handleTrigger = useCallback(async (phrase) => {
     const bot = BOT_CONFIGS[activeBot];
     const systemPrompt = document.getElementById(bot.promptId)?.textContent?.trim() || '';
 
     let userMessage;
     if(hasRealData){
-      const packet = assembleDataPacket(generatedData, activeTRC, dateStr, timeStr, history.map(h=>h.raw).filter(Boolean));
+      const packet = buildBotPacket(activeBot, history);
       userMessage = `Trigger: ${phrase}
 Date: ${dateStr} | Time: ${timeStr} | TRC: ${activeTRC}
-Scenario: ${generatedData.scenario||'Baseline'}${generatedData.driverEvent&&generatedData.driverEvent!=='None'?' / '+generatedData.driverEvent:''}
 
-=== DATA PACKET ===
-${JSON.stringify(packet, null, 1)}
+${packet}
 
 ---
-Note: This is a prototype running on Claude. Data is synthetic and deterministic. Bot prompts are production-identical.`;
+Note: This is a prototype running on Claude. Data is generated from your configured TRCs, workstreams, and scenario parameters. Bot prompts are production-identical.`;
     } else {
       userMessage = buildUserMessage(phrase, legacyData, activeTRC, dateStr, timeStr, activeBot);
     }
@@ -3974,19 +4275,20 @@ Note: This is a prototype running on Claude. Data is synthetic and deterministic
     try {
       const result = await callClaude(systemPrompt, userMessage);
       setOutput(result);
+      const todayRisks = (generatedData?.riskWindows||[]).filter(w=>w.date===dateStr&&(activeTRC==='ALL'||w.trc===activeTRC));
       setHistory(prev => [
         { bot: bot.name, version: bot.version, phrase, trc: activeTRC, time: timeStr,
           raw: hasRealData ? { bot:activeBot, trigger:phrase, trc:activeTRC,
-            summary:{ riskCount:(generatedData.riskWindows||[]).filter(w=>w.date===dateStr).length,
-                      topQueue:(generatedData.riskWindows||[])[0]?.queueId||'',
-                      netAvgWorst:(generatedData.riskWindows||[])[0]?.netAvg||0 }} : null },
+            summary:{ riskCount:todayRisks.length,
+                      topQueue:todayRisks[0]?.queueId||'',
+                      netAvgWorst:todayRisks[0]?.netAvg||0 }} : null },
         ...prev.slice(0, 11),
       ]);
     } catch (err) {
       setOutput(`❌ Error: ${err.message}\n\nTip: Make sure ANTHROPIC_API_KEY is set in Vercel environment variables.`);
     }
     setLoading(false);
-  }, [activeBot, activeTRC, hasRealData, generatedData, legacyData, dateStr, timeStr, history]);
+  }, [activeBot, activeTRC, hasRealData, generatedData, legacyData, dateStr, timeStr, history, buildBotPacket]);
 
   return (
     <div className="ops-shell">
@@ -3996,8 +4298,9 @@ Note: This is a prototype running on Claude. Data is synthetic and deterministic
           <span style={{fontSize:10,fontWeight:700,color:'#3EFFC0',textTransform:'uppercase',letterSpacing:'0.5px'}}>TRC</span>
           <select value={activeTRC} onChange={e=>setActiveTRC(e.target.value)}
             style={{padding:'3px 8px',borderRadius:4,border:'1px solid rgba(62,255,192,0.5)',background:'#013A42',color:'#3EFFC0',fontWeight:700,fontSize:12,cursor:'pointer',outline:'none'}}>
-            {(['ALL',...['ONC','RARE','PACE'].filter(t=>
-              !generatedData?.intervals?.length || generatedData.intervals.some(iv=>iv.trc===t)
+            {(['ALL',...(hasRealData
+              ? [...new Set((generatedData.intervals||[]).map(iv=>iv.trc))].sort()
+              : ['ONC','RARE','PACE']
             )]).map(t=><option key={t} value={t}>{t}</option>)}
           </select>
         </div>
