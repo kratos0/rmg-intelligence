@@ -86,9 +86,15 @@
     /* Main layout (data panel + analysis panel) */
     .main-content { display: flex; flex: 1; overflow: hidden; }
 
-    /* Data Panel */
-    .data-panel {
-      width: 340px; flex-shrink: 0; background: #fff;
+    /* Data Panel — split into status col + data col */
+    .data-panel { width: 340px; flex-shrink: 0; background: #fff; border-right: 1px solid #D8E8E6; display: flex; flex-direction: column; overflow: hidden; }
+    .ops-status-col {
+      width: 260px; flex-shrink: 0; background: #fff;
+      border-right: 1px solid #D8E8E6;
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .ops-data-col {
+      width: 360px; flex-shrink: 0; background: #FAFAF8;
       border-right: 1px solid #D8E8E6;
       display: flex; flex-direction: column; overflow: hidden;
     }
@@ -5415,36 +5421,14 @@ Note: This is a prototype running on Claude. Data is generated from your configu
       {!activeAnalytic&&(
       <React.Fragment>
       <div className="main-content">
-        <div className="data-panel">
-          {/* Panel header with advanceable SimClock */}
+        {/* ── LEFT COL: status / context ── */}
+        <div className="ops-status-col">
           <div className="panel-header" style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:4}}>
-            <span>DATA PANEL — {activeTRC} · {BOT_CONFIGS[activeBot].name.toUpperCase()}</span>
+            <span>{activeTRC} · {BOT_CONFIGS[activeBot].name.toUpperCase()}</span>
             <SimClockAdvanced simTimeSlot={simTimeSlot} setSimTimeSlot={setSimTimeSlot}/>
           </div>
-
-          {/* World State banner — always visible when real data loaded */}
-          {hasRealData&&(
-            <WorldStateBar
-              generatedData={effectiveData||generatedData}
-              injectedEvents={injectedEvents}
-              onRemoveEvent={removeEvent}
-              simTimeSlot={simTimeSlot}
-            />
-          )}
-
-          {/* Event Injector — quick-fire event buttons */}
-          {hasRealData&&(
-            <EventInjector
-              activeTRC={activeTRC}
-              injectedEvents={injectedEvents}
-              onInject={injectEvent}
-              onClear={clearEvents}
-            />
-          )}
-
-          {/* DataLoad block */}
           {hasRealData&&dataLoadSummary ? (
-            <div className="data-load-block">
+            <div className="data-load-block" style={{flex:1,overflowY:'auto'}}>
               <div className="dl-header">DATA LOAD | {dateStr} | {timeStr}{simTimeSlot!=='Live'?' (SIM)':''}</div>
               <div className="dl-row">✅ Scenario — <span style={{color:'#5A8A86'}}>{dataLoadSummary.scenario}</span></div>
               <div className="dl-row">✅ Interval Data — <span style={{color:'#5A8A86'}}>{dataLoadSummary.queues} queues · 24 slots each</span></div>
@@ -5461,11 +5445,34 @@ Note: This is a prototype running on Claude. Data is generated from your configu
           ) : (
             <DataLoadBlock bot={activeBot} dateStr={dateStr} timeStr={timeStr} actualsCount={actualsCount}/>
           )}
+        </div>
 
-          {/* Bot data view — receives effectiveData (base + overlays) */}
+        {/* ── MIDDLE COL: live grid / events ── */}
+        <div className="ops-data-col">
+          <div className="panel-header">
+            LIVE DATA — {activeTRC}
+          </div>
+          {hasRealData&&(
+            <WorldStateBar
+              generatedData={effectiveData||generatedData}
+              injectedEvents={injectedEvents}
+              onRemoveEvent={removeEvent}
+              simTimeSlot={simTimeSlot}
+            />
+          )}
+          {hasRealData&&(
+            <EventInjector
+              activeTRC={activeTRC}
+              injectedEvents={injectedEvents}
+              onInject={injectEvent}
+              onClear={clearEvents}
+            />
+          )}
           <BotDataView activeBot={activeBot} activeTRC={activeTRC}
             generatedData={effectiveData||generatedData} legacyData={legacyData} history={history}/>
         </div>
+
+        {/* ── RIGHT COL: bot analysis ── */}
         <AnalysisPanel
           output={output}
           isLoading={loading}
