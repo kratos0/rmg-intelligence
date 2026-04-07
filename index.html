@@ -5527,7 +5527,7 @@ Note: This is a prototype running on Claude. Data is generated from your configu
               />
             </React.Fragment>
           )}
-          {wsList4.length>1&&(
+          {activeBot==='intraday'&&wsList4.length>1&&(
             <div style={{padding:'6px 8px',borderTop:'1px solid #D8E8E6'}}>
               <div style={{fontSize:9,color:'#8AABA8',fontWeight:700,marginBottom:4,letterSpacing:.5}}>WORKSTREAM</div>
               <div style={{display:'flex',flexWrap:'wrap',gap:3}}>
@@ -5543,7 +5543,7 @@ Note: This is a prototype running on Claude. Data is generated from your configu
               </div>
             </div>
           )}
-          {qList4.length>1&&(
+          {activeBot==='intraday'&&qList4.length>1&&(
             <div style={{padding:'6px 8px',borderTop:'1px solid #D8E8E6',flex:'0 0 auto'}}>
               <div style={{fontSize:9,color:'#8AABA8',fontWeight:700,marginBottom:4,letterSpacing:.5}}>QUEUE</div>
               <div style={{display:'flex',flexWrap:'wrap',gap:3,overflowY:'auto',maxHeight:270}}>
@@ -5579,7 +5579,7 @@ Note: This is a prototype running on Claude. Data is generated from your configu
               );
             })}
           </div>
-          {slotMap4.length>0?(
+          {activeBot==='intraday'&&slotMap4.length>0?(
             <div style={{flex:1,overflowY:'auto',padding:'6px 8px'}}>
               <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:6}}>
                 <span style={{fontSize:10,color:'#8AABA8'}}>Avg Net</span>
