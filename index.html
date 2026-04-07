@@ -5683,49 +5683,6 @@ Note: This is a prototype running on Claude. Data is generated from your configu
                     })()}
                   </div>
                 </div>
-                          ):(
-                            <React.Fragment>
-                              <th style={{textAlign:'right',color:'#C06020',padding:'3px 5px'}}>BKLOG-F</th>
-                              <th style={{textAlign:'right',color:'#C06020',padding:'3px 5px'}}>BKLOG-A</th>
-                              <th style={{textAlign:'right',color:'#C06020',padding:'3px 5px'}}>TAT(h)</th>
-                            </React.Fragment>
-                          )}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(qSlots4||[]).map(s=>{
-                          const nc=s.netStaffing<-2?'#EA5353':s.netStaffing<0?'#E88789':s.netStaffing>0?'#3EFFC0':'#888';
-                          const rowBg=s.status==='critical'?'#FFF0F0':s.status==='at_risk'?'#FFFAF0':'transparent';
-                          return (
-                            <tr key={s.time} style={{borderBottom:'1px solid #F0F4F3',background:rowBg}}>
-                              <td style={{color:'#5A8A86',padding:'3px 5px',fontWeight:600,position:'sticky',left:0,background:rowBg||'#fff',zIndex:1}}>{s.time}</td>
-                              <td style={{textAlign:'right',color:'#666',padding:'3px 5px'}}>{s.volumeForecast||s.volume||0}</td>
-                              <td style={{textAlign:'right',color:'#333',padding:'3px 5px',fontWeight:500}}>{s.volumeActual||s.volume||0}</td>
-                              <td style={{textAlign:'right',color:'#666',padding:'3px 5px'}}>{s.ahtForecast||s.aht||0}</td>
-                              <td style={{textAlign:'right',color:'#333',padding:'3px 5px',fontWeight:500}}>{s.ahtActual||s.aht||0}</td>
-                              <td style={{textAlign:'right',color:'#333',padding:'3px 5px'}}>{(s.scheduledFTE||0).toFixed(1)}</td>
-                              <td style={{textAlign:'right',color:'#333',padding:'3px 5px'}}>{(s.requiredFTE||0).toFixed(1)}</td>
-                              <td style={{textAlign:'right',color:'#333',padding:'3px 5px'}}>{(s.actualFTE||0).toFixed(1)}</td>
-                              <td style={{textAlign:'right',fontWeight:700,color:nc,padding:'3px 5px'}}>{s.netStaffing>0?'+':''}{(s.netStaffing||0).toFixed(1)}</td>
-                              {qChan4==='Phone'?(
-                                <React.Fragment>
-                                  <td style={{textAlign:'right',padding:'3px 5px',color:s.asa>60?'#EA5353':s.asa>30?'#E88789':'#4A70D0',fontWeight:s.asa>60?700:400}}>{s.asa||'—'}s</td>
-                                  <td style={{textAlign:'right',padding:'3px 5px',color:s.abandonRate>8?'#EA5353':s.abandonRate>4?'#E88789':'#4A70D0',fontWeight:s.abandonRate>8?700:400}}>{s.abandonRate||'—'}%</td>
-                                </React.Fragment>
-                              ):(
-                                <React.Fragment>
-                                  <td style={{textAlign:'right',padding:'3px 5px',color:s.forecastBacklog>0?'#C06020':'#8AABA8'}}>{s.forecastBacklog||0}</td>
-                                  <td style={{textAlign:'right',padding:'3px 5px',color:s.actualBacklog>0?'#EA5353':'#8AABA8',fontWeight:s.actualBacklog>5?700:400}}>{s.actualBacklog||0}</td>
-                                  <td style={{textAlign:'right',padding:'3px 5px',color:s.tat>2?'#EA5353':s.tat>1?'#E88789':s.tat>0?'#C06020':'#8AABA8',fontWeight:s.tat>2?700:400}}>{s.tat>0?s.tat:'—'}</td>
-                                </React.Fragment>
-                              )}
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
               ):(
                 <div>
                   <div style={{fontSize:9,color:'#8AABA8',fontWeight:700,marginBottom:4}}>QUEUE AGGREGATE</div>
