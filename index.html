@@ -94,13 +94,8 @@
       display: flex; flex-direction: column; overflow: hidden;
     }
     .ops-col-2 {
-      width: 310px; flex-shrink: 0; background: #FAFAF8;
-      border-right: 1px solid #D8E8E6;
-      display: flex; flex-direction: column; overflow: hidden;
-    }
-    .ops-col-3 {
-      width: 220px; flex-shrink: 0; background: #fff;
-      border-right: 1px solid #D8E8E6;
+      width: 530px; flex-shrink: 0; background: #FAFAF8;
+      
       display: flex; flex-direction: column; overflow: hidden;
     }
     .panel-header {
@@ -2075,18 +2070,33 @@ function generateRiskWindows(intervals) {
         const nets = run.map(s=>s.netStaffing);
         const netAvg = parseFloat((nets.reduce((a,b)=>a+b,0)/nets.length).toFixed(2));
         const worst  = Math.min(...nets);
-        const hasCrit= run.some(s=>s.status==='critical');
+        const hasCrit= run.some(s=>s.netStaffing<=-3);
         const pkPct  = run.filter(s=>s.timeBucket==='PEAK').length/run.length;
+        const lastTime = run[run.length-1].time;
+        const [lh,lm] = lastTime.split(':').map(Number);
+        const em = lh*60+lm+30;
+        const endTime = `${String(Math.floor(em/60)).padStart(2,'0')}:${String(em%60).padStart(2,'0')}`;
         windows.push({
           queueId:iv.queueId, trc:iv.trc, workstream:iv.workstream,
           label:iv.label, date:iv.date, priority:iv.priority,
-          start:run[0].time, end:run[run.length-1].time,
+          start:run[0].time, end:run[run.length-1].time, endTime,
           durationMins:run.length*30, intervalCount:run.length,
           netAvg, worst, hasCritical:hasCrit,
           timeBucket:pkPct>0.5?'PEAK':'OFFPEAK',
           severityScore:parseFloat((Math.abs(netAvg)*(pkPct>0.5?1.5:1.0)*(hasCrit?1.3:1.0)*(iv.priority||2)).toFixed(2)),
         });
       }
+      run=[];
+    };
+    iv.slots.forEach(s=>{
+      if(s.netStaffing < -2) run.push(s);
+      else flush();
+    });
+    flush();
+  });
+  windows.sort((a,b)=>b.severityScore-a.severityScore);
+  return windows.slice(0,30);
+}
       run=[];
     };
     iv.slots.forEach(s=>{
@@ -5710,36 +5720,45 @@ Note: This is a prototype running on Claude. Data is generated from your configu
                 generatedData={effectiveData||generatedData} legacyData={legacyData} history={history}/>
             </div>
           )}
+          {/* ── Risk Windows ── */}
+          {activeBot==='intraday'&&(
+            <div style={{flexShrink:0,borderTop:'2px solid #D8E8E6',display:'flex',flexDirection:'column',maxHeight:260,minHeight:80}}>
+              <div style={{display:'flex',alignItems:'center',gap:6,padding:'5px 8px',background:'#F5FAF9',borderBottom:'1px solid #D8E8E6',flexShrink:0}}>
+                <span style={{fontSize:9,fontWeight:700,color:'#035C67',letterSpacing:.5}}>RISK WINDOWS</span>
+                {todayRisks4.length>0&&(
+                  <span style={{background:'#EA5353',color:'#fff',borderRadius:10,padding:'1px 6px',fontSize:9,fontWeight:700}}>{todayRisks4.length}</span>
+                )}
+                <span style={{fontSize:9,color:'#8AABA8',marginLeft:'auto'}}>{viewDay}</span>
+              </div>
+              <div style={{flex:1,overflowY:'auto',padding:'4px 6px'}}>
+                {todayRisks4.length===0?(
+                  <div style={{color:'#8AABA8',fontSize:10,textAlign:'center',padding:'12px 0'}}>No risk windows</div>
+                ):(
+                  <div style={{display:'grid',gridTemplateColumns:'auto auto 1fr auto auto',gap:'1px 0',fontSize:9}}>
+                    <div style={{color:'#8AABA8',padding:'3px 6px 3px 4px',fontWeight:700,borderBottom:'1px solid #E8F0EF'}}>WINDOW</div>
+                    <div style={{color:'#8AABA8',padding:'3px 4px',fontWeight:700,borderBottom:'1px solid #E8F0EF'}}>DUR</div>
+                    <div style={{color:'#8AABA8',padding:'3px 6px',fontWeight:700,borderBottom:'1px solid #E8F0EF'}}>QUEUE</div>
+                    <div style={{color:'#8AABA8',padding:'3px 4px',fontWeight:700,borderBottom:'1px solid #E8F0EF',textAlign:'right'}}>WORST</div>
+                    <div style={{color:'#8AABA8',padding:'3px 6px 3px 4px',fontWeight:700,borderBottom:'1px solid #E8F0EF',textAlign:'right'}}>AVG</div>
+                    {todayRisks4.map((r,idx)=>{
+                      const sev = r.hasCritical?'#EA5353':'#E88789';
+                      const bg  = idx%2===0?'transparent':'#F5FAF9';
+                      return (
+                        <React.Fragment key={idx}>
+                          <div style={{padding:'3px 6px 3px 4px',background:bg,color:sev,fontWeight:700,whiteSpace:'nowrap'}}>{r.start} - {r.endTime||r.end}</div>
+                          <div style={{padding:'3px 4px',background:bg,color:'#8AABA8',whiteSpace:'nowrap'}}>{r.durationMins}m</div>
+                          <div style={{padding:'3px 6px',background:bg,color:'#5A8A86',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}} title={r.queueId}>{r.label||r.queueId}</div>
+                          <div style={{padding:'3px 4px',background:bg,color:r.worst<=-3?'#EA5353':'#E88789',fontWeight:700,textAlign:'right'}}>{r.worst}</div>
+                          <div style={{padding:'3px 6px 3px 4px',background:bg,color:sev,textAlign:'right'}}>{r.netAvg}</div>
+                        </React.Fragment>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
-
-        {/* ── COL 3: Risk summary ── */}
-        <div className="ops-col-3">
-          <div className="panel-header" style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-            <span>RISK WINDOWS</span>
-            {todayRisks4.length>0&&(
-              <span style={{background:'#EA5353',color:'#fff',borderRadius:10,padding:'1px 7px',fontSize:10,fontWeight:700}}>
-                {todayRisks4.length}
-              </span>
-            )}
-          </div>
-          <div style={{flex:1,overflowY:'auto',padding:'6px 8px'}}>
-            {todayRisks4.length===0?(
-              <div style={{color:'#8AABA8',fontSize:11,textAlign:'center',marginTop:20}}>No risk windows</div>
-            ):(
-              todayRisks4.map((r,i)=>(
-                <div key={i} style={{marginBottom:8,padding:'6px 8px',background:'#FFF5F5',border:'1px solid #EA535330',borderRadius:6,fontSize:11}}>
-                  <div style={{fontWeight:700,color:'#EA5353',marginBottom:2,fontSize:10}}>{r.queueId||r.queue||r.label||'Risk'}</div>
-                  {r.workstream&&<div style={{color:'#8AABA8',fontSize:9,marginBottom:2}}>{wsShort[r.workstream]||r.workstream}</div>}
-                  <div style={{color:'#555',fontSize:10}}>{r.startSlot||r.slot||''}{r.endSlot?' - '+r.endSlot:''}</div>
-                  {r.severity&&<div style={{color:'#EA5353',fontSize:9,fontWeight:600,marginTop:2}}>Sev: {r.severity}</div>}
-                  {r.description&&<div style={{color:'#777',fontSize:9,marginTop:2}}>{r.description}</div>}
-                  {r.net!==undefined&&<div style={{color:r.net<0?'#EA5353':'#3EFFC0',fontSize:9}}>Net: {r.net>0?'+':''}{r.net}</div>}
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
         {/* ── COL 4: Analyst summary ── */}
         <AnalysisPanel
           output={output}
