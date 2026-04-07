@@ -88,13 +88,18 @@
 
     /* Data Panel — split into status col + data col */
     .data-panel { width: 340px; flex-shrink: 0; background: #fff; border-right: 1px solid #D8E8E6; display: flex; flex-direction: column; overflow: hidden; }
-    .ops-status-col {
-      width: 260px; flex-shrink: 0; background: #fff;
+    .ops-col-1 {
+      width: 230px; flex-shrink: 0; background: #fff;
       border-right: 1px solid #D8E8E6;
       display: flex; flex-direction: column; overflow: hidden;
     }
-    .ops-data-col {
-      width: 360px; flex-shrink: 0; background: #FAFAF8;
+    .ops-col-2 {
+      width: 310px; flex-shrink: 0; background: #FAFAF8;
+      border-right: 1px solid #D8E8E6;
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .ops-col-3 {
+      width: 220px; flex-shrink: 0; background: #fff;
       border-right: 1px solid #D8E8E6;
       display: flex; flex-direction: column; overflow: hidden;
     }
@@ -5286,6 +5291,67 @@ function OperationsTab({ generatedData, queueFlowConfig, setQueueFlowConfig }) {
     };
   },[effectiveData, generatedData, activeTRC, dateStr, injectedEvents]);
 
+  // ── 4-col layout shared state ──
+  const wsShort = {Pharmacist:'Pharm',Technician:'Tech',PatientAccess:'PtAcc',ContactCenter:'CC'};
+  const [viewDay, setViewDay] = useState(()=>{
+    const now=new Date(); const dow=now.getDay();
+    if(dow===0){const d=new Date(now);d.setDate(d.getDate()+1);return d.toISOString().split('T')[0];}
+    if(dow===6){const d=new Date(now);d.setDate(d.getDate()+2);return d.toISOString().split('T')[0];}
+    return now.toISOString().split('T')[0];
+  });
+  const weekDays = useMemo(()=>{
+    const now=new Date(); const dow=now.getDay();
+    const mon=new Date(now);
+    if(dow===0) mon.setDate(now.getDate()+1);
+    else if(dow===6) mon.setDate(now.getDate()+2);
+    else mon.setDate(now.getDate()-(dow-1));
+    mon.setHours(0,0,0,0);
+    return [0,1,2,3,4].map(i=>{
+      const d=new Date(mon); d.setDate(mon.getDate()+i);
+      return {date:d.toISOString().split('T')[0],label:['Mon','Tue','Wed','Thu','Fri'][i],short:`${d.getMonth()+1}/${d.getDate()}`};
+    });
+  },[]);
+  const [selectedWS, setSelectedWS] = useState('ALL');
+  const [selectedQ,  setSelectedQ]  = useState('ALL');
+  useEffect(()=>{setSelectedWS('ALL');setSelectedQ('ALL');},[activeTRC,viewDay]);
+  useEffect(()=>setSelectedQ('ALL'),[selectedWS]);
+  const todayIvs = useMemo(()=>{
+    if(!effectiveData?.intervals) return [];
+    return effectiveData.intervals.filter(iv=>iv.date===viewDay&&(activeTRC==='ALL'||iv.trc===activeTRC));
+  },[effectiveData,viewDay,activeTRC]);
+  const wsList4 = useMemo(()=>['ALL',...[...new Set(todayIvs.map(iv=>iv.workstream))].sort()],[todayIvs]);
+  const wsIvs4  = useMemo(()=>selectedWS==='ALL'?todayIvs:todayIvs.filter(iv=>iv.workstream===selectedWS),[todayIvs,selectedWS]);
+  const qList4  = useMemo(()=>['ALL',...wsIvs4.map(iv=>iv.queueId).sort()],[wsIvs4]);
+  const todayRisks4 = useMemo(()=>{
+    if(!effectiveData?.riskWindows) return [];
+    let rw=effectiveData.riskWindows.filter(w=>w.date===viewDay&&(activeTRC==='ALL'||w.trc===activeTRC));
+    if(selectedWS!=='ALL') rw=rw.filter(w=>w.workstream===selectedWS);
+    if(selectedQ!=='ALL')  rw=rw.filter(w=>w.queueId===selectedQ);
+    return (selectedQ==='ALL'&&selectedWS==='ALL')?rw.slice(0,15):rw;
+  },[effectiveData,viewDay,activeTRC,selectedWS,selectedQ]);
+  const slotMap4 = useMemo(()=>{
+    const m={};
+    wsIvs4.forEach(iv=>(iv.slots||[]).forEach(s=>{
+      if(!m[s.time]) m[s.time]={sch:0,act:0,req:0,net:0};
+      m[s.time].sch+=s.scheduledFTE||0; m[s.time].act+=s.actualFTE||0;
+      m[s.time].req+=s.requiredFTE||0;  m[s.time].net+=s.netStaffing||0;
+    }));
+    return Object.entries(m).sort(([a],[b])=>a.localeCompare(b));
+  },[wsIvs4]);
+  const qSum4 = useMemo(()=>wsIvs4.map(iv=>{
+    const slots=iv.slots||[]; const nets=slots.map(s=>s.netStaffing||0); const n=nets.length||1;
+    const netAvg=parseFloat((nets.reduce((a,b)=>a+b,0)/n).toFixed(1));
+    const worst=nets.length>0?Math.min(...nets):0;
+    const riskSlots=slots.filter(s=>s.status==='at_risk'||s.status==='critical').length;
+    const critSlots=slots.filter(s=>s.status==='critical').length;
+    return {queueId:iv.queueId,workstream:iv.workstream,trc:iv.trc,netAvg,worst,riskSlots,critSlots};
+  }).sort((a,b)=>a.netAvg-b.netAvg),[wsIvs4]);
+  const qSlots4 = useMemo(()=>selectedQ==='ALL'?null:wsIvs4.find(iv=>iv.queueId===selectedQ)?.slots||[],[wsIvs4,selectedQ]);
+  const netCls4 = n=>n<-2?'net-bad':n<0?'net-warn':n>0?'net-ok':'';
+  const avgNet4 = slotMap4.length>0?Math.round(slotMap4.reduce((s,[,v])=>s+v.net,0)/slotMap4.length):0;
+  const netColor4 = avgNet4<-2?'#EA5353':avgNet4<0?'#E88789':avgNet4>3?'#90B9FF':'#008F83';
+  const agentsActive4 = useMemo(()=>(effectiveData?.agentSchedules||[]).filter(a=>a.date===viewDay&&(activeTRC==='ALL'||a.trc===activeTRC)&&a.isScheduled).length,[effectiveData,viewDay,activeTRC]);
+
   // Per-bot packet — uses effectiveData so injected events are reflected in bot output
   const buildBotPacket = useCallback((bot, hist)=>{
     const rawHist = hist.map(h=>h.raw).filter(Boolean);
@@ -5421,58 +5487,195 @@ Note: This is a prototype running on Claude. Data is generated from your configu
       {!activeAnalytic&&(
       <React.Fragment>
       <div className="main-content">
-        {/* ── LEFT COL: status / context ── */}
-        <div className="ops-status-col">
+        {/* ── COL 1: Data load + Injection + Filters ── */}
+        <div className="ops-col-1">
           <div className="panel-header" style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:4}}>
-            <span>{activeTRC} · {BOT_CONFIGS[activeBot].name.toUpperCase()}</span>
+            <span>{activeTRC} {BOT_CONFIGS[activeBot].name.toUpperCase()}</span>
             <SimClockAdvanced simTimeSlot={simTimeSlot} setSimTimeSlot={setSimTimeSlot}/>
           </div>
           {hasRealData&&dataLoadSummary ? (
-            <div className="data-load-block" style={{flex:1,overflowY:'auto'}}>
+            <div className="data-load-block" style={{flex:'0 0 auto'}}>
               <div className="dl-header">DATA LOAD | {dateStr} | {timeStr}{simTimeSlot!=='Live'?' (SIM)':''}</div>
-              <div className="dl-row">✅ Scenario — <span style={{color:'#5A8A86'}}>{dataLoadSummary.scenario}</span></div>
-              <div className="dl-row">✅ Interval Data — <span style={{color:'#5A8A86'}}>{dataLoadSummary.queues} queues · 24 slots each</span></div>
-              <div className="dl-row">✅ Daily History — <span style={{color:'#5A8A86'}}>{dataLoadSummary.history} records (13 weeks)</span></div>
-              <div className="dl-row">✅ Agent Schedules — <span style={{color:'#5A8A86'}}>{dataLoadSummary.agents} agent-day records</span></div>
-              <div className="dl-row">✅ Risk Windows — <span style={{color:'#5A8A86'}}>{dataLoadSummary.riskWins} windows today (recomputed)</span></div>
+              <div className="dl-row">Scenario: <span style={{color:'#5A8A86'}}>{dataLoadSummary.scenario}</span></div>
+              <div className="dl-row">Intervals: <span style={{color:'#5A8A86'}}>{dataLoadSummary.queues} queues</span></div>
+              <div className="dl-row">History: <span style={{color:'#5A8A86'}}>{dataLoadSummary.history} records</span></div>
+              <div className="dl-row">Agents: <span style={{color:'#5A8A86'}}>{dataLoadSummary.agents} records</span></div>
+              <div className="dl-row">Risk Windows: <span style={{color:'#5A8A86'}}>{dataLoadSummary.riskWins} today</span></div>
               {dataLoadSummary.events>0&&(
                 <div className="dl-row" style={{color:'#FFD166',fontWeight:700}}>
-                  ⚡ {dataLoadSummary.events} live event{dataLoadSummary.events>1?'s':''} injected — data overlaid
+                  {dataLoadSummary.events} event{dataLoadSummary.events>1?'s':''} injected
                 </div>
               )}
-              <div className="dl-row" style={{color:'#3EFFC0',fontWeight:700}}>⚡ DataPacket ready — real data</div>
+              <div className="dl-row" style={{color:'#3EFFC0',fontWeight:700}}>DataPacket ready</div>
             </div>
           ) : (
             <DataLoadBlock bot={activeBot} dateStr={dateStr} timeStr={timeStr} actualsCount={actualsCount}/>
           )}
+          {hasRealData&&(
+            <React.Fragment>
+              <WorldStateBar
+                generatedData={effectiveData||generatedData}
+                injectedEvents={injectedEvents}
+                onRemoveEvent={removeEvent}
+                simTimeSlot={simTimeSlot}
+              />
+              <EventInjector
+                activeTRC={activeTRC}
+                injectedEvents={injectedEvents}
+                onInject={injectEvent}
+                onClear={clearEvents}
+              />
+            </React.Fragment>
+          )}
+          {wsList4.length>1&&(
+            <div style={{padding:'6px 8px',borderTop:'1px solid #D8E8E6'}}>
+              <div style={{fontSize:9,color:'#8AABA8',fontWeight:700,marginBottom:4,letterSpacing:.5}}>WORKSTREAM</div>
+              <div style={{display:'flex',flexWrap:'wrap',gap:3}}>
+                {wsList4.map(ws=>(
+                  <button key={ws} onClick={()=>setSelectedWS(ws)}
+                    style={{padding:'2px 7px',borderRadius:10,border:'1px solid',fontSize:10,cursor:'pointer',
+                      background:selectedWS===ws?'#3EFFC0':'transparent',
+                      color:selectedWS===ws?'#0D2C29':'#5A8A86',
+                      borderColor:selectedWS===ws?'#3EFFC0':'#3EFFC040'}}>
+                    {ws==='ALL'?'All':(wsShort[ws]||ws)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {qList4.length>1&&(
+            <div style={{padding:'6px 8px',borderTop:'1px solid #D8E8E6',flex:'0 0 auto'}}>
+              <div style={{fontSize:9,color:'#8AABA8',fontWeight:700,marginBottom:4,letterSpacing:.5}}>QUEUE</div>
+              <div style={{display:'flex',flexWrap:'wrap',gap:3,overflowY:'auto',maxHeight:90}}>
+                {qList4.map(q=>(
+                  <button key={q} onClick={()=>setSelectedQ(q)}
+                    style={{padding:'2px 7px',borderRadius:10,border:'1px solid',fontSize:10,cursor:'pointer',
+                      background:selectedQ===q?'#90B9FF':'transparent',
+                      color:selectedQ===q?'#0D2C29':'#5A8A86',
+                      borderColor:selectedQ===q?'#90B9FF':'#90B9FF40'}}>
+                    {q==='ALL'?'All':q}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* ── MIDDLE COL: live grid / events ── */}
-        <div className="ops-data-col">
-          <div className="panel-header">
-            LIVE DATA — {activeTRC}
+        {/* ── COL 2: Day toggle + Chart + Aggregate ── */}
+        <div className="ops-col-2">
+          <div style={{padding:'5px 6px',borderBottom:'1px solid #D8E8E6',display:'flex',gap:3,flexShrink:0}}>
+            {weekDays.map(d=>{
+              const isTod=d.date===new Date().toISOString().split('T')[0];
+              const active=viewDay===d.date;
+              return (
+                <button key={d.date} onClick={()=>setViewDay(d.date)}
+                  style={{flex:1,padding:'3px 2px',borderRadius:6,border:'1px solid',fontSize:9,cursor:'pointer',textAlign:'center',
+                    background:active?'#3EFFC0':'transparent',
+                    color:active?'#0D2C29':isTod?'#3EFFC0':'#8AABA8',
+                    borderColor:active?'#3EFFC0':isTod?'#3EFFC040':'#D8E8E640',fontWeight:active?700:400}}>
+                  <div>{d.label}</div>
+                  <div style={{fontSize:8}}>{d.short}</div>
+                </button>
+              );
+            })}
           </div>
-          {hasRealData&&(
-            <WorldStateBar
-              generatedData={effectiveData||generatedData}
-              injectedEvents={injectedEvents}
-              onRemoveEvent={removeEvent}
-              simTimeSlot={simTimeSlot}
-            />
+          {slotMap4.length>0?(
+            <div style={{flex:1,overflowY:'auto',padding:'6px 8px'}}>
+              <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:6}}>
+                <span style={{fontSize:10,color:'#8AABA8'}}>Avg Net</span>
+                <span style={{fontSize:14,fontWeight:700,color:netColor4}}>{avgNet4>0?'+':''}{avgNet4}</span>
+                <span style={{fontSize:10,color:'#8AABA8',marginLeft:'auto'}}>{agentsActive4} agents sched</span>
+              </div>
+              <div style={{display:'flex',alignItems:'flex-end',gap:1,height:48,marginBottom:8,background:'#F5FAF9',borderRadius:4,padding:'4px 4px 0'}}>
+                {slotMap4.map(([time,v])=>{
+                  const h=Math.min(40,Math.max(4,20+v.net*3));
+                  const c=v.net<-2?'#EA5353':v.net<0?'#E88789':v.net>0?'#3EFFC0':'#008F83';
+                  return (
+                    <div key={time} title={time+' net:'+v.net} style={{flex:1,height:h,background:c,borderRadius:'2px 2px 0 0',minWidth:2}}/>
+                  );
+                })}
+              </div>
+              <div style={{fontSize:9,color:'#8AABA8',marginBottom:6}}>
+                {slotMap4[0]&&slotMap4[0][0]} — {slotMap4[slotMap4.length-1]&&slotMap4[slotMap4.length-1][0]}
+              </div>
+              {selectedQ!=='ALL'&&qSlots4?(
+                <div>
+                  <div style={{fontSize:9,color:'#8AABA8',fontWeight:700,marginBottom:4}}>SLOT DETAIL — {selectedQ}</div>
+                  <div style={{display:'grid',gridTemplateColumns:'auto 1fr 1fr 1fr',gap:'2px 6px',fontSize:9}}>
+                    <div style={{color:'#8AABA8'}}>TIME</div>
+                    <div style={{color:'#8AABA8',textAlign:'right'}}>SCH</div>
+                    <div style={{color:'#8AABA8',textAlign:'right'}}>REQ</div>
+                    <div style={{color:'#8AABA8',textAlign:'right'}}>NET</div>
+                    {(qSlots4||[]).map(s=>(
+                      <React.Fragment key={s.time}>
+                        <div style={{color:'#5A8A86'}}>{s.time}</div>
+                        <div style={{textAlign:'right',color:'#333'}}>{(s.scheduledFTE||0).toFixed(1)}</div>
+                        <div style={{textAlign:'right',color:'#333'}}>{(s.requiredFTE||0).toFixed(1)}</div>
+                        <div style={{textAlign:'right',fontWeight:600,color:s.netStaffing<0?'#EA5353':s.netStaffing>0?'#3EFFC0':'#888'}}>
+                          {s.netStaffing>0?'+':''}{(s.netStaffing||0).toFixed(1)}
+                        </div>
+                      </React.Fragment>
+                    ))}
+                  </div>
+                </div>
+              ):(
+                <div>
+                  <div style={{fontSize:9,color:'#8AABA8',fontWeight:700,marginBottom:4}}>QUEUE AGGREGATE</div>
+                  <div style={{display:'grid',gridTemplateColumns:'1fr auto auto',gap:'2px 6px',fontSize:9}}>
+                    <div style={{color:'#8AABA8'}}>QUEUE</div>
+                    <div style={{color:'#8AABA8',textAlign:'right'}}>AVG</div>
+                    <div style={{color:'#8AABA8',textAlign:'right'}}>RISK</div>
+                    {qSum4.map(q=>(
+                      <React.Fragment key={q.queueId}>
+                        <div style={{color:'#5A8A86',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}
+                          title={q.queueId}>{q.queueId}</div>
+                        <div style={{textAlign:'right',fontWeight:600,color:q.netAvg<0?'#EA5353':q.netAvg>0?'#3EFFC0':'#888'}}>
+                          {q.netAvg>0?'+':''}{q.netAvg}
+                        </div>
+                        <div style={{textAlign:'right',color:q.riskSlots>0?'#EA5353':'#8AABA8'}}>{q.riskSlots}</div>
+                      </React.Fragment>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ):(
+            <div style={{flex:1,overflowY:'auto'}}>
+              <BotDataView activeBot={activeBot} activeTRC={activeTRC}
+                generatedData={effectiveData||generatedData} legacyData={legacyData} history={history}/>
+            </div>
           )}
-          {hasRealData&&(
-            <EventInjector
-              activeTRC={activeTRC}
-              injectedEvents={injectedEvents}
-              onInject={injectEvent}
-              onClear={clearEvents}
-            />
-          )}
-          <BotDataView activeBot={activeBot} activeTRC={activeTRC}
-            generatedData={effectiveData||generatedData} legacyData={legacyData} history={history}/>
         </div>
 
-        {/* ── RIGHT COL: bot analysis ── */}
+        {/* ── COL 3: Risk summary ── */}
+        <div className="ops-col-3">
+          <div className="panel-header" style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+            <span>RISK WINDOWS</span>
+            {todayRisks4.length>0&&(
+              <span style={{background:'#EA5353',color:'#fff',borderRadius:10,padding:'1px 7px',fontSize:10,fontWeight:700}}>
+                {todayRisks4.length}
+              </span>
+            )}
+          </div>
+          <div style={{flex:1,overflowY:'auto',padding:'6px 8px'}}>
+            {todayRisks4.length===0?(
+              <div style={{color:'#8AABA8',fontSize:11,textAlign:'center',marginTop:20}}>No risk windows</div>
+            ):(
+              todayRisks4.map((r,i)=>(
+                <div key={i} style={{marginBottom:8,padding:'6px 8px',background:'#FFF5F5',border:'1px solid #EA535330',borderRadius:6,fontSize:11}}>
+                  <div style={{fontWeight:700,color:'#EA5353',marginBottom:2,fontSize:10}}>{r.queueId||r.queue||r.label||'Risk'}</div>
+                  {r.workstream&&<div style={{color:'#8AABA8',fontSize:9,marginBottom:2}}>{wsShort[r.workstream]||r.workstream}</div>}
+                  <div style={{color:'#555',fontSize:10}}>{r.startSlot||r.slot||''}{r.endSlot?' - '+r.endSlot:''}</div>
+                  {r.severity&&<div style={{color:'#EA5353',fontSize:9,fontWeight:600,marginTop:2}}>Sev: {r.severity}</div>}
+                  {r.description&&<div style={{color:'#777',fontSize:9,marginTop:2}}>{r.description}</div>}
+                  {r.net!==undefined&&<div style={{color:r.net<0?'#EA5353':'#3EFFC0',fontSize:9}}>Net: {r.net>0?'+':''}{r.net}</div>}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* ── COL 4: Analyst summary ── */}
         <AnalysisPanel
           output={output}
           isLoading={loading}
