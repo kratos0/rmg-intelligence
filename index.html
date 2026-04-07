@@ -2097,17 +2097,6 @@ function generateRiskWindows(intervals) {
   windows.sort((a,b)=>b.severityScore-a.severityScore);
   return windows.slice(0,30);
 }
-      run=[];
-    };
-    iv.slots.forEach(s=>{
-      if(s.status==='critical'||s.status==='at_risk') run.push(s);
-      else flush();
-    });
-    flush();
-  });
-  windows.sort((a,b)=>b.severityScore-a.severityScore);
-  return windows.slice(0,30);
-}
 
 function generateDailyHistory(queueList, scenarioParams, endDate, weeks=13) {
   const result = [];
