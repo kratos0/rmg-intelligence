@@ -5313,7 +5313,7 @@ function OperationsTab({ generatedData, queueFlowConfig, setQueueFlowConfig }) {
   },[]);
   const [selectedWS, setSelectedWS] = useState('ALL');
   const [selectedQ,  setSelectedQ]  = useState('ALL');
-  useEffect(()=>{setSelectedWS('ALL');setSelectedQ('ALL');},[activeTRC,viewDay]);
+  useEffect(()=>{setSelectedWS('ALL');setSelectedQ('ALL');},[activeTRC,viewDay,activeBot]);
   useEffect(()=>setSelectedQ('ALL'),[selectedWS]);
   const todayIvs = useMemo(()=>{
     if(!effectiveData?.intervals) return [];
@@ -5546,7 +5546,7 @@ Note: This is a prototype running on Claude. Data is generated from your configu
           {qList4.length>1&&(
             <div style={{padding:'6px 8px',borderTop:'1px solid #D8E8E6',flex:'0 0 auto'}}>
               <div style={{fontSize:9,color:'#8AABA8',fontWeight:700,marginBottom:4,letterSpacing:.5}}>QUEUE</div>
-              <div style={{display:'flex',flexWrap:'wrap',gap:3,overflowY:'auto',maxHeight:90}}>
+              <div style={{display:'flex',flexWrap:'wrap',gap:3,overflowY:'auto',maxHeight:270}}>
                 {qList4.map(q=>(
                   <button key={q} onClick={()=>setSelectedQ(q)}
                     style={{padding:'2px 7px',borderRadius:10,border:'1px solid',fontSize:10,cursor:'pointer',
