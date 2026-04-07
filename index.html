@@ -2054,7 +2054,7 @@ function generateIntervals(agentSchedules, queueList, scenarioParams, startDate,
 
         const isPeak = (slotMin>=8*60&&slotMin<12*60)||(slotMin>=13*60&&slotMin<17*60);
         slots.push({ slotIdx:s, time:timeStr, scheduledFTE, actualFTE, requiredFTE,
-                     netStaffing:net, volume:vol, aht,
+                     netStaffing:net, volume:vol, aht, volumeForecast:Math.round(wsBase.baseVol*curve), volumeActual:vol, ahtForecast:wsBase.baseAHT, ahtActual:aht,
                      adherencePct:parseFloat((adh*100).toFixed(1)),
                      status, timeBucket:isPeak?'PEAK':'OFFPEAK' });
       }
@@ -5601,21 +5601,41 @@ Note: This is a prototype running on Claude. Data is generated from your configu
               {selectedQ!=='ALL'&&qSlots4?(
                 <div>
                   <div style={{fontSize:9,color:'#8AABA8',fontWeight:700,marginBottom:4}}>SLOT DETAIL — {selectedQ}</div>
-                  <div style={{display:'grid',gridTemplateColumns:'auto 1fr 1fr 1fr',gap:'2px 6px',fontSize:9}}>
-                    <div style={{color:'#8AABA8'}}>TIME</div>
-                    <div style={{color:'#8AABA8',textAlign:'right'}}>SCH</div>
-                    <div style={{color:'#8AABA8',textAlign:'right'}}>REQ</div>
-                    <div style={{color:'#8AABA8',textAlign:'right'}}>NET</div>
-                    {(qSlots4||[]).map(s=>(
-                      <React.Fragment key={s.time}>
-                        <div style={{color:'#5A8A86'}}>{s.time}</div>
-                        <div style={{textAlign:'right',color:'#333'}}>{(s.scheduledFTE||0).toFixed(1)}</div>
-                        <div style={{textAlign:'right',color:'#333'}}>{(s.requiredFTE||0).toFixed(1)}</div>
-                        <div style={{textAlign:'right',fontWeight:600,color:s.netStaffing<0?'#EA5353':s.netStaffing>0?'#3EFFC0':'#888'}}>
-                          {s.netStaffing>0?'+':''}{(s.netStaffing||0).toFixed(1)}
-                        </div>
-                      </React.Fragment>
-                    ))}
+                  <div style={{overflowX:'auto',overflowY:'visible'}}>
+                    <table style={{borderCollapse:'collapse',fontSize:9,whiteSpace:'nowrap',width:'100%'}}>
+                      <thead>
+                        <tr style={{borderBottom:'1px solid #D8E8E6',background:'#F5FAF9'}}>
+                          <th style={{textAlign:'left',color:'#8AABA8',padding:'3px 5px',position:'sticky',left:0,background:'#F5FAF9',zIndex:1}}>TIME</th>
+                          <th style={{textAlign:'right',color:'#8AABA8',padding:'3px 5px'}}>VOL-F</th>
+                          <th style={{textAlign:'right',color:'#8AABA8',padding:'3px 5px'}}>VOL-A</th>
+                          <th style={{textAlign:'right',color:'#8AABA8',padding:'3px 5px'}}>AHT-F</th>
+                          <th style={{textAlign:'right',color:'#8AABA8',padding:'3px 5px'}}>AHT-A</th>
+                          <th style={{textAlign:'right',color:'#8AABA8',padding:'3px 5px'}}>SCH</th>
+                          <th style={{textAlign:'right',color:'#8AABA8',padding:'3px 5px'}}>REQ</th>
+                          <th style={{textAlign:'right',color:'#8AABA8',padding:'3px 5px'}}>ACT</th>
+                          <th style={{textAlign:'right',color:'#8AABA8',padding:'3px 5px'}}>NET</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(qSlots4||[]).map(s=>{
+                          const nc=s.netStaffing<-2?'#EA5353':s.netStaffing<0?'#E88789':s.netStaffing>0?'#3EFFC0':'#888';
+                          const rowBg=s.status==='critical'?'#FFF0F0':s.status==='at_risk'?'#FFFAF0':'transparent';
+                          return (
+                            <tr key={s.time} style={{borderBottom:'1px solid #F0F4F3',background:rowBg}}>
+                              <td style={{color:'#5A8A86',padding:'3px 5px',fontWeight:600,position:'sticky',left:0,background:rowBg||'#fff',zIndex:1}}>{s.time}</td>
+                              <td style={{textAlign:'right',color:'#666',padding:'3px 5px'}}>{s.volumeForecast||s.volume||0}</td>
+                              <td style={{textAlign:'right',color:'#333',padding:'3px 5px',fontWeight:500}}>{s.volumeActual||s.volume||0}</td>
+                              <td style={{textAlign:'right',color:'#666',padding:'3px 5px'}}>{s.ahtForecast||s.aht||0}</td>
+                              <td style={{textAlign:'right',color:'#333',padding:'3px 5px',fontWeight:500}}>{s.ahtActual||s.aht||0}</td>
+                              <td style={{textAlign:'right',color:'#333',padding:'3px 5px'}}>{(s.scheduledFTE||0).toFixed(1)}</td>
+                              <td style={{textAlign:'right',color:'#333',padding:'3px 5px'}}>{(s.requiredFTE||0).toFixed(1)}</td>
+                              <td style={{textAlign:'right',color:'#333',padding:'3px 5px'}}>{(s.actualFTE||0).toFixed(1)}</td>
+                              <td style={{textAlign:'right',fontWeight:700,color:nc,padding:'3px 5px'}}>{s.netStaffing>0?'+':''}{(s.netStaffing||0).toFixed(1)}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               ):(
