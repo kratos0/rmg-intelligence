@@ -5344,13 +5344,14 @@ function OperationsTab({ generatedData, queueFlowConfig, setQueueFlowConfig }) {
   },[effectiveData,viewDay,activeTRC,selectedWS,selectedQ]);
   const slotMap4 = useMemo(()=>{
     const m={};
-    wsIvs4.forEach(iv=>(iv.slots||[]).forEach(s=>{
+    const _src = selectedQ==='ALL' ? wsIvs4 : wsIvs4.filter(iv=>iv.queueId===selectedQ);
+    _src.forEach(iv=>(iv.slots||[]).forEach(s=>{
       if(!m[s.time]) m[s.time]={sch:0,act:0,req:0,net:0};
       m[s.time].sch+=s.scheduledFTE||0; m[s.time].act+=s.actualFTE||0;
       m[s.time].req+=s.requiredFTE||0;  m[s.time].net+=s.netStaffing||0;
     }));
     return Object.entries(m).sort(([a],[b])=>a.localeCompare(b));
-  },[wsIvs4]);
+  },[wsIvs4,selectedQ]);
   const qSum4 = useMemo(()=>wsIvs4.map(iv=>{
     const slots=iv.slots||[]; const nets=slots.map(s=>s.netStaffing||0); const n=nets.length||1;
     const netAvg=parseFloat((nets.reduce((a,b)=>a+b,0)/n).toFixed(1));
@@ -5635,17 +5636,30 @@ Note: This is a prototype running on Claude. Data is generated from your configu
                 <span style={{fontSize:14,fontWeight:700,color:netColor4}}>{avgNet4>0?'+':''}{avgNet4}</span>
                 <span style={{fontSize:10,color:'#8AABA8',marginLeft:'auto'}}>{agentsActive4} agents sched</span>
               </div>
-              <div style={{display:'flex',alignItems:'flex-end',gap:1,height:48,marginBottom:8,background:'#F5FAF9',borderRadius:4,padding:'4px 4px 0'}}>
-                {slotMap4.map(([time,v])=>{
-                  const h=Math.min(40,Math.max(4,20+v.net*3));
-                  const c=v.net<-2?'#EA5353':v.net<0?'#E88789':v.net>0?'#3EFFC0':'#008F83';
-                  return (
-                    <div key={time} title={time+' net:'+v.net} style={{flex:1,height:h,background:c,borderRadius:'2px 2px 0 0',minWidth:2}}/>
-                  );
-                })}
-              </div>
-              <div style={{fontSize:9,color:'#8AABA8',marginBottom:6}}>
-                {slotMap4[0]&&slotMap4[0][0]} — {slotMap4[slotMap4.length-1]&&slotMap4[slotMap4.length-1][0]}
+              <div style={{position:'relative',marginBottom:0}}>
+                {/* Bars */}
+                <div style={{display:'flex',alignItems:'flex-end',gap:1,height:48,background:'#F5FAF9',borderRadius:'4px 4px 0 0',padding:'4px 4px 0',position:'relative'}}>
+                  <div style={{position:'absolute',left:4,right:4,bottom:24,borderTop:'1px dashed #C8DDD9',pointerEvents:'none',zIndex:1}}/>
+                  {slotMap4.map(([time,v])=>{
+                    const h=Math.min(40,Math.max(4,20+v.net*3));
+                    const c=v.net<-2?'#EA5353':v.net<0?'#E88789':v.net>0?'#3EFFC0':'#008F83';
+                    return (
+                      <div key={time} title={time+' net:'+v.net} style={{flex:1,height:h,background:c,borderRadius:'2px 2px 0 0',minWidth:2,position:'relative',zIndex:2}}/>
+                    );
+                  })}
+                </div>
+                {/* Time axis */}
+                <div style={{display:'flex',gap:1,background:'#EEF3F2',borderRadius:'0 0 4px 4px',padding:'0 4px',marginBottom:8}}>
+                  {slotMap4.map(([time,v],idx)=>{
+                    const show=idx===0||idx%4===0||idx===slotMap4.length-1;
+                    return (
+                      <div key={time} style={{flex:1,minWidth:2,position:'relative',height:14}}>
+                        <div style={{position:'absolute',top:0,left:'50%',width:1,height:show?5:2,background:show?'#A8C5C0':'#D0E2E0'}}/>
+                        {show&&<div style={{position:'absolute',left:'50%',transform:'translateX(-50%)',top:5,fontSize:7,color:'#8AABA8',whiteSpace:'nowrap',lineHeight:1}}>{time.slice(0,5)}</div>}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
               {selectedQ!=='ALL'&&qSlots4?(
                 <div>
