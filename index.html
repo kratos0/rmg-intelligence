@@ -89,7 +89,7 @@
     /* Data Panel — split into status col + data col */
     .data-panel { width: 340px; flex-shrink: 0; background: #fff; border-right: 1px solid #D8E8E6; display: flex; flex-direction: column; overflow: hidden; }
     .ops-col-1 {
-      width: 230px; flex-shrink: 0; background: #fff;
+      width: 280px; flex-shrink: 0; background: #fff;
       border-right: 1px solid #D8E8E6;
       display: flex; flex-direction: column; overflow: hidden;
     }
@@ -5332,7 +5332,9 @@ function OperationsTab({ generatedData, queueFlowConfig, setQueueFlowConfig }) {
   },[effectiveData,viewDay,activeTRC]);
   const wsList4 = useMemo(()=>['ALL',...[...new Set(todayIvs.map(iv=>iv.workstream))].sort()],[todayIvs]);
   const wsIvs4  = useMemo(()=>selectedWS==='ALL'?todayIvs:todayIvs.filter(iv=>iv.workstream===selectedWS),[todayIvs,selectedWS]);
-  const qList4  = useMemo(()=>['ALL',...wsIvs4.map(iv=>iv.queueId).sort()],[wsIvs4]);
+  const qList4    = useMemo(()=>['ALL',...wsIvs4.map(iv=>iv.queueId).sort()],[wsIvs4]);
+  const phoneQs4  = useMemo(()=>wsIvs4.filter(iv=>iv.channel==='Phone').map(iv=>iv.queueId).sort(),[wsIvs4]);
+  const offlineQs4= useMemo(()=>wsIvs4.filter(iv=>iv.channel!=='Phone').map(iv=>iv.queueId).sort(),[wsIvs4]);
   const todayRisks4 = useMemo(()=>{
     if(!effectiveData?.riskWindows) return [];
     let rw=effectiveData.riskWindows.filter(w=>w.date===viewDay&&(activeTRC==='ALL'||w.trc===activeTRC));
@@ -5556,19 +5558,54 @@ Note: This is a prototype running on Claude. Data is generated from your configu
             </div>
           )}
           {activeBot==='intraday'&&qList4.length>1&&(
-            <div style={{padding:'6px 8px',borderTop:'1px solid #D8E8E6',flex:'0 0 auto'}}>
-              <div style={{fontSize:9,color:'#8AABA8',fontWeight:700,marginBottom:4,letterSpacing:.5}}>QUEUE</div>
-              <div style={{display:'flex',flexWrap:'wrap',gap:3,overflowY:'auto',maxHeight:270}}>
-                {qList4.map(q=>(
-                  <button key={q} onClick={()=>setSelectedQ(q)}
-                    style={{padding:'2px 7px',borderRadius:10,border:'1px solid',fontSize:10,cursor:'pointer',
-                      background:selectedQ===q?'#90B9FF':'transparent',
-                      color:selectedQ===q?'#0D2C29':'#5A8A86',
-                      borderColor:selectedQ===q?'#90B9FF':'#90B9FF40'}}>
-                    {q==='ALL'?'All':q}
-                  </button>
-                ))}
+            <div style={{padding:'6px 8px',borderTop:'1px solid #D8E8E6',flex:'1 1 0',overflowY:'auto',minHeight:0}}>
+              {/* ALL clear pill */}
+              <div style={{display:'flex',alignItems:'center',gap:4,marginBottom:6}}>
+                <span style={{fontSize:9,color:'#8AABA8',fontWeight:700,letterSpacing:.5}}>QUEUE</span>
+                <button onClick={()=>setSelectedQ('ALL')}
+                  style={{padding:'1px 8px',borderRadius:10,border:'1px solid',fontSize:10,cursor:'pointer',marginLeft:'auto',
+                    background:selectedQ==='ALL'?'#3EFFC0':'transparent',
+                    color:selectedQ==='ALL'?'#0D2C29':'#5A8A86',
+                    borderColor:selectedQ==='ALL'?'#3EFFC0':'#3EFFC040'}}>All</button>
               </div>
+              {/* Phone queues */}
+              {phoneQs4.length>0&&(
+                <div style={{marginBottom:6}}>
+                  <div style={{fontSize:8,color:'#4A70D0',fontWeight:700,letterSpacing:.5,marginBottom:3,display:'flex',alignItems:'center',gap:4}}>
+                    <span style={{display:'inline-block',width:6,height:6,borderRadius:'50%',background:'#4A70D0'}}></span>PHONE
+                  </div>
+                  <div style={{display:'flex',flexWrap:'wrap',gap:3}}>
+                    {phoneQs4.map(q=>(
+                      <button key={q} onClick={()=>setSelectedQ(q)}
+                        style={{padding:'2px 6px',borderRadius:10,border:'1px solid',fontSize:9,cursor:'pointer',
+                          background:selectedQ===q?'#90B9FF':'transparent',
+                          color:selectedQ===q?'#0D2C29':'#4A70D0',
+                          borderColor:selectedQ===q?'#90B9FF':'#90B9FF50'}}>
+                        {q}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {/* Offline queues */}
+              {offlineQs4.length>0&&(
+                <div>
+                  <div style={{fontSize:8,color:'#C06020',fontWeight:700,letterSpacing:.5,marginBottom:3,display:'flex',alignItems:'center',gap:4}}>
+                    <span style={{display:'inline-block',width:6,height:6,borderRadius:'50%',background:'#C06020'}}></span>OFFLINE
+                  </div>
+                  <div style={{display:'flex',flexWrap:'wrap',gap:3}}>
+                    {offlineQs4.map(q=>(
+                      <button key={q} onClick={()=>setSelectedQ(q)}
+                        style={{padding:'2px 6px',borderRadius:10,border:'1px solid',fontSize:9,cursor:'pointer',
+                          background:selectedQ===q?'#EF8C5B':'transparent',
+                          color:selectedQ===q?'#0D2C29':'#C06020',
+                          borderColor:selectedQ===q?'#EF8C5B':'#EF8C5B50'}}>
+                        {q}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
